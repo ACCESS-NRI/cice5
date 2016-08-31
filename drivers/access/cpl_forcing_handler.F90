@@ -686,20 +686,23 @@ stray = um_tauy * aice      !*tmask ?
 do j = 1, ny_block
 do i = 1, nx_block
   do k = 1, nblocks
-    if (aice(i,j,k)==0.0) then
-      do cat = 1, ncat
-        flatn_f(i,j,cat,k) = 0.0
-      enddo
-      ! This will then be conserved in CICE (done in sfcflux_to_ocn)
-      flatn_f(i,j,1,k) = um_lhflx(i,j,k)
-    else
+    !BX 20160826: as in NEMO sbccpl.F90, there is no "open water field" um_lhflx involved: 
+    !    qla_ice(:,:,1:jpl) = - frcv(jpr_ievp)%z3(:,:,1:jpl) * lsub 
+    !-------------------------------------------------------------------------------------
+    !if (aice(i,j,k)==0.0) then
+    !  do cat = 1, ncat
+    !    flatn_f(i,j,cat,k) = 0.0
+    !  enddo
+    !  ! This will then be conserved in CICE (done in sfcflux_to_ocn)
+    !  flatn_f(i,j,1,k) = um_lhflx(i,j,k)
+    !else
       do cat = 1, ncat
         !!!BX: flatn_f(i,j,cat,k) = um_lhflx(i,j,k) * aicen(i,j,cat,k)/aice(i,j,k)
         !!!   Double check "Lsub" used here !!! 
         !?! flatn_f(i,j,cat,k) = um_iceevp(i,j,cat,k) * Lsub 
         flatn_f(i,j,cat,k) = - um_iceevp(i,j,cat,k) * Lsub
       enddo
-    endif
+    !endif
   enddo
 enddo
 enddo
