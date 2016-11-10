@@ -91,7 +91,8 @@
 !
 !EOP
 !
-#ifdef CICE_IN_NEMO
+!#ifdef CICE_IN_NEMO
+#ifdef ACCESS
       integer (kind=int_kind) :: &
           i, j, n    ! horizontal indices
       
@@ -182,7 +183,8 @@
             i = indxi(ij)
             j = indxj(ij)
 
-#ifdef CICE_IN_NEMO
+!#ifdef CICE_IN_NEMO
+#ifdef ACCESS
 !----------------------------------------------------------------------
 ! Convert fluxes from GBM values to per ice area values when 
 ! running in NEMO environment.  (When in standalone mode, fluxes

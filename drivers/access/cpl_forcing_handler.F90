@@ -14,7 +14,8 @@ use ice_domain_size
 use ice_domain,    only : distrb_info, nblocks 
 use ice_flux            !forcing data definition (Tair, Qa, uocn, etc.)
                         !Tn_top, keffn_top ...(for multilayer configuration)   
-use ice_state,     only : aice, aicen, trcr, trcrn, nt_hpnd   !ice concentration and tracers
+!use ice_state,     only : aice, aicen, trcr, trcrn, nt_hpnd   !ice concentration and tracers
+use ice_state,     only : aice, aicen, trcr, trcrn, nt_hpnd, nt_Tsfc   !ice concentration and tracers
 use ice_state,     only: uvel, vvel, vsnon, vicen
 use ice_gather_scatter
 !ars599: 11042014: use all ice_constants
@@ -726,6 +727,27 @@ enddo
 !!!           the original weighting is CORRECT! so back to *aice:
 fsnow = max(aice * um_snow,0.0)
 frain = max(aice * um_rain,0.0)  
+!
+!!! XXXXXX: ice surface skin temperature (from UM)--------------------------
+!see: tsfc_ice definition in sbccpl.F90 at
+!/short/p66/hxy599/fcm_make_ocean_GC3/extract/nemo/NEMOGCM/NEMO/OPA_SRC/SBC
+!---------------------------------------------------------------------------
+do cat = 1, ncat
+  !!!  trcrn(:,:,nt_Tsfc,cat,:) = um_tsfice(:,:,cat,:)
+  do k = 1, nblocks
+    do j = 1, ny_block
+      do i = 1, nx_block
+        if (um_tsfice(i,j,cat,k) > 0.0) then
+          trcrn(i,j,nt_Tsfc,cat,k) = 0.0 
+        else if (um_tsfice(i,j,cat,k) < -60.0) then
+          trcrn(i,j,nt_Tsfc,cat,k) = -60.0 
+        else
+          trcrn(i,j,nt_Tsfc,cat,k) = um_tsfice(i,j,cat,k)
+        endif
+      enddo
+    enddo
+  enddo
+enddo
 !!!------------------------------------------------------------------------------------------
 
 ! Fields from MOM4 (SSU/V and sslx/y are on U points): 
@@ -1013,11 +1035,16 @@ ia_aicen(:,:,:,:) = maicen(:,:,:,:)
 !BX: save it for use in atm_icefluxes_back2GBM ---
 maicen_saved = maicen
 
+!XXX -- As per Alex West, only two of the ice vaiables below need to be scaled down 
+!       by "* aice": ice top layer "temperature" and "effective conductivity"!
+
 !(9-13) ice thickness
 ia_thikn(:,:,:,:) = mthikn(:,:,:,:)
+!ia_thikn(:,:,:,:) = mthikn(:,:,:,:) * mfoifr(:,:,:,:)  !X
 
 !(14-18) snow thickness
 ia_snown(:,:,:,:) = msnown(:,:,:,:)
+!ia_snown(:,:,:,:) = msnown(:,:,:,:) * mfoifr(:,:,:,:)  !X
 
 !(19-20) co2 flux stuff
 ia_co2 = mco2
@@ -1030,16 +1057,20 @@ ia_sstfz(:,:,:) = msstfz(:,:,:) + 273.15
 ia_foifr(:,:,:,:) = mfoifr(:,:,:,:)
 
 !(27-31) ice top layer temperature
-ia_itopt(:,:,:,:) = mitopt(:,:,:,:) + 273.15
+!XXX ia_itopt(:,:,:,:) = mitopt(:,:,:,:) + 273.15
+ia_itopt(:,:,:,:) = (mitopt(:,:,:,:) + 273.15) * mfoifr(:,:,:,:)        !Y
 
 !(32-36) ice top layer effective conductivity
-ia_itopk(:,:,:,:) = mitopk(:,:,:,:)
+!XXX ia_itopk(:,:,:,:) = mitopk(:,:,:,:)
+ia_itopk(:,:,:,:) = mitopk(:,:,:,:) * mfoifr(:,:,:,:)                   !Y
 
 !(37-41) ice melt pond concentration
 ia_pndfn(:,:,:,:) = mpndfn(:,:,:,:)
+!ia_pndfn(:,:,:,:) = mpndfn(:,:,:,:) * mfoifr(:,:,:,:)  !X
 
 !(42-46) ice melt pond thickness
 ia_pndtn(:,:,:,:) = mpndtn(:,:,:,:)
+!ia_pndtn(:,:,:,:) = mpndtn(:,:,:,:) * mfoifr(:,:,:,:)  !X
 
 return
 end subroutine get_i2a_fields

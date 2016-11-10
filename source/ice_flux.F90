@@ -430,6 +430,7 @@
       sss   (:,:,:) = 34.0_dbl_kind   ! sea surface salinity (ppt)
 !ars599: 04042016: should we change to AusCOM or ACCESS?
 #ifndef CICE_IN_NEMO
+!#ifndef ACCESS                  !XXX --  won't run!
       if (ktherm == 2) then           ! freezing temp (C)
          ! liquidus_temperature_mush(sss)
          Tf (:,:,:) = sss(:,:,:) / (-18.48_dbl_kind &
