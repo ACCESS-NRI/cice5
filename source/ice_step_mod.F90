@@ -43,6 +43,10 @@
                                Sswabsn, Iswabsn
       use ice_state, only: aice, aicen
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_sw
+      !BBB:
+      use ice_grid, only: tmask
+      use ice_calendar, only: istep1
+      !b.  
 
       real (kind=dbl_kind), intent(in) :: &
          dt      ! time step
@@ -106,9 +110,16 @@
             do j = jlo, jhi
             do i = ilo, ihi
                if (aicen(i,j,n,iblk) > puny) then
+                 if (.not. tmask(i,j,iblk)) then  !BBB
+                   write(nu_diag,*) 'BBB1 ??? land point found! at istep1, my_task: ',&
+                                                                  istep1, my_task
+                   write(nu_diag,'(a,4i5,e12.6)') 'BBB1 i,j, n,iblk, aicen = ', &
+                                                       i,j, n,iblk, aicen(i,j,n,iblk)
+                 else                             !B 
                   icells = icells + 1
                   indxi(icells) = i
                   indxj(icells) = j
+                 endif                            !B
                endif
             enddo               ! i
             enddo               ! j
@@ -194,6 +205,11 @@
       use ice_therm_shared, only: calc_Tsfc
       use ice_therm_vertical, only: frzmlt_bottom_lateral, thermo_vertical
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_ponds
+      !BBB:
+      use ice_grid, only: tmask
+      use ice_calendar, only: istep1
+      !b.  
+
 !#ifdef ACCESS
 !      use cpl_arrays_setup, only: maice_saved
 !#endif
@@ -391,9 +407,16 @@
             do j = jlo, jhi
             do i = ilo, ihi
                if (aicen(i,j,n,iblk) > puny) then
+                 if (.not. tmask(i,j,iblk)) then  !BBB
+                   write(nu_diag,*) 'BBB2 ??? land point found! at istep1, my_task: ',&
+                                                                  istep1, my_task
+                   write(nu_diag,'(a,4i5,e12.6)') 'BBB2 i,j, n,iblk, aicen = ', &
+                                                       i,j, n,iblk, aicen(i,j,n,iblk)
+                 else                             !B 
                   icells = icells + 1
                   indxi(icells) = i
                   indxj(icells) = j
+                 endif                            !B
                endif
             enddo               ! i
             enddo               ! j

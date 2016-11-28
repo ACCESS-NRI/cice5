@@ -2510,7 +2510,14 @@
          ferr = abs(efinal(ij)-einit(ij)-einp) / dt
 
          if (ferr > ferrmax) then
-            l_stop = .true.
+
+           if (ferr > 10.0 * ferrmax) then
+             l_stop = .true.
+             write(nu_diag,*) 'BBB: TOO BAD --- CICE is to stop!' 
+           else 
+             write(nu_diag,*) 'BBB: WARNING -- too big flux error --'
+           endif
+
             istop = i
             jstop = j
 
@@ -2532,6 +2539,18 @@
          write(nu_diag,*) fcondtopn_solve(i,j), fcondtopn_extra(i,j)
 	 write(nu_diag,*) 'enum(ij):'
 	 write(nu_diag,*) enum(ij)
+!B:
+!               write(nu_diag,*) 'Global i and j:', &
+!                                this_block%i_glob(istop), &
+!                                this_block%j_glob(jstop)
+!               write(nu_diag,*) 'Lat, Lon:', &
+!                                TLAT(istop,jstop,iblk)*rad_to_deg, &
+!                                TLON(istop,jstop,iblk)*rad_to_deg
+!               write(nu_diag,*) 'aice:', &
+!                                aice(istop,jstop,iblk)
+!               write(nu_diag,*) 'n: ',n, 'aicen: ', &
+!                                aicen(istop,jstop,n,iblk)
+!b
 
 !         if (ktherm == 2) then
             write(nu_diag,*) 'Intermediate energy =', einter(ij)
