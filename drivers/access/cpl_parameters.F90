@@ -32,8 +32,7 @@ integer(kind=int_kind) :: il_commlocal  ! Component internal communicator
 !integer(kind=int_kind) :: il_master=0	! master_task id
  
 integer(kind=int_kind) :: num_cpl_ai    ! num of (a2i) cpl periods
-integer(kind=int_kind) :: num_cpl_io    ! num of (i2o) cpl periods
-integer(kind=int_kind) :: num_ice_io    ! ice time loop iter num per i2o cpl interval
+integer(kind=int_kind) :: num_ice_ai    ! ice time loop iter num per a2i cpl interval
 
 real(kind=dbl_kind) :: meltlimit = -200.    !12/03/2008: set max melt
 real(kind=dbl_kind) :: ocn_albedo = 0.06 ! for compability with AusCOM
@@ -112,9 +111,7 @@ namelist/coupling/       &
          chk_o2i_fields
 
 integer(kind=int_kind) :: iniday, inimon, iniyear   !from inidate
-real(kind=dbl_kind) :: coef_io    !dt_ice/dt_cpl_io, for i2o fields tavg 
-real(kind=dbl_kind) :: coef_ia    !dt_ice/dt_cpl_ai, for i2a fields tavg
-real(kind=dbl_kind) :: coef_cpl   !dt_cpl_io/dt_cpl_ai, for ocn fields tavg 
+real(kind=dbl_kind) :: coef_ai    !dt_ice/dt_cpl_ai, for i2a fields tavg
 
 real(kind=dbl_kind) :: frazil_factor = 0.5
          !frazil_factor is associated with the difference between ocean 
@@ -137,14 +134,16 @@ implicit none
 open(unit=99,file="input_ice.nml",form="formatted",status="old")
 read (99, coupling)
 close(unit=99)
-! *** make sure dt_cpl_ai is multiple of dt_cpl_io, and dt_cpl_io if multiple of dt_ice ***
-num_cpl_ai = runtime/dt_cpl_ai
-num_cpl_io = dt_cpl_ai/dt_cpl_io
-num_ice_io = dt_cpl_io/dt_cice
 
-coef_io = float(dt_cice)/float(dt_cpl_io)
-coef_ia = float(dt_cice)/float(dt_cpl_ai)
-coef_cpl = float(dt_cpl_io)/float(dt_cpl_ai)
+! *** make sure dt_cpl_ai is multiple of dt_cpl_io, and dt_cpl_io if multiple of dt_ice ***
+
+!hardrwire dt_cpl_io == dt_cice
+dt_cpl_io = dt_cice
+
+num_cpl_ai = runtime/dt_cpl_ai
+num_ice_ai = dt_cpl_ai/dt_cice
+
+coef_ai = float(dt_cice)/float(dt_cpl_ai)
 
 iniday  = mod(inidate, 100)
 inimon  = mod( (inidate - iniday)/100, 100)
@@ -192,15 +191,15 @@ if (nml_error /= 0) then
    write(6, *)
 endif
 
+!hardrwire dt_cpl_io == dt_cice
+dt_cpl_io = dt_cice
+
 ! * make sure runtime is mutliple of dt_cpl_ai, dt_cpl_ai is mutliple of dt_cpl_io, 
 ! * and dt_cpl_io is mutliple of dt_cice!
 num_cpl_ai = runtime/dt_cpl_ai
-num_cpl_io = dt_cpl_ai/dt_cpl_io
-num_ice_io = dt_cpl_io/dt_cice
+num_ice_ai = dt_cpl_ai/dt_cice
 
-coef_io = float(dt_cice)/float(dt_cpl_io)
-coef_ia = float(dt_cice)/float(dt_cpl_ai)
-coef_cpl = float(dt_cpl_io)/float(dt_cpl_ai)
+coef_ai = float(dt_cice)/float(dt_cpl_ai)
 
 iniday  = mod(inidate, 100)
 inimon  = mod( (inidate - iniday)/100, 100)

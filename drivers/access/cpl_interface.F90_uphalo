@@ -919,13 +919,19 @@
     endif
 
   enddo
-        !BX: 20160623...... avoid initial "remap transport: bad departure points" (e.g.@(332,776))?
-        if (isteps == 0) then
-          um_taux = um_taux * 0.1
-          um_tauy = um_tauy * 0.1
-        endif
-        !BX.
-
+!=========================B: The operation below is ridiculous"======================================
+!               it definitely destroys the "reproducibility" when model is run
+!                  with different time segments (e.g., 1 month vs 3 months  
+!       IF really required (see comments below), should do it at the very beginning of the exp. or 
+!       --actually better-- reducing windstress in the preprecessed data "a2i.nc" !!! 
+!
+!       !BX: 20160623...... avoid initial "remap transport: bad departure points" (e.g.@(332,776))?
+!        if (isteps == 0) then
+!          um_taux = um_taux * 0.1
+!          um_tauy = um_tauy * 0.1
+!        endif
+!       !BX.
+!----------------------------------------------------------------------------------------------------
     call ice_HaloUpdate(um_thflx, halo_info,field_loc_center,field_type_scalar)
     call ice_HaloUpdate(um_pswflx, halo_info,field_loc_center,field_type_scalar)
     call ice_HaloUpdate(um_runoff, halo_info,field_loc_center,field_type_scalar)

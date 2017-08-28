@@ -21,14 +21,20 @@
       real (kind=dbl_kind), parameter, public :: &
          rhos      = 330.0_dbl_kind   ,&! density of snow (kg/m^3)
          rhoi      = 917.0_dbl_kind   ,&! density of ice (kg/m^3)
+!#ifdef AusCOM
+!         rhow      = 1035.0_dbl_kind  ,&! density of seawater (kg/m^3)
+!                     !mom uses this value---arguable for sea ice---
+!#else
          rhow      = 1026.0_dbl_kind  ,&! density of seawater (kg/m^3)
+!#endif
          cp_air    = 1005.0_dbl_kind  ,&! specific heat of air (J/kg/K)
          ! (Briegleb JGR 97 11475-11485  July 1992)
          emissivity= 0.95_dbl_kind    ,&! emissivity of snow and ice
          cp_ice    = 2106._dbl_kind   ,&! specific heat of fresh ice (J/kg/K)
 !ars599: 11042014: add AusCOM
 #ifdef AusCOM
-         cp_ocn    = 3989._dbl_kind   ,&! specific heat of ocn    (J/kg/K)
+!         cp_ocn    = 3989._dbl_kind   ,&! specific heat of ocn    (J/kg/K)
+         cp_ocn    = 3992.10322329649_dbl_kind 
                                         ! freshwater value needed for enthalpy
 #else
          cp_ocn    = 4218._dbl_kind   ,&! specific heat of ocn    (J/kg/K)

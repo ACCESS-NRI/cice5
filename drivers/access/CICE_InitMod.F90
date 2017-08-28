@@ -257,7 +257,7 @@
       ! for continue runs, need restart o2i forcing fields and time-averaged ice 
       ! variables ('mice')saved at the end of last run from ice models; 
       ! for initial run, pre-processed o2i (and maybe mice) fields are required.
-!hxy599      call get_restart_o2i(trim(restartdir)//'/o2i.nc')
+      call get_restart_o2i(trim(restartdir)//'/o2i.nc')
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       !if no lag for ice to atm coupling, then cice has to read restart file i2a.nc and 
@@ -266,24 +266,21 @@
 !      call put_restart_i2a('i2a.nc', 0)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!      if ( file_exist('CICE_restart/mice.nc') ) then
       if ( file_exist(trim(restartdir)//'/mice.nc') ) then
         !for continue runs, mice data MUST be available.
-!        call get_restart_mice('CICE_restart/mice.nc')
         call get_restart_mice(trim(restartdir)//'/mice.nc')
       else
-write(6,*)'*** CICE WARNING: No initial mice.nc data available here! **'
-write(6,*)'*** CICE WARNING: ALL mice variables will be set to ZERO! **'
-write(6,*)'*** CICE WARNING: This is allowed for the init run ONLY ! **' 
+        write(6,*)'*** CICE WARNING: No initial mice.nc data available here! **'
+        write(6,*)'*** CICE WARNING: ALL mice variables will be set to ZERO! **'
+        write(6,*)'*** CICE WARNING: This is allowed for the init run ONLY ! **' 
       endif
       if (use_core_runoff) then
-!         call get_core_runoff('CICE_input/core_runoff_regrid.nc',&
          call get_core_runoff(trim(inputdir)//'/core_runoff_regrid.nc',&
                               'runoff',1)
       endif
 
-!hxy599        write(il_out,*)' calling ave_ocn_fields_4_i2a at time_sec = ',0 !time_sec
-!hxy599        call time_average_ocn_fields_4_i2a  !accumulate/average ocn fields needed for IA coupling
+        write(il_out,*)' calling ave_ocn_fields_4_i2a at time_sec = ',0 !time_sec
+        call time_average_ocn_fields_4_i2a  !accumulate/average ocn fields needed for IA coupling
 
       !get a2i fields and then set up initial SBC for ice
       !call from_atm(0)
