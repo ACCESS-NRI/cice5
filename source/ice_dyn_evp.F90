@@ -407,7 +407,7 @@
 
       ! Force symmetry across the tripole seam
       if (trim(grid_type) == 'tripole') then
-      if (maskhalo_dyn) then
+       if (maskhalo_dyn) then
          !-------------------------------------------------------
          ! set halomask to zero because ice_HaloMask always keeps
          ! local copies AND tripole zipper communication
@@ -443,7 +443,7 @@
                               field_loc_center,  field_type_scalar)
 
          call ice_HaloDestroy(halo_info_mask)
-      else
+       else
          call ice_HaloUpdate_stress(stressp_1, stressp_3, halo_info, &
                               field_loc_center,  field_type_scalar)
          call ice_HaloUpdate_stress(stressp_3, stressp_1, halo_info, &
@@ -470,7 +470,7 @@
                               field_loc_center,  field_type_scalar)
          call ice_HaloUpdate_stress(stress12_4, stress12_2, halo_info, &
                               field_loc_center,  field_type_scalar)
-      endif   ! maskhalo
+       endif   ! maskhalo
       endif   ! tripole
 
       !-----------------------------------------------------------------
@@ -498,8 +498,12 @@
       call u2tgrid_vector(strocnxT)    ! shift
       call u2tgrid_vector(strocnyT)
 
-      call ice_timer_stop(timer_dynamics)    ! dynamics
+      call ice_HaloUpdate(strocnxT, halo_info, &
+                              field_loc_center,  field_type_vector)
+      call ice_HaloUpdate(strocnyT, halo_info, &
+                              field_loc_center,  field_type_vector)
 
+       call ice_timer_stop(timer_dynamics)    ! dynamics
       end subroutine evp
 
 !=======================================================================

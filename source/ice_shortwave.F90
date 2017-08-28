@@ -169,6 +169,7 @@
       use ice_blocks, only: block, get_block
       use ice_grid, only: tmask, tlat, tlon
       use ice_meltpond_lvl, only: dhsn, ffracn
+      use ice_therm_shared, only: calc_Tsfc
 
       integer (kind=int_kind) :: &
          icells          ! number of cells with aicen > puny
@@ -224,6 +225,17 @@
       enddo   ! iblk
       !$OMP END PARALLEL DO
 
+      ! Alex West, March 2017: Because we do not model SW radiation penetrating
+      ! into ice in the coupled model yet, furthur SW calculations in the 
+      ! initialisation after setting everything to 0 are unnecessary, and 
+      ! may be introducing spurious values.  Hence everything from here 
+      ! onwards will be enclosed in a 'if calc_Tsfc' statement (which only
+      ! evaluates to .true. in the forced model).
+      !
+      ! In the case that penetrating SW radiation is implemented in the coupled
+      ! model, this control structure may need to be removed.
+
+      if (calc_Tsfc) then
       if (trim(shortwave) == 'dEdd') then ! delta Eddington
 
 #ifndef CCSMCOUPLED
@@ -396,6 +408,8 @@
 
       enddo     ! nblocks
       !$OMP END PARALLEL DO
+
+      endif     ! calc_Tsfc
 
       end subroutine init_shortwave
 

@@ -1846,7 +1846,7 @@
          trcrn        ! ice tracers
 
       real (kind=dbl_kind), dimension (nx_block,ny_block), &
-         intent(out) :: &
+         intent(inout) :: &
          dfpond   , & ! zapped pond water flux (kg/m^2/s)
          dfresh   , & ! zapped fresh water flux (kg/m^2/s)
          dfsalt   , & ! zapped salt flux   (kg/m^2/s)
