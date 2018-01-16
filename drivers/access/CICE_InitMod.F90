@@ -270,28 +270,41 @@
         !for continue runs, mice data MUST be available.
         call get_restart_mice(trim(restartdir)//'/mice.nc')
       else
-        write(6,*)'*** CICE WARNING: No initial mice.nc data available here! **'
-        write(6,*)'*** CICE WARNING: ALL mice variables will be set to ZERO! **'
-        write(6,*)'*** CICE WARNING: This is allowed for the init run ONLY ! **' 
+        write(6,*)'* WARNING: No initial mice.nc data available here! *'
+        write(6,*)'* WARNING: ALL mice variables will be set to ZERO! *'
+        write(6,*)'* WARNING: This is allowed for the init run ONLY ! *' 
       endif
       if (use_core_runoff) then
          call get_core_runoff(trim(inputdir)//'/core_runoff_regrid.nc',&
                               'runoff',1)
       endif
 
-        write(il_out,*)' calling ave_ocn_fields_4_i2a at time_sec = ',0 !time_sec
-        call time_average_ocn_fields_4_i2a  !accumulate/average ocn fields needed for IA coupling
+      write(il_out,*)' calling ave_ocn_fields_4_i2a time_sec = ',0 !time_sec
+      call time_average_ocn_fields_4_i2a  
+      !accumulate/average ocn fields needed for IA coupling
 
-      !get a2i fields and then set up initial SBC for ice
-      !call from_atm(0)
-      !call get_sbc_ice
-      !now "most of" the IC of this run are 'proper' for "call ice_write_hist"
 #endif
 
-!ars599: 11042014: ice_write_hist is no longer there now change to accum_hist
-!	so wrapup this line n markout
-!dhb599: 20111128: the following call is moved 'upstair'
-!      if (write_ic) call accum_hist(dt) ! write initial conditions 
+!20171024: read in mask for land ice discharge into ocean off Antarctica and Greenland.
+#ifdef ACCESS
+      !!! options for land ice discharged as iceberg melting around AA and Gnld
+      !   0: "even" distribution as for u-ar676;
+      !   1: use AC2 data but GC3.1 iceberg climatological pattern, each month takes the 
+      !          total discharge as that diagnosed in u-ar676 (yrs2-101);
+      !   2: use GC3 iceberg climatological pattern, each month enhanced by ac2/gc3 annual ratio 
+      !          of land ice discharge to make sure the annual total discharge is same as case 1;
+      !   3: as case 1 but use annual mean    
+      !   4: as case 2 but use annual mean
+      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have idential annual 
+      !!! discharge of land ice (as iceberg) into ocean. 
+
+      if ( file_exist(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') ) then
+          call get_lice_discharge_masks_or_iceberg(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') 
+      else
+          write(6,*)'* CICE stopped -- land ice discharge masks and iceberg datafile missing.*' 
+          call abort_ice ('ice: land ice discharge masks and iceberg datafile missing!')
+      endif
+#endif
 
       end subroutine cice_init
 

@@ -117,6 +117,7 @@
                 ' calling into_ocn at icpl_ai, itap, time_sec = ', icpl_ai, itap, time_sec
           !call ice_timer_start(timer_into_ocn)  ! atm/ocn coupling
           !===========================
+          !call check_iceberg_fields('chk_iceberg_i2o.nc')
           call into_ocn(stimestamp_io)
           !===========================
           !call ice_timer_stop(timer_into_ocn)  ! atm/ocn coupling
@@ -125,22 +126,20 @@
           call get_sbc_ice
 
           !Debug: 20170825 -- check sbc_ice variables from "get_sbc_ice"
-          call check_ice_sbc_fields('chk_ice_sbc.nc')
+          !call check_ice_sbc_fields('chk_ice_sbc.nc')
 
           !Debug: 20170927 -- check the restart fields at the beginning of day 3
-          !if (idate == 10103 .and. write_tmp_dump ) then
-          if (icpl_ai == 17 .and. itap == 1) then
-            write(il_out,'(a,4i10)') &
-                ' calling dumpfile at icpl_ai, itap, time_sec, idate = ', icpl_ai, itap, time_sec, idate
-            call dumpfile
-            !write_tmp_dump = .false.
-          endif
+          !if (icpl_ai == 17 .and. itap == 1) then
+          !  write(il_out,'(a,4i10)') &
+          !      ' calling dumpfile at icpl_ai, itap, time_sec, idate = ', icpl_ai, itap, time_sec, idate
+          !  call dumpfile
+          !endif
  
           !*** ice "update" ***!
           call ice_step
 
           !Debug: 20170827 -- check updated ice varables after ice_step
-          call check_ice_fields('chk_ice_fields.nc')
+          !call check_ice_fields('chk_ice_fields.nc')
 
           !time-average ice variables required for setting up i2o and i2a cpl fields 
           call time_average_fields_4_i2o        !actually "instant" ice vairables
@@ -193,23 +192,15 @@
           end if
 
         end do      !itap
-!
-!B: the following part is done in the above itap loop......logically "unnatural"! 
-!        write(il_out,*)' calling get_i2a_fields at time_sec = ',time_sec
-!        !call ice_timer_start(timer_into_atm)  
-!        !i2a fields ready to be sent for next IA cpl int in atm.
-!        call get_i2a_fields
-!
-!        !stimestamp_ai = time_sec 
-!        stimestamp_ai = time_sec - dt   !??? test new order???!
-!
-!        write(il_out,*)' calling into_atm at icpl_ai, itap, time_sec = ',icpl_ai, itap, time_sec
-!        call into_atm(stimestamp_ai)
-!
-!        !set time averaged ice and ocn variables back to 0
-!        write(il_out,*)' calling init_mocn_fields_4_i2a at time_sec = ',time_sec
-!        call initialize_mocn_fields_4_i2a
-!        !call ice_timer_stop(timer_into_atm)  ! atm/ocn coupling
+
+        !reset land ice amount lice_nth and lice_sth for "previous" a2i step:
+
+        !debug: check landice fields----
+        !call check_landice_fields_1('chk_lice_fields_ai.nc')
+
+        lice_nth = um_icenth
+        lice_sth = um_icesth
+        newstep_ai = .true.
 
       END DO      !icpl_ai
 

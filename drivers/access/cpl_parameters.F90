@@ -15,7 +15,7 @@ integer (kind=int_kind) :: xdim, ydim
 !integer(kind=int_kind), parameter :: nrecv = 50   ! maxium no of flds rcvd allowed
 integer(kind=int_kind) :: nsend_i2a, nsend_i2o
 integer(kind=int_kind) :: nrecv_a2i, nrecv_o2i 
-integer(kind=int_kind), parameter :: jpfldout = 63 ! actual number of fields sent
+integer(kind=int_kind), parameter :: jpfldout = 65 ! actual number of fields sent
 integer(kind=int_kind), parameter :: jpfldin  = 47 ! actual number of fields rcvd 
 
 character(len=8), dimension(jpfldout) :: cl_writ ! Symb names fields sent
@@ -75,7 +75,10 @@ integer(kind=int_kind) :: runtime = 86400      !the time length for this run seg
 !          tropical cooling bias:
 real(kind=dbl_kind) :: ocn_ssuv_factor = 1.0  ! 0.0 -- turn off the ocn_current into UM.
 real(kind=dbl_kind) :: iostress_factor = 1.0  ! 0.0 -- turn off stresses into MOM4.
-             
+!
+!20171227: Adding options for land ice discharge as iceberg melt (0,1,2,3,4)
+integer(kind=int_kind) :: iceberg = 0 
+!             
 namelist/coupling/       &
          caltype,        &
          jobnum,         &
@@ -103,6 +106,7 @@ namelist/coupling/       &
          do_scale_fluxes, &
          extreme_test,   &
          imsk_evap,      &
+         iceberg,        &
          ocn_ssuv_factor,&
          iostress_factor,&
          chk_a2i_fields, &
@@ -122,6 +126,8 @@ real(kind=dbl_kind) :: frazil_factor = 0.5
          ! cice uses forward time-stepping, which means we need 'correct'
          ! the received frazil energy by multiplying 0.5...
 !---------------------------------------------------------------------------------------
+
+logical :: newstep_ai = .false.         !20171024: for land ice availiblity control
 
 contains
 

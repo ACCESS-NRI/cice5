@@ -34,7 +34,7 @@
 !ars599: 11042014: add AusCOM
 #ifdef AusCOM
 !         cp_ocn    = 3989._dbl_kind   ,&! specific heat of ocn    (J/kg/K)
-         cp_ocn    = 3992.10322329649_dbl_kind  ,&
+         cp_ocn    = 3992.10322329649_dbl_kind,& 
                                         ! freshwater value needed for enthalpy
 #else
          cp_ocn    = 4218._dbl_kind   ,&! specific heat of ocn    (J/kg/K)
@@ -45,7 +45,8 @@
 !ars599: 26032014 new code (CODE: dragio)
 !	use new code, mark out #ifndef AusCOM
 #ifndef AusCOM
-         dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
+         !!! dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
+         dragio    = 0.01_dbl_kind ,&!!! 20170922 test new value as per spo 
 #endif
          albocn    = 0.06_dbl_kind      ! ocean albedo
 
@@ -88,12 +89,16 @@
 
          ! kice is not used for mushy thermo
          kice   = 2.03_dbl_kind  ,&! thermal conductivity of fresh ice(W/m/deg)
+         !!!kice   = 2.63_dbl_kind  ,&!!! !20170922: spo suggests to test new kice and ksno
          ! kseaice is used only for zero-layer thermo
          kseaice= 2.00_dbl_kind  ,&! thermal conductivity of sea ice (W/m/deg)
                                    ! (used in zero layer thermodynamics option)
-         ksno   = 0.31_dbl_kind  ,&! thermal conductivity of snow  (W/m/deg)
+         ksno   = 0.2_dbl_kind  ,&! thermal conductivity of snow  (W/m/deg)
+         !!!ksno   = 0.31_dbl_kind  ,&! thermal conductivity of snow (W/m/deg) 
+         !!!ksno   = 0.50_dbl_kind  ,&!!! test new value as per spo
          zref   = 10._dbl_kind   ,&! reference height for stability (m)
-#ifndef AusCOM	                                 ! multilayers with the UM coupling
+#ifndef AusCOM
+         ! multilayers with the UM coupling
          aicenmin_ml = 0.00001_dbl_kind, &! AEW: min aice we want to allow when using
          snowpatch = 0.02_dbl_kind ! parameter for fractional snow area (m)
 #else

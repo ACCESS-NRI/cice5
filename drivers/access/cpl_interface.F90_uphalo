@@ -515,6 +515,11 @@
     cl_writ(nsend_i2o)='co2_i1'
     nsend_i2o = nsend_i2o + 1
     cl_writ(nsend_i2o)='wnd_i1'
+!2 more added 20171024:
+    nsend_i2o = nsend_i2o + 1
+    cl_writ(nsend_i2o)='lice_fw'
+    nsend_i2o = nsend_i2o + 1
+    cl_writ(nsend_i2o)='lice_ht'
 
     if (my_task == 0 .or. ll_comparal) then
 
@@ -686,6 +691,13 @@
   allocate (um_icesth(nx_block,ny_block,max_blocks)); um_icesth(:,:,:) = 0
   allocate (um_tsfice(nx_block,ny_block,ncat,max_blocks)); um_tsfice(:,:,:,:) = 0
   allocate (um_iceevp(nx_block,ny_block,ncat,max_blocks)); um_iceevp(:,:,:,:) = 0
+  !20171024: 6 more arrays added (for land ice discharge into ocean)
+  allocate (lice_nth(nx_block,ny_block,max_blocks)); lice_nth(:,:,:) = 0
+  allocate (lice_sth(nx_block,ny_block,max_blocks)); lice_sth(:,:,:) = 0
+  allocate (msk_nth(nx_block,ny_block,max_blocks));  msk_nth(:,:,:) = 0
+  allocate (msk_sth(nx_block,ny_block,max_blocks));  msk_sth(:,:,:) = 0
+  allocate (amsk_nth(nx_block,ny_block,max_blocks)); amsk_nth(:,:,:) = 0
+  allocate (amsk_sth(nx_block,ny_block,max_blocks)); amsk_sth(:,:,:) = 0
 
   !
   allocate ( core_runoff(nx_block,ny_block,max_blocks));  core_runoff(:,:,:) = 0.
@@ -738,6 +750,9 @@
   allocate (io_form(nx_block,ny_block,max_blocks));  io_form(:,:,:) = 0
   allocate (io_co2(nx_block,ny_block,max_blocks));  io_co2(:,:,:) = 0
   allocate (io_wnd(nx_block,ny_block,max_blocks));  io_wnd(:,:,:) = 0
+!20171024: 2 more added
+  allocate (io_licefw(nx_block,ny_block,max_blocks)); io_licefw(:,:,:) = 0
+  allocate (io_liceht(nx_block,ny_block,max_blocks)); io_liceht(:,:,:) = 0
 
   ! temporary arrays:
   ! IO cpl int time-average
@@ -770,11 +785,14 @@
   allocate (mpndtn(nx_block,ny_block,ncat,max_blocks)); mpndtn(:,:,:,:) = 0
 !BX:
   allocate (maicen_saved(nx_block,ny_block,ncat,max_blocks)); maicen_saved(:,:,:,:) = 0
+!
+  allocate (icebergfw(nx_block,ny_block,12,max_blocks)); icebergfw(:,:,:,:) = 0
 
   allocate (vwork(nx_block,ny_block,max_blocks)); vwork(:,:,:) = 0
   allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0
   allocate (sicemass(nx_block,ny_block,max_blocks)); sicemass(:,:,:) = 0.
   allocate (vwork2d(l_ilo:l_ihi, l_jlo:l_jhi)); vwork2d(:,:) = 0. !l_ihi-l_ilo+1, l_jhi-l_jlo+1
+
   end subroutine init_cpl
 
 !=======================================================================
@@ -919,18 +937,6 @@
     endif
 
   enddo
-!=========================B: The operation below is ridiculous"======================================
-!               it definitely destroys the "reproducibility" when model is run
-!                  with different time segments (e.g., 1 month vs 3 months  
-!       IF really required (see comments below), should do it at the very beginning of the exp. or 
-!       --actually better-- reducing windstress in the preprecessed data "a2i.nc" !!! 
-!
-!       !BX: 20160623...... avoid initial "remap transport: bad departure points" (e.g.@(332,776))?
-!        if (isteps == 0) then
-!          um_taux = um_taux * 0.1
-!          um_tauy = um_tauy * 0.1
-!        endif
-!       !BX.
 !----------------------------------------------------------------------------------------------------
     call ice_HaloUpdate(um_thflx, halo_info,field_loc_center,field_type_scalar)
     call ice_HaloUpdate(um_pswflx, halo_info,field_loc_center,field_type_scalar)
@@ -1197,6 +1203,9 @@
     case('form_io');  vwork = io_form
     case('co2_i1'); vwork = io_co2
     case('wnd_i1'); vwork = io_wnd
+    !2 more added 20171024:
+    case('lice_fw'); vwork = io_licefw
+    case('lice_ht'); vwork = io_liceht    
     end select
     
     if(.not. ll_comparal) then 
@@ -1204,22 +1213,6 @@
     else
       call pack_global_dbl(gwork, vwork, master_task, distrb_info)
       vwork2d(l_ilo:l_ihi, l_jlo:l_jhi) = gwork(l_ilo:l_ihi, l_jlo:l_jhi)
-!      do iblk=1,nblocks_tot
-!
-!        if (distrb_info%blockLocation(iblk) == my_task+1) then
-!
-!          this_block = get_block(iblk,iblk)
-!          ilo = this_block%ilo
-!          ihi = this_block%ihi
-!          jlo = this_block%jlo
-!          jhi = this_block%jhi
-!
-!          vwork2d(this_block%i_glob(ilo):this_block%i_glob(ihi),   &
-!             this_block%j_glob(jlo):this_block%j_glob(jhi)) =      &
-!          vwork(ilo:ihi,jlo:jhi,distrb_info%blockLocalID(iblk)) 
-!        endif
-!      end do
-      
     endif
     if (my_task == 0 .or. ll_comparal) then   
 
