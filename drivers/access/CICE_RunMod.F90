@@ -434,7 +434,8 @@
           fswthru_ai, fhocn, fswthru, scale_factor, &
           swvdr, swidr, swvdf, swidf, Tf, Tair, Qa, strairxT, strairyt, &
           fsens, flat, fswabs, flwout, evap, Tref, Qref, faero_ocn, &
-          fsurfn_f, flatn_f, scale_fluxes, frzmlt_init, frzmlt
+          fsurfn_f, flatn_f, scale_fluxes, frzmlt_init, frzmlt, &
+          snowfrac, snowfracn, evap_ice, evap_snow
       use ice_grid, only: tmask
       use ice_ocean, only: oceanmixed_ice, ocean_mixed_layer
       use ice_shortwave, only: alvdfn, alidfn, alvdrn, alidrn, &
@@ -492,6 +493,7 @@
             albsno(i,j,iblk) = c0
             albpnd(i,j,iblk) = c0
             apeff_ai(i,j,iblk) = c0
+            snowfrac(i,j,iblk) = c0
 
             ! for history averaging
             cszn = c0
@@ -524,6 +526,8 @@
 
             apeff_ai(i,j,iblk) = apeff_ai(i,j,iblk) &       ! for history
                + apeffn(i,j,n,iblk)*aicen(i,j,n,iblk)
+            snowfrac(i,j,iblk) = snowfrac(i,j,iblk) &       ! for history
+               + snowfracn(i,j,n,iblk)*aicen(i,j,n,iblk)
          enddo
          enddo
          enddo
@@ -587,6 +591,7 @@
                             fsens    (:,:,iblk), flat    (:,:,iblk), &
                             fswabs   (:,:,iblk), flwout  (:,:,iblk), &
                             evap     (:,:,iblk),                     &
+                            evap_ice (:,:,iblk), evap_snow(:,:,iblk),&
                             Tref     (:,:,iblk), Qref    (:,:,iblk), &
                             fresh    (:,:,iblk), fsalt   (:,:,iblk), &
                             fhocn    (:,:,iblk), fswthru (:,:,iblk), &
@@ -628,74 +633,6 @@
 
       end subroutine coupling_prep
 
-!=======================================================================
-!
-! If surface heat fluxes are provided to CICE instead of CICE calculating
-! them internally (i.e. .not. calc_Tsfc), then these heat fluxes can 
-! be provided at points which do not have ice.  (This is could be due to
-! the heat fluxes being calculated on a lower resolution grid or the
-! heat fluxes not recalculated at every CICE timestep.)  At ice free points, 
-! conserve energy and water by passing these fluxes to the ocean.
-!
-! author: A. McLaren, Met Office
-
-      subroutine sfcflux_to_ocn(nx_block,   ny_block,     &
-                                tmask,      aice,         &
-                                fsurfn_f,   flatn_f,      &
-                                fresh,      fhocn)
-
-      use ice_domain_size, only: ncat
-
-      integer (kind=int_kind), intent(in) :: &
-          nx_block, ny_block  ! block dimensions
-
-      logical (kind=log_kind), dimension (nx_block,ny_block), &
-          intent(in) :: &
-          tmask       ! land/boundary mask, thickness (T-cell)
-
-      real (kind=dbl_kind), dimension(nx_block,ny_block), &
-          intent(in):: &
-          aice        ! initial ice concentration
-
-      real (kind=dbl_kind), dimension(nx_block,ny_block,ncat), &
-          intent(in) :: &
-          fsurfn_f, & ! net surface heat flux (provided as forcing)
-          flatn_f     ! latent heat flux (provided as forcing)
-
-      real (kind=dbl_kind), dimension(nx_block,ny_block), &
-          intent(inout):: &
-          fresh        , & ! fresh water flux to ocean         (kg/m2/s)
-          fhocn            ! actual ocn/ice heat flx           (W/m**2)
-
-!ars599: 08052014 not sure but add auscom to try, copy from dhb599 fm
-!#ifdef CICE_IN_NEMO
-#ifdef AusCOM
-
-      ! local variables
-      integer (kind=int_kind) :: &
-          i, j, n    ! horizontal indices
-      
-      real (kind=dbl_kind)    :: &
-          rLsub            ! 1/Lsub
-
-      rLsub = c1 / Lsub
-
-      do n = 1, ncat
-         do j = 1, ny_block
-         do i = 1, nx_block
-            if (tmask(i,j) .and. aice(i,j) <= puny) then
-               fhocn(i,j)      = fhocn(i,j)              &
-                            + fsurfn_f(i,j,n) + flatn_f(i,j,n)
-               fresh(i,j)      = fresh(i,j)              &
-                                 + flatn_f(i,j,n) * rLsub
-            endif
-         enddo   ! i
-         enddo   ! j
-      enddo      ! n
-
-#endif 
-
-      end subroutine sfcflux_to_ocn
 
 !=======================================================================
 

@@ -36,7 +36,7 @@
       logical (kind=log_kind), public :: &
          hist_avg  ! if true, write averaged data instead of snapshots
 
-      character (len=char_len), public :: &
+      character (len=char_len_long), public :: &
          history_file  , & ! output file for history
          incond_file       ! output file for snapshot initial conditions
 
@@ -183,10 +183,12 @@
       character (len=max_nstrm), public :: &
 !          f_example   = 'md', &
            f_hi        = 'm', f_hs         = 'm', &
+           f_snowfrac  = 'x', f_snowfracn  = 'x', &
            f_Tsfc      = 'm', f_aice       = 'm', &
            f_uvel      = 'm', f_vvel       = 'm', &
            f_uatm      = 'm', f_vatm       = 'm', &
            f_fswdn     = 'm', f_flwdn      = 'm', &
+           f_fswup     = 'm', &
            f_snow      = 'm', f_snow_ai    = 'm', &
            f_rain      = 'm', f_rain_ai    = 'm', &
            f_sst       = 'm', f_sss        = 'm', &
@@ -195,14 +197,17 @@
            f_fswfac    = 'm', f_fswint_ai  = 'x', &
            f_fswabs    = 'm', f_fswabs_ai  = 'm', &
            f_albsni    = 'm', &
-           f_alvdr     = 'm', f_alidr      = 'm', &
-           f_alvdf     = 'm', f_alidf      = 'm', &
+           f_alvdr     = 'x', f_alidr      = 'x', &
+           f_alvdf     = 'x', f_alidf      = 'x', &
+           f_alvdr_ai  = 'm', f_alidr_ai   = 'm', &
+           f_alvdf_ai  = 'm', f_alidf_ai   = 'm', &
            f_albice    = 'm', f_albsno     = 'm', &
            f_albpnd    = 'm', f_coszen     = 'm', &
            f_flat      = 'm', f_flat_ai    = 'm', &
            f_fsens     = 'm', f_fsens_ai   = 'm', &
            f_flwup     = 'm', f_flwup_ai   = 'm', &
            f_evap      = 'm', f_evap_ai    = 'm', &
+           f_evap_ice_ai = 'm', f_evap_snow_ai = 'm', &
            f_Tair      = 'm', &
            f_Tref      = 'm', f_Qref       = 'm', &
            f_congel    = 'm', f_frazil     = 'm', &
@@ -228,6 +233,47 @@
            f_mlt_onset = 'm', f_frz_onset  = 'm', &
            f_iage      = 'm', f_FY         = 'm', &
            f_hisnap    = 'm', f_aisnap     = 'm', &
+           f_sithick   = 'x', f_sisnthick  = 'x', &
+           f_sisnconc  = 'x', f_siage      = 'x', &
+           f_sitemptop = 'x', f_sitempsnic = 'x', &
+           f_sitempbot = 'x', f_sispeed    = 'x', &
+           f_siu       = 'x', f_siv        = 'x', &
+           f_sidmasstranx = 'x', f_sidmasstrany = 'x', &
+           f_sistrxdtop = 'x', f_sistrydtop = 'x', &
+           f_sistrxubot = 'x', f_sistryubot = 'x', &
+           f_siforcetiltx = 'x', f_siforcetilty = 'x', &
+           f_siforcecoriolx = 'x', f_siforcecorioly = 'x', &
+           f_siforceintstrx = 'x', f_siforceintstry = 'x', &
+           f_sicompstren = 'x', &
+           f_sialb     = 'x', &
+           f_sihc      = 'x', f_sisnhc     = 'x', &
+           f_sidconcth = 'x', f_sidconcdyn = 'x', &
+           f_sifb      = 'x', &
+           f_sidmassth = 'x', f_sidmassdyn = 'x', &
+           f_sidmassgrowthwat = 'x', &
+           f_sidmassgrowthbot = 'x', &
+           f_sidmasssi = 'x', &
+           f_sidmassevapsubl = 'x', &
+           f_sidmassmelttop = 'x', &
+           f_sidmassmeltbot = 'x', &
+           f_sidmasslat = 'x', &
+           f_sndmasssnf = 'x', &
+           f_sndmassmelt = 'x', &
+           f_sidivvel = 'x', &
+           f_siflswdtop = 'x', &
+           f_siflswutop = 'x', &
+           f_siflswdbot = 'x', &
+           f_sifllwdtop = 'x', &
+           f_sifllwutop = 'x', &
+           f_siflsenstop = 'x', &
+           f_siflsensupbot = 'x', &
+           f_sifllatstop = 'x', &
+           f_siflcondtop = 'x', &
+           f_siflcondbot = 'x', &
+           f_sipr = 'x', &
+           f_siflsaltbot = 'x', &
+           f_siflfwbot = 'x', &
+           f_sisaltmass = 'x', &
            f_aicen     = 'x', f_vicen      = 'x', &
            f_vsnon     = 'x',                     &
            f_trsig     = 'm', f_icepresent = 'm', &
@@ -265,10 +311,12 @@
            f_VGRDb    , &
 !          f_example  , &
            f_hi,        f_hs       , &
+           f_snowfrac,  f_snowfracn, &
            f_Tsfc,      f_aice     , &
            f_uvel,      f_vvel     , &
            f_uatm,      f_vatm     , &
            f_fswdn,     f_flwdn    , &
+           f_fswup, &
            f_snow,      f_snow_ai  , &     
            f_rain,      f_rain_ai  , &
            f_sst,       f_sss      , &
@@ -279,12 +327,15 @@
            f_albsni                , &
            f_alvdr,     f_alidr    , &
            f_alvdf,     f_alidf    , &
+           f_alvdr_ai,  f_alidr_ai , &
+           f_alvdf_ai,  f_alidf_ai , &
            f_albice,    f_albsno   , &
            f_albpnd,    f_coszen   , &
            f_flat,      f_flat_ai  , &
            f_fsens,     f_fsens_ai , &
            f_flwup,     f_flwup_ai , &
            f_evap,      f_evap_ai  , &
+           f_evap_ice_ai, f_evap_snow_ai, &
            f_Tair                  , &
            f_Tref,      f_Qref     , &
            f_congel,    f_frazil   , &
@@ -293,8 +344,8 @@
            f_meltb,     f_meltl    , &
            f_fresh,     f_fresh_ai , &  
            f_fsalt,     f_fsalt_ai , &  
+           f_fswthru,   f_fswthru_ai, &
            f_fhocn,     f_fhocn_ai , &
-           f_fswthru,   f_fswthru_ai,&
            f_strairx,   f_strairy  , &
            f_strtltx,   f_strtlty  , &
            f_strcorx,   f_strcory  , &
@@ -310,6 +361,47 @@
            f_mlt_onset, f_frz_onset, &
            f_iage,      f_FY       , &
            f_hisnap,    f_aisnap   , &
+           f_sithick,   f_sisnthick, &
+           f_sisnconc,  f_siage,     &
+           f_sifb,                   &
+           f_sitemptop, f_sitempsnic,&
+           f_sitempbot, f_sispeed,   &
+           f_siu,       f_siv,       &
+           f_sidmasstranx, f_sidmasstrany, &
+           f_sistrxdtop, f_sistrydtop, &
+           f_sistrxubot, f_sistryubot, &
+           f_siforcetiltx, f_siforcetilty, &
+           f_siforcecoriolx, f_siforcecorioly, &
+           f_siforceintstrx, f_siforceintstry, &
+           f_sicompstren, &
+           f_sialb, &
+           f_sidivvel, &
+           f_sihc,      f_sisnhc,    &
+           f_sidconcth, f_sidconcdyn,&
+           f_sidmassth, f_sidmassdyn,&
+           f_sidmassgrowthwat, &
+           f_sidmassgrowthbot, &
+           f_sidmasssi, &
+           f_sidmassevapsubl, &
+           f_sidmassmelttop, &
+           f_sidmassmeltbot, &
+           f_sidmasslat, &
+           f_sndmasssnf, &
+           f_sndmassmelt, &
+           f_siflswdtop, &
+           f_siflswutop, &
+           f_siflswdbot, &
+           f_sifllwdtop, &
+           f_sifllwutop, &
+           f_siflsenstop, &
+           f_siflsensupbot, &
+           f_sifllatstop, &
+           f_siflcondtop, &
+           f_siflcondbot, &
+           f_sipr, &
+           f_siflsaltbot, &
+           f_siflfwbot, &
+           f_sisaltmass, &
            f_aicen,     f_vicen    , &
            f_vsnon,                  &
            f_trsig,     f_icepresent,&
@@ -362,11 +454,13 @@
       integer (kind=int_kind), dimension(max_nstrm), public :: &
 !          n_example    , &
            n_hi         , n_hs         , &
+           n_snowfrac,    n_snowfracn,   &
            n_Tsfc       , n_aice       , &
            n_uvel       , n_vvel       , &
            n_uatm       , n_vatm       , &
            n_sice       , &
            n_fswdn      , n_flwdn      , &
+           n_fswup, &
            n_snow       , n_snow_ai    , &
            n_rain       , n_rain_ai    , &
            n_sst        , n_sss        , &
@@ -377,12 +471,15 @@
            n_albsni     , &
            n_alvdr      , n_alidr      , &
            n_alvdf      , n_alidf      , &
+           n_alvdr_ai   , n_alidr_ai   , &
+           n_alvdf_ai      , n_alidf_ai      , &
            n_albice     , n_albsno     , &
            n_albpnd     , n_coszen     , &
            n_flat       , n_flat_ai    , &
            n_fsens      , n_fsens_ai   , &
            n_flwup      , n_flwup_ai   , &
            n_evap       , n_evap_ai    , &
+           n_evap_ice_ai, n_evap_snow_ai , &
            n_Tair       , &
            n_Tref       , n_Qref       , &
            n_congel     , n_frazil     , &
@@ -391,6 +488,47 @@
            n_meltb      , n_meltl      , &
            n_fresh      , n_fresh_ai   , &
            n_fsalt      , n_fsalt_ai   , &
+           n_sidivvel,                   &
+           n_sithick    , n_sisnthick  , &
+           n_sisnconc,    n_siage,       &
+           n_sifb,                       &
+           n_sitemptop  , n_sitempsnic , &
+           n_sitempbot  , n_sispeed,     &
+           n_siu,         n_siv,         &
+           n_sidmasstranx, n_sidmasstrany, &
+           n_sistrxdtop,  n_sistrydtop,  &
+           n_sistrxubot,  n_sistryubot,  &
+           n_siforcetiltx, n_siforcetilty, &
+           n_siforcecoriolx, n_siforcecorioly, &
+           n_siforceintstrx, n_siforceintstry, &
+           n_sicompstren, &
+           n_sialb, &
+           n_sihc       , n_sisnhc,      &
+           n_sidconcth  , n_sidconcdyn,  &
+           n_sidmassth  , n_sidmassdyn,  &
+           n_sidmassgrowthwat, &
+           n_sidmassgrowthbot,  &
+           n_sidmasssi,  &
+           n_sidmassevapsubl,  &
+           n_sidmassmelttop,  &
+           n_sidmassmeltbot,  &
+           n_sidmasslat,  &
+           n_sndmasssnf,  &
+           n_sndmassmelt,  &
+           n_siflswdtop,  &
+           n_siflswutop,  &
+           n_siflswdbot,  &
+           n_sifllwdtop,  &
+           n_sifllwutop,  &
+           n_siflsenstop,  &
+           n_siflsensupbot,  &
+           n_sifllatstop,  &
+           n_siflcondtop,  &
+           n_siflcondbot,  &
+           n_sipr,  &
+           n_siflsaltbot,  &
+           n_siflfwbot,  &
+           n_sisaltmass, &
            n_vsnon,                        &
            n_fhocn      , n_fhocn_ai   , &
            n_fswthru    , n_fswthru_ai , &
@@ -456,8 +594,9 @@
       integer (kind=int_kind), intent(in) :: ns
 
       integer (kind=int_kind) :: iyear, imonth, iday, isec
+      character (len=1) :: cstream
 
-        iyear = nyr + year_init - 1 ! set year_init=1 in ice_in to get iyear=nyr
+      iyear = nyr + year_init - 1 ! set year_init=1 in ice_in to get iyear=nyr
         imonth = month
         iday = mday
         isec = sec - dt
@@ -487,28 +626,35 @@
           endif
          endif
 
+         cstream = ''
+         if (ns > 10) write(cstream,'(i1.1)') ns-1
+! ABK: Disable the addition of a stream number to the history file
+! (now only occurs for more than 10 streams, which is v unlikely!)
+
          if (histfreq(ns) == '1') then ! instantaneous, write every dt
            write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file)),'_inst.', &
-             iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
+            history_file(1:lenstr(history_file))//trim(cstream),'_inst.', &
+            iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
 
          elseif (hist_avg) then    ! write averaged data
 
           if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
            write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,a)')  &
-            history_file(1:lenstr(history_file)), &
+           history_file(1:lenstr(history_file))//trim(cstream), &
              '.',iyear,'-',imonth,'-',iday,'.',suffix
           elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
            write(ncfile,'(a,a,i2.2,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file)),'_',histfreq_n(ns),'h.', &
-             iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
+            history_file(1:lenstr(history_file))//trim(cstream),'_', &
+            histfreq_n(ns),'h.',iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
+
           elseif (histfreq(ns) == 'm'.or.histfreq(ns) == 'M') then ! monthly
            write(ncfile,'(a,a,i4.4,a,i2.2,a,a)')  &
-            history_file(1:lenstr(history_file)),'.', &
+            history_file(1:lenstr(history_file))//trim(cstream),'.', &
              iyear,'-',imonth,'.',suffix
           elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
            write(ncfile,'(a,a,i4.4,a,a)') &
-            history_file(1:lenstr(history_file)),'.', iyear,'.',suffix
+            history_file(1:lenstr(history_file))//trim(cstream),'.', &
+          iyear,'.',suffix
           endif
 
          else                     ! instantaneous with histfreq > dt
@@ -607,8 +753,9 @@
             id(ns) = num_avail_hist_fields_tot
 
             stmp = vname
-            if (ns > 1) &
-               write(stmp,'(a,a1,a1)') trim(stmp),'_',vhistfreq(ns1:ns1)
+!            if (ns > 1) &
+!               write(stmp,'(a,a1,a1)') trim(stmp),'_',vhistfreq(ns1:ns1)
+! This was disabled in Met office version by ABK.
 
             avail_hist_fields(id(ns))%vname = trim(stmp)
             avail_hist_fields(id(ns))%vunit = trim(vunit)
@@ -752,7 +899,7 @@
        do k = 1, ndim
        do j = jlo, jhi
        do i = ilo, ihi
-          if (tmask(i,j,iblk)) then
+         if (tmask(i,j,iblk) .and. abs(field_accum(i,j,k)) < 1.0e+10_dbl_kind) then
              field(i,j,k,idns,iblk) = field(i,j,k,idns,iblk) + field_accum(i,j,k)
           endif
        enddo
@@ -818,9 +965,11 @@
        do n = 1, ndim3
        do j = jlo, jhi
        do i = ilo, ihi
-          if (tmask(i,j,iblk)) then
+         if (tmask(i,j,iblk)) then
+         if (tmask(i,j,iblk) .and. abs(field_accum(i,j,n,k)) < 1.0e+10_dbl_kind) then
              field(i,j,n,k,idns,iblk) = field(i,j,n,k,idns,iblk) + field_accum(i,j,n,k)
           endif
+         endif
        enddo
        enddo
        enddo

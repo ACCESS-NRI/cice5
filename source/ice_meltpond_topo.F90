@@ -68,7 +68,7 @@
 
       subroutine compute_ponds_topo(nx_block,ny_block,  &
                                     ilo, ihi, jlo, jhi, &
-                                    dt,                 &
+                                    dt,snowfracn,       &
                                     aice,  aicen,       &
                                     vice,  vicen,       &
                                     vsno,  vsnon,       &
@@ -103,7 +103,8 @@
 
       real (kind=dbl_kind), dimension (nx_block,ny_block,ncat), &
          intent(inout) :: &
-         vicen      ! ice volume, per category (m)
+         vicen, &      ! ice volume, per category (m)
+         snowfracn
 
       real (kind=dbl_kind), dimension (nx_block,ny_block,ncat), &
          intent(in) :: &
@@ -141,6 +142,7 @@
 
       real (kind=dbl_kind) :: &
          hi,    & ! ice thickness (m)
+         hs,    & ! snow thickness (m)
          dHui,  & ! change in thickness of ice lid (m)
          omega,	& ! conduction
          dTice, & ! temperature difference across ice lid (C)
@@ -185,6 +187,13 @@
 
                hpondn(i,j,n) = c0     ! pond depth, per category
                apondn(i,j,n) = c0     ! pond area,  per category
+               ! set snow fraction using JULES empirical formula based
+               ! on snow volume
+               ! this will be updated for meltpond covered areas in
+               ! pond_area() below
+               hs = vsnon(i,j,n) / aicen(i,j,n)
+               snowfracn(i,j,n) = c1 - exp(-p2*rhos*hs)
+
             enddo
          enddo
          indxii(:,n) = 0
@@ -229,7 +238,8 @@
          !--------------------------------------------------------------
          ! calculate pond area and depth
          !--------------------------------------------------------------
-         call pond_area(dt,aice(i,j),   vice(i,j),vsno(i,j), &
+         call pond_area(dt,             snowfracn(i,j,:), &
+                        aice(i,j),   vice(i,j),vsno(i,j), &
                         aicen(i,j,:),   vicen(i,j,:), vsnon(i,j,:), &
                         qicen(i,j,:,:), sicen(i,j,:,:), &
                         volpn(i,j,:),   volp(i,j), &
@@ -376,7 +386,7 @@
 
 ! Computes melt pond area, pond depth and melting rates
 
-      subroutine pond_area(dt,                    &
+      subroutine pond_area(dt, snowfracn,           &
                            aice,   vice,   vsno,  &
                            aicen,  vicen,  vsnon, &
                            qicen,  sicen,         &
@@ -405,7 +415,7 @@
          volp, dvolp
 
       real (kind=dbl_kind), dimension(ncat), intent(out) :: &
-         apondn, hpondn
+         apondn, hpondn,snowfracn
 
       ! local variables
 
@@ -481,6 +491,9 @@
                 * max(0.2_dbl_kind,(-0.024_dbl_kind*hicen(n) + 0.832_dbl_kind))
             asnon(n) = reduced_aicen(n) 
          endif
+
+         ! update snow fraction from asnon
+         snowfracn(n) = asnon(n)
 
 ! This choice for alfa and beta ignores hydrostatic equilibium of categories.
 ! Hydrostatic equilibium of the entire ITD is accounted for below, assuming

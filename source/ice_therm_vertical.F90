@@ -88,8 +88,12 @@
                                   fswsfc,      fswint,    &
                                   Sswabs,      Iswabs,    &
                                   fsurfn,      fcondtopn, &
+                                  fcondbotn,              &
                                   fsensn,      flatn,     &
-                                  flwoutn,     evapn,     &
+                                  flwoutn,                & 
+                                  ice_freeboardn,         &
+                                  evapn,                  &
+                                  evapn_ice,   evapn_snow,&
                                   freshn,      fsaltn,    &
                                   fhocnn,      meltt,     &
                                   melts,       meltb,     &
@@ -161,14 +165,17 @@
       ! coupler fluxes to atmosphere
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(out):: &
          flwoutn , & ! outgoing longwave radiation (W/m^2) 
-         evapn       ! evaporative water flux (kg/m^2/s) 
+         evapn   , & ! evaporative water flux (kg/m^2/s) 
+         evapn_ice, &! evaporative water flux over ice (kg/m^2/s) 
+         evapn_snow  ! evaporative water flux over snow(kg/m^2/s) 
 
       ! Note: these are intent out if calc_Tsfc = T, otherwise intent in
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(inout):: &
          fsensn   , & ! sensible heat flux (W/m^2) 
          flatn    , & ! latent heat flux   (W/m^2) 
          fsurfn   , & ! net flux to top surface, excluding fcondtopn
-         fcondtopn    ! downward cond flux at top surface (W m-2)
+         fcondtopn, & ! downward cond flux at top surface (W m-2)
+         fcondbotn    ! downward cond flux at bottom surface (W m-2)
 
       ! coupler fluxes to ocean
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(out):: &
@@ -186,7 +193,10 @@
          snoice   , & ! snow-ice formation       (m/step-->cm/day) 
          dsnow    , & ! change in snow thickness (m/step-->cm/day) 
          mlt_onset, & ! day of year that sfc melting begins 
-         frz_onset    ! day of year that freezing begins (congel or frazil) 
+         frz_onset, & ! day of year that freezing begins (congel or frazil) 
+         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
+                         ! above sea level in m
+
 
       real (kind=dbl_kind), intent(in) :: &
          yday      ! day of year
@@ -273,6 +283,10 @@
          fsaltn (i,j) = c0
          fhocnn (i,j) = c0
          fadvocn(i,j) = c0
+         fcondbotn(i,j) = c0
+         ice_freeboardn(i,j) = c0
+
+
 
          meltt  (i,j) = c0
          meltb  (i,j) = c0
@@ -448,6 +462,15 @@
 
       endif         ! heat_capacity
 
+      ! Alex West: Read 1D bottom conductive flux array into 2D array
+      ! for diagnostics (SIMIP)i
+      do ij = 1, icells
+         i = indxi(ij)
+         j = indxj(ij)
+         fcondbotn(i,j) = fcondbot(ij)
+      enddo
+
+
             ! intermediate energy for error check
             do ij = 1, icells
                einter(ij) = c0
@@ -478,8 +501,10 @@
                                 fbot,         Tbot,     &
                                 flatn,        fsurfn,   &
                                 fcondtopn,    fcondbot, &
+                                ice_freeboardn,         &
                                 fsnow,        hsn_new,  &
                                 fhocnn,       evapn,    &
+                                evapn_ice,    evapn_snow,&
                                 meltt,        melts,    &
                                 meltb,        iage,     &
                                 congel,       snoice,   &
@@ -1420,8 +1445,10 @@
                                     fbot,      Tbot,     &
                                     flatn,     fsurfn,   &
                                     fcondtopn, fcondbot, &
+                                    ice_freeboardn,      &
                                     fsnow,     hsn_new,  &
                                     fhocnn,    evapn,    &
+                                    evapn_ice, evapn_snow,&
                                     meltt,     melts,    &
                                     meltb,     iage,     &
                                     congel,    snoice,   &  
@@ -1480,7 +1507,10 @@
          dsnow       , & ! snow  formation          (m/step-->cm/day)
          iage        , & ! ice age (s)
          mlt_onset   , & ! day of year that sfc melting begins
-         frz_onset       ! day of year that freezing begins (congel or frazil)
+         frz_onset   , & ! day of year that freezing begins (congel or frazil)
+         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
+                         ! above sea level in m
+
 
       real (kind=dbl_kind), dimension (icells), &
          intent(inout) :: &
@@ -1492,8 +1522,9 @@
 
       real (kind=dbl_kind), dimension (nx_block,ny_block), intent(out):: &
          fhocnn      , & ! fbot, corrected for any surplus energy (W m-2)
-         evapn           ! ice/snow mass sublimated/condensed (kg m-2 s-1)
-
+         evapn       , & ! ice/snow mass sublimated/condensed (kg m-2 s-1)
+         evapn_ice   , & ! ice mass sublimated/condensed (kg m-2 s-1)
+         evapn_snow      ! snow mass sublimated/condensed (kg m-2 s-1)
       real (kind=dbl_kind), dimension (icells), intent(out):: &
          hsn_new         ! thickness of new snow (m)
 
@@ -1668,15 +1699,20 @@
          !--------------------------------------------------------------
 
          evapn   (i,j) = c0          ! initialize
+         evapn_ice(i,j) = c0          
+         evapn_snow(i,j) = c0          
 
          if (hsn(ij) > puny) then    ! add snow with enthalpy zqsn(ij,1)
             dhs = econ(ij) / (zqsn(ij,1) - rhos*Lvap) ! econ < 0, dhs > 0
             dzs(ij,1) = dzs(ij,1) + dhs
             evapn(i,j) = evapn(i,j) + dhs*rhos
+            evapn_snow(i,j) = evapn_snow(i,j) + dhs*rhos
          else                        ! add ice with enthalpy zqin(ij,1)
             dhi = econ(ij) / (qm(ij,1) - rhoi*Lvap) ! econ < 0, dhi > 0
             dzi(ij,1) = dzi(ij,1) + dhi
             evapn(i,j) = evapn(i,j) + dhi*rhoi
+            evapn_ice(i,j) = evapn_ice(i,j) + dhi*rhoi
+
             ! enthalpy of melt water
             emlt_atm(ij) = emlt_atm(ij) - qmlt(ij,1) * dhi 
          endif
@@ -1778,6 +1814,8 @@
             esub(ij) = esub(ij) - dhs*qsub
             esub(ij) = max(esub(ij), c0)   ! in case of roundoff error
             evapn(i,j) = evapn(i,j) + dhs*rhos
+           evapn_snow(i,j) = evapn_snow(i,j) + dhs*rhos
+
 
          !--------------------------------------------------------------
          ! Melt snow (top)
@@ -1814,6 +1852,8 @@
             esub(ij) = esub(ij) - dhi*qsub
             esub(ij) = max(esub(ij), c0)
             evapn(i,j) = evapn(i,j) + dhi*rhoi
+            evapn_ice(i,j) = evapn_ice(i,j) + dhi*rhoi
+
             emlt_ocn(ij) = emlt_ocn(ij) - qmlt(ij,k) * dhi 
 
          !--------------------------------------------------------------
@@ -1975,7 +2015,7 @@
                       hin,      hsn,      &
                       zqin,     zqsn,     &
                       dzi,      dzs,      &
-                      dsnow)
+                      dsnow,    ice_freeboardn)
 
 !---!-------------------------------------------------------------------
 !---! Repartition the ice and snow into equal-thickness layers,
@@ -2121,6 +2161,8 @@
          j = indxj(ij)
          efinal(ij) = -evapn(i,j)*Lvap
          evapn(i,j) =  evapn(i,j)/dt
+         evapn_ice(i,j) =  evapn_ice(i,j)/dt
+         evapn_snow(i,j) =  evapn_snow(i,j)/dt
       enddo
 
       do k = 1, nslyr
@@ -2176,7 +2218,7 @@
                             hin,      hsn,      &
                             zqin,     zqsn,     &
                             dzi,      dzs,      &
-                            dsnow)
+                            dsnow,    ice_freeboardn)
 
       integer (kind=int_kind), intent(in) :: &
          nx_block, ny_block, & ! block dimensions
@@ -2194,6 +2236,12 @@
          snoice  , & ! snow-ice formation       (m/step-->cm/day)
          dsnow   , & ! change in snow thickness after snow-ice formation (m)
          iage        ! snow thickness (m)
+
+      real (kind=dbl_kind), dimension(nx_block,ny_block), &
+         intent(inout) :: &
+         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
+                         ! above sea level in m
+
 
       real (kind=dbl_kind), dimension (icells), &
          intent(inout) :: &
@@ -2302,6 +2350,16 @@
             snoice(i,j) = snoice(i,j) + dhin(ij)
          endif               ! dhin > puny
       enddo                  ! ij
+
+      ! Calculate diagnostic sea ice freeboard after adjustments (SIMIP)
+      do ij = 1, icells
+         i = indxi(ij)
+         j = indxj(ij)
+
+         ice_freeboardn(i,j) = &
+            hin(ij) * (1 - rhoi / rhow)  -  hsn(ij) * (rhos / rhow)
+      enddo
+
 
       end subroutine freeboard
 

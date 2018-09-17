@@ -785,6 +785,8 @@
   allocate (mpndtn(nx_block,ny_block,ncat,max_blocks)); mpndtn(:,:,:,:) = 0
 !BX:
   allocate (maicen_saved(nx_block,ny_block,ncat,max_blocks)); maicen_saved(:,:,:,:) = 0
+!
+  allocate (icebergfw(nx_block,ny_block,12,max_blocks)); icebergfw(:,:,:,:) = 0
 
   allocate (vwork(nx_block,ny_block,max_blocks)); vwork(:,:,:) = 0
   allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0

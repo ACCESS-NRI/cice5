@@ -162,7 +162,7 @@
       use ice_domain, only: nblocks, blocks_ice
       use ice_flux, only: alvdf, alidf, alvdr, alidr, &
                           alvdr_ai, alidr_ai, alvdf_ai, alidf_ai, &
-                          swvdr, swvdf, swidr, swidf, &
+                          swvdr, swvdf, swidr, swidf, snowfrac,snowfracn, &
                           albice, albsno, albpnd, apeff_ai, albcnt, coszen, fsnow
       use ice_orbital, only: init_orbit
       use ice_state, only: aicen, vicen, vsnon, trcrn, nt_Tsfc
@@ -382,6 +382,8 @@
 
                apeff_ai(i,j,iblk) = apeff_ai(i,j,iblk) &
                   + apeffn(i,j,n,iblk)*aicen(i,j,n,iblk)
+               snowfrac(i,j,iblk) = snowfrac(i,j,iblk) &
+                  + snowfracn(i,j,n,iblk) * aicen(i,j,n,iblk)
             enddo
 
          enddo  ! ncat

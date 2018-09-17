@@ -338,24 +338,14 @@
 !mclaren: Should there be an if calc_Tsfc statement here then?? 
 ! Alex West: Temporarily at least, yes.  Here goes.
 
-      if (istep1==15552) then 
-         do m = 1, icells
-	    i = indxi(m)
-	    j = indxj(m)
-
-	    if ((i==91) .AND. (j==46) .and. (my_task==24)) then
-	       write(nu_diag,*) ' '
-	       write(nu_diag,*) ' '
-	       write(nu_diag,*) 'Printing initial temperature profile'
-	       write(nu_diag,*) 'Tsn_init, Tin_init = ', Tsn_init(m,:), Tin_init(m,:)
-	    endif
-
-	 enddo
-      endif
 
       if (calc_Tsfc) then
-	 frac = 0.9
-	 dTemp = 0.02_dbl_kind
+!        frac = 0.9
+!	 dTemp = 0.02_dbl_kind
+!ars599: 031418
+!MetOffice Setting
+         frac = 1 - puny
+         dTemp = 0.01_dbl_kind
 	 do k = 1, nilyr
             do ij = 1, icells
                i = indxi(ij)
@@ -375,7 +365,10 @@
               endif
               if (Iswabs_tmp < puny) Iswabs_tmp = c0
 
-               dswabs = min(Iswabs(i,j,k) - Iswabs_tmp, fswint(i,j))
+!               dswabs = min(Iswabs(i,j,k) - Iswabs_tmp, fswint(i,j))
+!ars599: 031418
+!MetOffice Setting
+               dswabs = Iswabs(i,j,k) - Iswabs_tmp
 
                fswsfc(i,j)   = fswsfc(i,j) + dswabs
                fswint(i,j)   = fswint(i,j) - dswabs
@@ -415,16 +408,6 @@
 
       do niter = 1, nitermax
 
-         if ((istep1==15552) .and. (my_task==24)) then
-
-            write(nu_diag,*) ' '
-            write(nu_diag,*) ' '
-
-	    write(nu_diag,*) '--------------------'
-	    write(nu_diag,*) 'Entering iteration', niter
-            write(nu_diag,*) ' '
-	 endif
-	    
 
       !-----------------------------------------------------------------
       ! Identify cells, if any, where calculation has not converged.
@@ -582,20 +565,7 @@
 	    ! See if we need to reduce fcondtopn anywhere
 	    fcondtopn_force = fcondtopn - fcondtopn_reduction
 	    
-	    if (istep1==15552) then 
-               do ij = 1, isolve
-		  i = indxii(ij)
-		  j = indxjj(ij)
-		  m = indxij(ij)
 		  
-		  if ((i==91) .AND. (j==46) .and. (my_task==24)) then
-		     write(nu_diag,*) 'Calling solver with fcondtopn_force, fcondtopn, fcondtopn_reduction = ', &
-		        fcondtopn_force(i,j), fcondtopn(i,j), fcondtopn_reduction(i,j)
-		     write(nu_diag,*) 'and etai, etas, kh = ', etai(ij,:), etas(ij,:), kh(m,:)
-		  endif
-		  
-	       enddo
-	    endif
 	    
             call get_matrix_elements_know_Tsfc &
                                   (nx_block, ny_block,         &
@@ -649,17 +619,6 @@
       !  to conserve energy) in the thickness_changes subroutine.
       !-----------------------------------------------------------------
 
-         if (istep1==15552) then
-            do ij = 1, isolve
-	       i = indxii(ij)
-	       j = indxjj(ij)
-	       m = indxij(ij)
-	       
-	       if ((i==91) .and. (j==46) .and. (my_task==24)) then
-	          write(nu_diag,*) 'Matrix solution of temperatures Tmat = ', Tmat(ij,:)
-	       endif
-	    enddo
-	 endif
 
          if (calc_Tsfc) then
 
@@ -771,20 +730,11 @@
 		  ! go into the ocean
 		  ! This is done to avoid an 'infinite loop' whereby temp continually evolves
 		  ! to the same point above zero, is reset, ad infinitum
-		  if ((i==91) .and. (j==46) .and. (my_task==24)) then
-		     write(nu_diag,*)
-	             write(nu_diag,*) 'Resetting Tsn1'
-		     write(nu_diag,*) 'zTsn, dqmat_sn = ', zTsn(m,k), dqmat_sn(m,k)
-		  endif
 		  if (l_snow(m) .AND. k == 1) then
 		     if (Top_T_was_reset_last_time(m)) then
 			fcondtopn_reduction(i,j) = fcondtopn_reduction(i,j) + dqmat_sn(m,k)*hslyr(m) / dt
 			Top_T_was_reset_last_time(m) = .false.
                         enum(m) = enum(m) + hslyr(m) * dqmat_sn(m,k)			
-			if ((i==91) .and. (j==46) .and. (my_task==24)) then
-	        	   write(nu_diag,*) 'Adjusting forcing'
-			   write(nu_diag,*) 'fcondtopn_reduction, enum = ', fcondtopn_reduction(i,j), enum(m)
-			endif
 		     else
 			Top_T_was_reset_last_time(m) = .true.
 		     endif
@@ -812,18 +762,6 @@
             enddo               ! ij
          enddo                  ! nslyr
 	 
-         if (istep1==15552) then
-            do ij = 1, isolve
-	       i = indxii(ij)
-	       j = indxjj(ij)
-	       m = indxij(ij)
-	       
-	       if ((i==91) .and. (j==46) .and. (my_task==24)) then
-	          write(nu_diag,*) 'After numerical corrections, zTsn = ', zTsn(m,:)
-		  write(nu_diag,*) 'zqsn, enew, enum = ', zqsn(m,k), enew(ij), enum(m)
-	       endif
-	    enddo
-	 endif
 
 
          dTmat(:,:) = c0
@@ -854,20 +792,11 @@
 		  ! go into the ocean
 		  ! This is done to avoid an 'infinite loop' whereby temp continually evolves
 		  ! to the same point above zero, is reset, ad infinitum
-		  if ((i==91) .and. (j==46) .and. (my_task==24)) then
-		     write(nu_diag,*)
-	             write(nu_diag,*) 'Resetting Tin1'
-		     write(nu_diag,*) 'zTin, dTmat, dqmat = ', zTin(m,k), dTmat(m,k), dqmat(m,k)
-		  endif
 		  if ((.NOT. (l_snow(m))) .AND. (k == 1)) then
 		     if (Top_T_was_reset_last_time(m)) then
 			fcondtopn_reduction(i,j) = fcondtopn_reduction(i,j) + dqmat(m,k)*hilyr(m) / dt
 			Top_T_was_reset_last_time(m) = .false.
                         enum(m) = enum(m) + hilyr(m) * dqmat(m,k)
-			if ((i==91) .and. (j==46) .and. (my_task==24)) then
-	        	   write(nu_diag,*) 'Adjusting forcing'
-			   write(nu_diag,*) 'fcondtopn_reduction, enum = ', fcondtopn_reduction(i,j), enum(m)
-			endif
 		     else
 			Top_T_was_reset_last_time(m) = .true.
 		     endif
@@ -926,20 +855,6 @@
             enddo               ! ij
          enddo                  ! nilyr
 	 
-         if (istep1==15552) then
-            do ij = 1, isolve
-	       i = indxii(ij)
-	       j = indxjj(ij)
-	       m = indxij(ij)
-	       
-	       if ((i==91) .and. (j==46) .and. (my_task==24)) then
-	          write(nu_diag,*) 'After numerical corrections, zTin = ', zTin(m,:)
-		  write(nu_diag,*) 'zqin, enew, enum = ', zqin(m,k), enew(ij), enum(m)
-	       endif
-	    enddo
-	 endif
-	 
-
          if (calc_Tsfc) then
 
 !DIR$ CONCURRENT !Cray
@@ -1002,18 +917,6 @@
             ferr(m) = abs( (enew(ij) - einit(m) + enum(m))/dt &
                     - (fcondtopn(i,j) - fcondbot(m) + fswint(i,j)) )
 		    
-            if (istep1==15552) then
-	       if ((i==91) .and. (j==46) .and. (my_task==24)) then
-		  write(nu_diag,*) ' '
-		  write(nu_diag,*) 'Testing for convergence'
-        	  write(nu_diag,*) 'enew, einit, enum = ', enew(ij), einit(m), enum(m)
-        	  write(nu_diag,*) 'enew/dt, einit/dt, enum/dt = ', enew(ij)/dt, einit(m)/dt, enum(m)/dt
-		  write(nu_diag,*) 'fcondtop, fcondbot, fswint = ', fcondtopn(i,j), fcondbot(m), fswint(i,j)
-		  write(nu_diag,*) '(enew(ij) - einit(m) + enum(m))/dt = ', (enew(ij) - einit(m) + enum(m))/dt
-		  write(nu_diag,*) 'fcondtopn(i,j) - fcondbot(m) + fswint(i,j)', fcondtopn(i,j) - fcondbot(m) + fswint(i,j)
-		  write(nu_diag,*) 'fcondtopn_force(i,j), fcondtopn_reduction(i,j) = ', fcondtopn_force(i,j), fcondtopn_reduction(i,j)
-	       endif
-            endif
 
             ! factor of 0.9 allows for roundoff errors later
             if (ferr(m) > 0.9_dbl_kind*ferrmax) then         ! condition (5)
@@ -1027,7 +930,6 @@
                do k = 1, nilyr
                   if (reduce_kh(m,k) .and. dqmat(m,k) > c0) then
                      frac = max(0.5*(c1-ferr(m)/abs(fcondtopn(i,j)-fcondbot(m))),p1)
-!                     frac = p1
                      kh(m,k+nslyr+1) = kh(m,k+nslyr+1) * frac
                      kh(m,k+nslyr)   = kh(m,k+nslyr+1)
                   endif

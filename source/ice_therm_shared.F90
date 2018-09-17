@@ -10,7 +10,8 @@
       module ice_therm_shared
 
       use ice_kinds_mod
-      use ice_domain_size, only: ncat, nilyr, nslyr, max_ntrcr
+      use ice_domain_size, only: ncat, nilyr, nslyr, max_ntrcr, max_blocks
+      use ice_blocks, only: nx_block, ny_block
 
       implicit none
       save
@@ -39,6 +40,11 @@
 
       character (char_len), public :: &
          conduct         ! 'MU71' or 'bubbly'
+
+      real (kind=dbl_kind), &
+         dimension(nx_block,ny_block,max_blocks), &
+         public :: &
+           Tsnic, Ti_bot
 
       logical (kind=log_kind), public :: &
          l_brine         ! if true, treat brine pocket effects

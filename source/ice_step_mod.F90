@@ -182,12 +182,14 @@
       use ice_fileunits, only: nu_diag
       use ice_flux, only: frzmlt, sst, Tf, strocnxT, strocnyT, rside, &
           meltsn, melttn, meltbn, congeln, snoicen, dsnown, uatm, vatm, &
-          wind, rhoa, potT, Qa, zlvl, strax, stray, flatn, fsensn, fsurfn, fcondtopn, &
+          wind, rhoa, potT, Qa, zlvl, strax, stray, flatn, fsensn, fsurfn,  &
+          fcondtopn, fcondbotn, fcondbot, &
+          ice_freeboardn, ice_freeboard, snowfracn, &
           flw, fsnow, fpond, sss, mlt_onset, frz_onset, faero_atm, faero_ocn, &
           frain, Tair, coszen, strairxT, strairyT, fsurf, fcondtop, fsens, &
           flat, fswabs, flwout, evap, Tref, Qref, Uref, fresh, fsalt, fhocn, &
           fswthru, meltt, melts, meltb, meltl, congel, snoice, &
-          merge_fluxes
+          merge_fluxes, evap_ice, evap_snow
       use ice_firstyear, only: update_FYarea
       use ice_grid, only: lmask_n, lmask_s, TLAT, TLON
       use ice_itd, only: hi_min
@@ -202,7 +204,7 @@
           nt_apnd, nt_hpnd, nt_ipnd, nt_alvl, nt_vlvl, nt_Tsfc, &
           tr_iage, nt_iage, tr_FY, nt_FY, tr_aero, tr_pond, tr_pond_cesm, &
           tr_pond_lvl, nt_qice, nt_sice, tr_pond_topo, uvel, vvel
-      use ice_therm_shared, only: calc_Tsfc
+      use ice_therm_shared, only: calc_Tsfc, Tsnic, Ti_bot
       use ice_therm_vertical, only: frzmlt_bottom_lateral, thermo_vertical
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_ponds
       !BBB:
@@ -237,6 +239,8 @@
          fswabsn     , & ! shortwave absorbed by ice          (W/m^2)
          flwoutn     , & ! upward LW at surface               (W/m^2)
          evapn       , & ! flux of vapor, atmos to ice   (kg m-2 s-1)
+         evapn_ice   , & ! flux of vapor, atmos to ice   (kg m-2 s-1)
+         evapn_snow  , & ! flux of vapor, atmos to snow   (kg m-2 s-1)
          freshn      , & ! flux of water, ice to ocean     (kg/m^2/s)
          fsaltn      , & ! flux of salt, ice to ocean      (kg/m^2/s)
          fhocnn      , & ! fbot corrected for leftover energy (W/m^2)
@@ -553,10 +557,13 @@
                                 Sswabsn(:,:,:,n,iblk),                    &
                                 Iswabsn(:,:,:,n,iblk),                    &
                                 fsurfn(:,:,n,iblk),                       &
-                                fcondtopn(:,:,n,iblk),                    &
+                                fcondtopn(:,:,n,iblk), fcondbotn(:,:,n,iblk),   &
                                 fsensn(:,:,n,iblk),  flatn(:,:,n,iblk),   &
                                 flwoutn,                                  &
-                                evapn,               freshn,              &
+                                ice_freeboardn,                           &
+                                evapn,                                    &
+                                evapn_ice,           evapn_snow,          &
+                                freshn,                                   & 
                                 fsaltn,              fhocnn,              &
                                 melttn(:,:,n,iblk),  meltsn(:,:,n,iblk),  &
                                 meltbn(:,:,n,iblk),                       &
@@ -710,18 +717,24 @@
                             strairxn,           strairyn,             &
                             Cdn_atm_ratio_n,                          &
                             fsurfn(:,:,n,iblk), fcondtopn(:,:,n,iblk),&
+                            fcondbotn(:,:,n,iblk),               &
                             fsensn(:,:,n,iblk), flatn(:,:,n,iblk),    &
                             fswabsn,            flwoutn,              &
                             evapn,                                    &
+                            evapn_ice,          evapn_snow,           &
+                            ice_freeboardn(:,:,n,iblk),               &
                             Trefn,              Qrefn,                &
                             freshn,             fsaltn,               &
                             fhocnn,             fswthrun(:,:,n,iblk), &
                             strairxT(:,:,iblk), strairyT  (:,:,iblk), &
                             Cdn_atm_ratio(:,:,iblk),                  &
                             fsurf   (:,:,iblk), fcondtop  (:,:,iblk), &
+                            fcondbot(:,:,iblk),                       &
                             fsens   (:,:,iblk), flat      (:,:,iblk), &
                             fswabs  (:,:,iblk), flwout    (:,:,iblk), &
                             evap    (:,:,iblk),                       &
+                            evap_ice(:,:,iblk), evap_snow (:,:,iblk), &
+                            ice_freeboard(:,:,iblk),                  &
                             Tref    (:,:,iblk), Qref      (:,:,iblk), &
                             fresh   (:,:,iblk), fsalt     (:,:,iblk), &
                             fhocn   (:,:,iblk), fswthru   (:,:,iblk), &
@@ -735,6 +748,9 @@
 
          enddo                  ! ncat
 
+         Ti_bot(:,:,iblk) = Tbot(:,:) * aice(:,:,iblk)
+         Tsnic(:,:,iblk) = c0
+
       !-----------------------------------------------------------------
       ! Calculate ponds from the topographic scheme
       !-----------------------------------------------------------------
@@ -742,7 +758,7 @@
          if (tr_pond_topo) then
             call compute_ponds_topo(nx_block, ny_block,                        &
                                     ilo, ihi, jlo, jhi,                        &
-                                    dt,                                        &
+                                    dt,snowfracn(:,:,:,iblk),                  &
                                     aice (:,:,iblk), aicen(:,:,:,iblk),        &
                                     vice (:,:,iblk), vicen(:,:,:,iblk),        &
                                     vsno (:,:,iblk), vsnon(:,:,:,iblk),        &
