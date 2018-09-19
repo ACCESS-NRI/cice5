@@ -78,6 +78,8 @@ real(kind=dbl_kind) :: iostress_factor = 1.0  ! 0.0 -- turn off stresses into MO
 !
 !20171227: Adding options for land ice discharge as iceberg melt (0,1,2,3,4)
 integer(kind=int_kind) :: iceberg = 0 
+!20180528: Adding "enhancement" factor for the iceberg waterflux
+real(kind=dbl_kind) :: iceberg_factor = 1.0
 !             
 namelist/coupling/       &
          caltype,        &
@@ -107,6 +109,7 @@ namelist/coupling/       &
          extreme_test,   &
          imsk_evap,      &
          iceberg,        &
+         iceberg_factor, &
          ocn_ssuv_factor,&
          iostress_factor,&
          chk_a2i_fields, &

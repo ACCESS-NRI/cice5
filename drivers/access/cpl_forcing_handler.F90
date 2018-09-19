@@ -520,7 +520,9 @@ else
     write(il_out,*) '(get_lice_discharge_masks_or_iceberg) reading in data, month= ',im
     !call ice_read_nc(ncid_i2o, im, trim(myvar), icebergfw(:,:,im,:), dbug)
     call ice_read_nc(ncid_i2o, im, trim(myvar), vwork, dbug)
-    icebergfw(:,:,im,:) = vwork(:,:,:)
+    icebergfw(:,:,im,:) = vwork(:,:,:) * iceberg_factor  
+    !iceberg_factor is 1.0 as default, but can be bigger/smaller for other runs 
+    !(e.g. in CABLE runs, iceberffw needs to be enhanced for water balance.)
   enddo
 
 !call check_iceberg_reading('chk_iceberg_readin.nc')
