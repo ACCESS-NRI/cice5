@@ -288,6 +288,9 @@
       idate = (nyr+year_init-1)*10000 + month*100 + mday ! date (yyyymmdd) 
 
 #ifdef AusCOM
+      ! Need this extra call to set_calendar to handle history
+      ! file naming in leap years properly
+      call set_calendar(nyr+year_init-1)
       write(il_out,*) '(calendar) runtime0 = ', runtime0
       write(il_out,*) '(calendar) nyr, year_init, month, mday = ', nyr, year_init, month, mday
       write(il_out,*) '(calendar)  idate = ', idate
