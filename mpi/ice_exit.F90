@@ -27,7 +27,8 @@
       use ice_fileunits, only: nu_diag, flush_fileunit
       use shr_sys_mod
 #else
-      use ice_fileunits, only: nu_diag, ice_stderr, flush_fileunit
+      use ice_fileunits, only: nu_diag, ice_stderr, ice_stdout, &
+                               flush_fileunit
       include 'mpif.h'   ! MPI Fortran include file
 #endif
 
@@ -37,6 +38,7 @@
 
 #ifndef CCSMCOUPLED
       integer (int_kind) :: ierr ! MPI error flag
+      integer (int_kind) :: error_code
 #endif
 
 #if (defined CCSMCOUPLED)
@@ -47,10 +49,13 @@
 #else
       call flush_fileunit(nu_diag)
 
+      write (ice_stdout,*) error_message
+      call flush_fileunit(ice_stdout)
       write (ice_stderr,*) error_message
       call flush_fileunit(ice_stderr)
 
-      call MPI_ABORT(MPI_COMM_WORLD, ierr)
+      error_code = 1
+      call MPI_ABORT(MPI_COMM_WORLD, error_code, ierr)
       stop
 #endif
 
