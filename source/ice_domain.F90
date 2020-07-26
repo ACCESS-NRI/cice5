@@ -271,7 +271,7 @@
       max_work_unit=10    ! quantize the work into values from 1,max
 
    integer (int_kind) :: &
-      i,j,n              ,&! dummy loop indices
+      i,j,n,p            ,&! dummy loop indices
       ig,jg              ,&! global indices
       work_unit          ,&! size of quantized work unit
       tblocks_tmp        ,&! total number of blocks
@@ -284,6 +284,10 @@
 
    type (block) :: &
       this_block           ! block information for current block
+
+    ! The number of extra blocks that need to be added so that each PE
+    ! has an equal number.
+    integer (int_kind) :: num_padding_blocks, num_work_blocks
 
 !----------------------------------------------------------------------
 !
