@@ -71,7 +71,7 @@
 
       integer (kind=int_kind) :: i,k,ic,n,nn, &
          ncid,status,imtid,jmtid,kmtidi,kmtids,kmtidb, cmtid,timid,varid, &
-         nvertexid,ivertex
+         nvertexid,ivertex,iflag
       integer (kind=int_kind), dimension(3) :: dimid
       integer (kind=int_kind), dimension(4) :: dimidz
       integer (kind=int_kind), dimension(5) :: dimidcz
@@ -127,7 +127,9 @@
         endif
 
         ! create file
-        status = nf90_create(ncfile(ns), nf90_clobber, ncid)
+        iflag = ior(NF90_NETCDF4, NF90_CLASSIC_MODEL);
+        iflag = ior(iflag, NF90_CLOBBER);
+        status = nf90_create(ncfile(ns), iflag, ncid)
         if (status /= nf90_noerr) call abort_ice( &
            'ice: Error creating history ncfile '//ncfile(ns))
 

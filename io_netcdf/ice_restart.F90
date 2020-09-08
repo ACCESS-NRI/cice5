@@ -162,8 +162,7 @@
          write(nu_rst_pointer,'(a)') filename
          close(nu_rst_pointer)
 
-         iflag = 0
-         if (lcdf64) iflag = nf90_64bit_offset
+         iflag = ior(NF90_NETCDF4, NF90_CLASSIC_MODEL);
          status = nf90_create(trim(filename), iflag, ncid)
          if (status /= nf90_noerr) call abort_ice( &
             'ice: Error creating restart ncfile '//trim(filename))
