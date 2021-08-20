@@ -166,6 +166,7 @@ subroutine get_cpl_timecontrol
 
 use ice_exit
 use ice_fileunits
+use ice_communicate, only: my_task, master_task
 
 implicit none
 
@@ -176,7 +177,9 @@ integer (int_kind) :: nml_error       ! namelist read error flag
 call get_fileunit(nu_nml)
 open(unit=nu_nml,file="input_ice.nml",form="formatted",status="old",iostat=nml_error)
 !
-write(6,*)'CICE: input_ice.nml opened at unit = ', nu_nml
+if (my_task == master_task) then
+   write(6,*)'CICE: input_ice.nml opened at unit = ', nu_nml
+endif
 !
 if (nml_error /= 0) then
    nml_error = -1
@@ -189,7 +192,9 @@ do while (nml_error > 0)
 end do
 if (nml_error == 0) close(nu_nml)
 
-write(6,coupling)
+if (my_task == master_task) then
+   write(6,coupling)
+endif
 
 call release_fileunit(nu_nml)
 

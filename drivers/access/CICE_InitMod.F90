@@ -21,7 +21,7 @@
       use cpl_forcing_handler
       use cpl_interface
 !ars599: 27032014: defind my_task
-      use ice_communicate, only: my_task
+      use ice_communicate, only: my_task, master_task
 #endif
 
       implicit none
@@ -110,13 +110,15 @@
       MPI_COMM_ICE = il_commlocal
 !      call init_cpl     ! initialize message passing
       call get_cpl_timecontrol
-      write(il_out,*)' CICE (cice_init) 1    jobnum = ',jobnum
-      write(il_out,*)' CICE (cice_init) 1   inidate = ',inidate
-      write(il_out,*)' CICE (cice_init) 1 init_date = ',init_date
-      write(il_out,*)' CICE (cice_init) 1  runtime0 = ',runtime0
-      write(il_out,*)' CICE (cice_init) 1   runtime = ',runtime
-      write(il_out,*)' CICE (cice_init) 1     idate = ',my_task, idate
-      !write(il_out,*)' CICE (cice_init) 1   runtype = ',runtype
+      if (my_task == master_task) then
+         write(il_out,*)' CICE (cice_init) 1    jobnum = ',jobnum
+         write(il_out,*)' CICE (cice_init) 1   inidate = ',inidate
+         write(il_out,*)' CICE (cice_init) 1 init_date = ',init_date
+         write(il_out,*)' CICE (cice_init) 1  runtime0 = ',runtime0
+         write(il_out,*)' CICE (cice_init) 1   runtime = ',runtime
+         write(il_out,*)' CICE (cice_init) 1     idate = ',my_task, idate
+         !write(il_out,*)' CICE (cice_init) 1   runtype = ',runtype
+      end if
 #endif
       call init_fileunits       ! unit numbers
 
@@ -177,9 +179,11 @@
       call init_restart         ! initialize restart variables
 
 #ifdef AusCOM
-      write(il_out,*) 'CICE (cice_init) 2      time = ', my_task, time
-      write(il_out,*) 'CICE (cice_init) 2  runtime0 = ', my_task, runtime0
-      !write(il_out,*) 'CICE (cice_init) 2     idate = ', my_task, idate
+      if (my_task == master_task) then
+         write(il_out,*) 'CICE (cice_init) 2      time = ', my_task, time
+         write(il_out,*) 'CICE (cice_init) 2  runtime0 = ', my_task, runtime0
+         !write(il_out,*) 'CICE (cice_init) 2     idate = ', my_task, idate
+      end if
  
       if (jobnum == 1 ) then
         time = 0.0            !NOTE, the first job must be set back to 0 and 
@@ -208,9 +212,11 @@
 !ars599: 26032014 original code
 !         call calendar(time)    ! at the end of the first timestep
       call calendar(time-runtime0)
-      write(il_out,*) 'CICE (cice_init) 3     time = ', my_task, time
-      write(il_out,*) 'CICE (cice_init) 3 runtime0 = ', my_task, runtime0
-      write(il_out,*) 'CICE (cice_init) 3    idate = ', my_task, idate
+      if (my_task == master_task) then
+         write(il_out,*) 'CICE (cice_init) 3     time = ', my_task, time
+         write(il_out,*) 'CICE (cice_init) 3 runtime0 = ', my_task, runtime0
+         write(il_out,*) 'CICE (cice_init) 3    idate = ', my_task, idate
+      end if
 #endif
 
    !--------------------------------------------------------------------
@@ -270,16 +276,20 @@
         !for continue runs, mice data MUST be available.
         call get_restart_mice(trim(restartdir)//'/mice.nc')
       else
-        write(6,*)'* WARNING: No initial mice.nc data available here! *'
-        write(6,*)'* WARNING: ALL mice variables will be set to ZERO! *'
-        write(6,*)'* WARNING: This is allowed for the init run ONLY ! *' 
+        if (my_task == master_task) then
+          write(6,*)'* WARNING: No initial mice.nc data available here! *'
+          write(6,*)'* WARNING: ALL mice variables will be set to ZERO! *'
+          write(6,*)'* WARNING: This is allowed for the init run ONLY ! *' 
+        endif
       endif
-      if (use_core_runoff) then
-         call get_core_runoff(trim(inputdir)//'/core_runoff_regrid.nc',&
-                              'runoff',1)
-      endif
+if (use_core_runoff) then
+      call get_core_runoff(trim(inputdir)//'/core_runoff_regrid.nc',&
+      'runoff',1)
+endif
 
-      write(il_out,*)' calling ave_ocn_fields_4_i2a time_sec = ',0 !time_sec
+      if (my_task == master_task) then
+        write(il_out,*)' calling ave_ocn_fields_4_i2a time_sec = ',0 !time_sec
+      endif
       call time_average_ocn_fields_4_i2a  
       !accumulate/average ocn fields needed for IA coupling
 
