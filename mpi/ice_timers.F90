@@ -57,6 +57,12 @@
       timer_cplsend,          &! send to coupled
       timer_sndrcv,           &! time between send to receive
 #endif
+#ifdef ACCESS
+      timer_from_atm,         &
+      timer_into_atm,         &
+      timer_from_ocn,         &
+      timer_into_ocn,         &
+#endif
       timer_bound,            &! boundary updates
       timer_bgc                ! biogeochemistry
 !      timer_tmp               ! for temporary timings
@@ -178,6 +184,12 @@
    call get_ice_timer(timer_rcvsnd,   'Rcv->Snd', nblocks,distrb_info%nprocs)
    call get_ice_timer(timer_cplsend,  'Cpl-Send', nblocks,distrb_info%nprocs)
    call get_ice_timer(timer_sndrcv,   'Snd->Rcv', nblocks,distrb_info%nprocs)
+#endif
+#ifdef ACCESS
+   call get_ice_timer(timer_from_atm, 'Cpl_fromA', nblocks,distrb_info%nprocs)
+   call get_ice_timer(timer_into_atm, 'Cpl_toA',   nblocks,distrb_info%nprocs)
+   call get_ice_timer(timer_from_ocn, 'Cpl_fromO', nblocks,distrb_info%nprocs)   
+   call get_ice_timer(timer_into_ocn, 'Cpl_toO',   nblocks,distrb_info%nprocs)
 #endif
 !   call get_ice_timer(timer_tmp,      '         ',nblocks,distrb_info%nprocs)
 
