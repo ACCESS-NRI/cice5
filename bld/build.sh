@@ -78,17 +78,10 @@ if ( $AusCOM == 'yes' ) then
     setenv CPL_INCS '-I$(CPLINCDIR)/include -I$(OASISDIR)/psmile.MPI1 -I$(OASISDIR)/mct -I$(SRCDIR)/ParallelIO/build/include/'
 endif
 
-### Setup the version string, this is the git hash of the commit used to build
-### the code. The version of an executable can be found with the following
-### command: strings <executable> | grep 'CICE_COMMIT_HASH='
-setenv GIT_CONFIG_NOGLOBAL 'yes'
-
-set old_hash=`grep 'public :: CICE_COMMIT_HASH =' $SRCDIR/drivers/$driver/version.F90 | cut -d '"' -f 2 | cut -d '=' -f 2`
-set new_hash=`git rev-parse HEAD`
-
-if ( $old_hash != $new_hash ) then
-    sed -e "s/{CICE_COMMIT_HASH}/$new_hash/g" $SRCDIR/drivers/$driver/version.F90.template > $SRCDIR/drivers/$driver/version.F90
-endif
+### The version of an executable can be found with the following
+### command: strings <executable> | grep 'CICE_VERSION='
+set version='202301'
+sed -e "s/{CICE_VERSION}/$version/g" $SRCDIR/drivers/$driver/version.F90.template > $SRCDIR/drivers/$driver/version_mod.F90
 
 ### Location and name of the generated exectuable
 setenv EXE cice_${driver}_${resolution}_${NTASK}p.exe

@@ -6,13 +6,13 @@ module version_mod
 !   used to build this executable.
 !
 !   This can be read from the command line with the following command:
-!   $ strings <executable> | grep 'CICE_COMMIT_HASH='
+!   $ strings <executable> | grep 'CICE_VERSION='
 ! </OVERVIEW>
 
 implicit none
 private
 
-character (len=*), parameter, public :: CICE_COMMIT_HASH = "CICE_COMMIT_HASH={CICE_COMMIT_HASH}"
+character (len=*), parameter, public :: CICE_VERSION = "CICE_VERSION={CICE_VERSION}"
 
 contains
 

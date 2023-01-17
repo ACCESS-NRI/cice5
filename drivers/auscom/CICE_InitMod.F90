@@ -108,7 +108,7 @@
 #ifdef popcice
       use drv_forcing, only: sst_sss
 #endif
-      use version_mod, only: CICE_COMMIT_HASH
+      use version_mod, only: CICE_VERSION
 
       type(accessom2_type), intent(inout) :: accessom2
 
@@ -268,7 +268,7 @@
 
       ! Print out my version
       if (my_task == master_task) then
-          print*, CICE_COMMIT_HASH
+          print*, CICE_VERSION
           call accessom2%print_version_info()
       endif
 
