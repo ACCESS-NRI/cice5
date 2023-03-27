@@ -149,7 +149,7 @@ subroutine sort_segments(seg_list)
 
     do i=1, size(seg_list) - 1
         do j=i+1, size(seg_list)
-            if (seg_list(i).global_offset > seg_list(j).global_offset) then
+            if (seg_list(i)%global_offset > seg_list(j)%global_offset) then
                 tmp = seg_list(i)
                 seg_list(i) = seg_list(j)
                 seg_list(j) = tmp
@@ -199,8 +199,8 @@ subroutine init_cpl(runtime_seconds, coupling_field_timesteps)
 
         do j = jlo, jhi
             ! Oasis uses zero-indexing to define the global offset, hence the final - 1
-            part_def(part_idx).global_offset = ((this_block%j_glob(j) - 1) * nx_global) + this_block%i_glob(ilo) - 1
-            part_def(part_idx).block_index = n
+            part_def(part_idx)%global_offset = ((this_block%j_glob(j) - 1) * nx_global) + this_block%i_glob(ilo) - 1
+            part_def(part_idx)%block_index = n
             part_idx = part_idx + 1
         enddo
     enddo
@@ -217,7 +217,7 @@ subroutine init_cpl(runtime_seconds, coupling_field_timesteps)
     oasis_part_def(1) = ORANGE
     ! The total number of segments
     oasis_part_def(2) = block_size_y*nblocks
-    oasis_part_def(3::2) = part_def(:).global_offset
+    oasis_part_def(3::2) = part_def(:)%global_offset
     oasis_part_def(4::2) = block_size_x
 
     call oasis_def_partition(part_id, oasis_part_def, err, nx_global * ny_global)
@@ -425,7 +425,7 @@ subroutine unpack_coupling_array(input, output)
     offset = 0
 
     do iseg=1, size(part_def)
-        iblk = part_def(iseg).block_index
+        iblk = part_def(iseg)%block_index
 
         output(isc:iec, blk_seg_num(iblk), iblk) = input((offset + 1):(offset + block_size_x))
 
@@ -457,7 +457,7 @@ subroutine pack_coupling_array(input, output)
     ! part_def being sorted so simply incrementing the blk_seg_num gets data
     ! from the next segmennt.
     do iseg=1, size(part_def)
-        iblk = part_def(iseg).block_index
+        iblk = part_def(iseg)%block_index
 
         output((offset + 1):(offset + block_size_x)) = input(isc:iec, blk_seg_num(iblk), iblk)
 
