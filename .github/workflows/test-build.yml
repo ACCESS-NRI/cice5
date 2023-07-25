@@ -1,4 +1,4 @@
-ame: Test CICE5 build
+name: Test CICE5 build
 
 on:
   workflow_dispatch:
