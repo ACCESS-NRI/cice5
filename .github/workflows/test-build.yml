@@ -16,5 +16,6 @@ jobs:
       package-name: cice5
       compiler-name: intel
       compiler-version: 2021.1.2
+      spack-packages-version: Enable_branch_use_for_cice5
     permissions:
       packages: read
