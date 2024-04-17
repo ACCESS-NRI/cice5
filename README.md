@@ -1,9 +1,11 @@
 ## Overview
-This repository contains the trunk from the subversion (svn) repository of the Los Alamos Sea Ice Model, CICE, including release tags through version 5.1.2. 
+This repository contains the access/cosima/auscom fork of cice5 used in the ACCESS-OM2/CM2 coupled models. It was forked from https://github.com/CICE-Consortium/CICE-svn-trunk/ which in turn captured the trunk from the subversion (svn) repository of the Los Alamos Sea Ice Model, CICE, including release tags through version 5.1.2. 
 
 More recent versions are found in the [CICE](https://github.com/CICE-Consortium/CICE) and [Icepack](https://github.com/CICE-Consortium/Icepack) repositories, which are maintained by the CICE Consortium.  
 
 If you expect to make any changes to the code, we recommend that you work in the CICE and Icepack repositories.  Changes made to code in this repository will not be accepted, other than critical bug fixes.
+
+There is [PDF documentation](https://github.com/ACCESS-NRI/cice5/blob/master/doc/cicedoc.pdf) available for CICE 5.1.2, however some changes were made to this fork to support coupling with ACCESS-OM2 and CM2, Parallel IO, ERA5 Forcing, BGC modelling and for other updates. Some of these changes are described in the [ACCESS-OM2 Technical Report](https://github.com/COSIMA/ACCESS-OM2-1-025-010deg-report).
 
 ## Useful links
 * **Wiki**: https://github.com/CICE-Consortium/CICE-svn-trunk/wiki
