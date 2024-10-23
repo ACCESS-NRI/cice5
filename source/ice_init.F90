@@ -112,7 +112,8 @@
         n            ! loop index
 
       character (len=6) :: chartmp
-      character (len=32) :: str
+      character (len=32) :: str, tmpstr2
+      character (len=32)      :: nml_name ! namelist name
 
       logical :: exists
 
@@ -383,49 +384,208 @@
       nml_filename  = 'ice_in'//trim(inst_suffix)
 #endif
 
-      call get_fileunit(nu_nml)
+if (my_task == master_task) then
 
-      if (my_task == master_task) then
-         open (nu_nml, file=nml_filename, status='old',iostat=nml_error)
-         if (nml_error /= 0) then
-            nml_error = -1
-         else
-            nml_error =  1
-         endif 
+   ! open namelist file
+   call get_fileunit(nu_nml)
+   open (nu_nml, file=trim(nml_filename), status='old',iostat=nml_error)
+   if (nml_error /= 0) then
+      call abort_ice('ERROR: open file '// &
+         trim(nml_filename))
+   endif
 
-         do while (nml_error > 0)
-            print*,'Reading setup_nml'
-               read(nu_nml, nml=setup_nml,iostat=nml_error)
-               if (nml_error /= 0) exit
-            print*,'Reading grid_nml'
-               read(nu_nml, nml=grid_nml,iostat=nml_error)
-               if (nml_error /= 0) exit
-            print*,'Reading tracer_nml'
-               read(nu_nml, nml=tracer_nml,iostat=nml_error)
-               if (nml_error /= 0) exit
-            print*,'Reading thermo_nml'
-               read(nu_nml, nml=thermo_nml,iostat=nml_error)
-               if (nml_error /= 0) exit
-            print*,'Reading dynamics_nml'
-               read(nu_nml, nml=dynamics_nml,iostat=nml_error)
-               if (nml_error /= 0) exit
-            print*,'Reading shortwave_nml'
-               read(nu_nml, nml=shortwave_nml,iostat=nml_error)
-               if (nml_error /= 0) exit
-            print*,'Reading ponds_nml'
-               read(nu_nml, nml=ponds_nml,iostat=nml_error)
-               if (nml_error /= 0) exit
-            print*,'Reading forcing_nml'
-               read(nu_nml, nml=forcing_nml,iostat=nml_error)
-               if (nml_error /= 0) exit
-         end do
-         if (nml_error == 0) close(nu_nml)
-      endif
-      call broadcast_scalar(nml_error, master_task)
+   ! read setup_nml
+   nml_name = 'setup_nml'
+   write(nu_diag,*) ' Reading ', trim(nml_name)
+   ! ! goto namelist in file
+   ! read(nu_nml,trim(nml_name),iostat=nml_error)
+   ! if (nml_error /= 0) then
+   !    call abort_ice('ERROR: searching for '// trim(nml_name))
+   ! endif
+
+   ! read namelist
+   nml_error =  1
+   do while (nml_error > 0)
+      read(nu_nml, nml=setup_nml,iostat=nml_error)
+      ! check if error
       if (nml_error /= 0) then
-         call abort_ice('ice: error reading namelist')
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr2
+         call abort_ice('ERROR: '//trim(nml_name)//' reading '// &
+              trim(tmpstr2))
       endif
-      call release_fileunit(nu_nml)
+   end do
+
+   ! read grid_nml
+   nml_name = 'grid_nml'
+   write(nu_diag,*) ' Reading ', trim(nml_name)
+   ! goto namelist in file
+   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
+   ! if (nml_error /= 0) then
+   !    call abort_ice('ERROR: searching for '// trim(nml_name))
+   ! endif
+
+   ! read namelist
+   nml_error =  1
+   do while (nml_error > 0)
+      read(nu_nml, nml=grid_nml,iostat=nml_error)
+      ! check if error
+      if (nml_error /= 0) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr2
+         call abort_ice('ERROR: ' //trim(nml_name)//' reading '// &
+              trim(tmpstr2))
+      endif
+   end do
+
+   ! read tracer_nml
+   nml_name = 'tracer_nml'
+   write(nu_diag,*) ' Reading ', trim(nml_name)
+   ! goto namelist in file
+   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
+   ! if (nml_error /= 0) then
+   !    call abort_ice('ERROR: searching for '// trim(nml_name))
+   ! endif
+
+   ! read namelist
+   nml_error =  1
+   do while (nml_error > 0)
+      read(nu_nml, nml=tracer_nml,iostat=nml_error)
+      ! check if error
+      if (nml_error /= 0) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr2
+         call abort_ice('ERROR: ' //trim(nml_name)//' reading '// &
+              trim(tmpstr2))
+      endif
+   end do
+
+   ! read thermo_nml
+   nml_name = 'thermo_nml'
+   write(nu_diag,*) ' Reading ', trim(nml_name)
+   ! goto namelist in file
+   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
+   ! if (nml_error /= 0) then
+   !    call abort_ice('ERROR: searching for '// trim(nml_name))
+   ! endif
+
+   ! read namelist
+   nml_error =  1
+   do while (nml_error > 0)
+      read(nu_nml, nml=thermo_nml,iostat=nml_error)
+      ! check if error
+      if (nml_error /= 0) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr2
+         call abort_ice('ERROR: '//trim(nml_name)//' reading '// &
+              trim(tmpstr2))
+      endif
+   end do
+
+   ! read dynamics_nml
+   nml_name = 'dynamics_nml'
+   write(nu_diag,*) ' Reading ', trim(nml_name)
+
+   ! goto namelist in file
+   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
+   ! if (nml_error /= 0) then
+   !    call abort_ice('ERROR: searching for '// trim(nml_name))
+   ! endif
+
+   ! read namelist
+   nml_error =  1
+   do while (nml_error > 0)
+      read(nu_nml, nml=dynamics_nml,iostat=nml_error)
+      ! check if error
+      if (nml_error /= 0) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr2
+         call abort_ice('ERROR: '//trim(nml_name)//' reading '// &
+              trim(tmpstr2))
+      endif
+   end do
+
+   ! read shortwave_nml
+   nml_name = 'shortwave_nml'
+   write(nu_diag,*) ' Reading ', trim(nml_name)
+
+   ! goto namelist in file
+   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
+   ! if (nml_error /= 0) then
+   !    call abort_ice('ERROR: searching for '// trim(nml_name))
+   ! endif
+
+   ! read namelist
+   nml_error =  1
+   do while (nml_error > 0)
+      read(nu_nml, nml=shortwave_nml,iostat=nml_error)
+      ! check if error
+      if (nml_error /= 0) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr2
+         call abort_ice('ERROR: '//trim(nml_name)//' reading '//&
+              trim(tmpstr2))
+      endif
+   end do
+
+   ! read ponds_nml
+   nml_name = 'ponds_nml'
+   write(nu_diag,*) ' Reading ', trim(nml_name)
+
+   ! goto namelist in file
+   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
+   ! if (nml_error /= 0) then
+   !    call abort_ice('ERROR: searching for '// trim(nml_name))
+   ! endif
+
+   ! read namelist
+   nml_error =  1
+   do while (nml_error > 0)
+      read(nu_nml, nml=ponds_nml,iostat=nml_error)
+      ! check if error
+      if (nml_error /= 0) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr2
+         call abort_ice('ERROR: '//trim(nml_name)//' reading '// &
+              trim(tmpstr2))
+      endif
+   end do
+
+   ! read forcing_nml
+   nml_name = 'forcing_nml'
+   write(nu_diag,*) ' Reading ', trim(nml_name)
+
+   ! goto namelist in file
+   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
+   ! if (nml_error /= 0) then
+   !    call abort_ice('ERROR: searching for '// trim(nml_name))
+   ! endif
+
+   ! read namelist
+   nml_error =  1
+   do while (nml_error > 0)
+      read(nu_nml, nml=forcing_nml,iostat=nml_error)
+      ! check if error
+      if (nml_error /= 0) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr2
+         call abort_ice('ERROR: '// trim(nml_name)//' reading '// &
+              trim(tmpstr2))
+      endif
+   end do
+
+   ! done reading namelist.
+   close(nu_nml)
+   call release_fileunit(nu_nml)
+endif
 
       !-----------------------------------------------------------------
       ! set up diagnostics output and resolve conflicts
