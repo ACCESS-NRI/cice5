@@ -92,29 +92,40 @@
          ntmp
       integer (kind=int_kind) :: nml_error ! namelist i/o error flag
 
+      character (len=32)  :: nml_name, tmpstr2
+
       !-----------------------------------------------------------------
       ! read namelist
       !-----------------------------------------------------------------
 
-      call get_fileunit(nu_nml)
       if (my_task == master_task) then
-         open (nu_nml, file=nml_filename, status='old',iostat=nml_error)
+         nml_name = 'icefields_nml'
+         write(nu_diag,*) ' Reading ', trim(nml_name)
+
+         ! open file
+         call get_fileunit(nu_nml)
+         open (nu_nml, file=trim(nml_filename), status='old',iostat=nml_error)
          if (nml_error /= 0) then
-            nml_error = -1
-         else
-            nml_error =  1
+            call abort_ice('ERROR: '//trim(nml_name)//' open file '// &
+               trim(nml_filename))
          endif
+
+         ! read namelist
+         nml_error =  1
          do while (nml_error > 0)
             read(nu_nml, nml=icefields_nml,iostat=nml_error)
+            ! check if error
+            if (nml_error /= 0) then
+               ! backspace and re-read erroneous line
+               backspace(nu_nml)
+               read(nu_nml,fmt='(A)') tmpstr2
+               call abort_ice('ERROR: ' // trim(nml_name) // ' reading ' // &
+                    trim(tmpstr2))
+            endif
          end do
-         if (nml_error == 0) close(nu_nml)
-      endif
-      call release_fileunit(nu_nml)
 
-      call broadcast_scalar(nml_error, master_task)
-      if (nml_error /= 0) then
-         close (nu_nml)
-         call abort_ice('ice: error reading icefields_nml')
+         close(nu_nml)
+         call release_fileunit(nu_nml)
       endif
 
       ! histfreq options ('1','h','d','m','y')

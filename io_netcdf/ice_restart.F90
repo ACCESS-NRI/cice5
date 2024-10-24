@@ -66,7 +66,9 @@
 
          status = nf90_open(trim(filename), nf90_nowrite, ncid)
          if (status /= nf90_noerr) call abort_ice( &
-            'ice: Error reading restart ncfile '//trim(filename))
+            'ice: Error reading restart ncfile '//trim(filename)//&
+            ' : '//nf90_strerror(status) &
+         )
       
          if (use_restart_time) then
          status = nf90_get_att(ncid, nf90_global, 'istep1', istep0)

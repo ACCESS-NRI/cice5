@@ -420,11 +420,6 @@ if (my_task == master_task) then
    ! read grid_nml
    nml_name = 'grid_nml'
    write(nu_diag,*) ' Reading ', trim(nml_name)
-   ! goto namelist in file
-   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
-   ! if (nml_error /= 0) then
-   !    call abort_ice('ERROR: searching for '// trim(nml_name))
-   ! endif
 
    ! read namelist
    nml_error =  1
@@ -443,11 +438,6 @@ if (my_task == master_task) then
    ! read tracer_nml
    nml_name = 'tracer_nml'
    write(nu_diag,*) ' Reading ', trim(nml_name)
-   ! goto namelist in file
-   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
-   ! if (nml_error /= 0) then
-   !    call abort_ice('ERROR: searching for '// trim(nml_name))
-   ! endif
 
    ! read namelist
    nml_error =  1
@@ -466,11 +456,6 @@ if (my_task == master_task) then
    ! read thermo_nml
    nml_name = 'thermo_nml'
    write(nu_diag,*) ' Reading ', trim(nml_name)
-   ! goto namelist in file
-   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
-   ! if (nml_error /= 0) then
-   !    call abort_ice('ERROR: searching for '// trim(nml_name))
-   ! endif
 
    ! read namelist
    nml_error =  1
@@ -490,12 +475,6 @@ if (my_task == master_task) then
    nml_name = 'dynamics_nml'
    write(nu_diag,*) ' Reading ', trim(nml_name)
 
-   ! goto namelist in file
-   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
-   ! if (nml_error /= 0) then
-   !    call abort_ice('ERROR: searching for '// trim(nml_name))
-   ! endif
-
    ! read namelist
    nml_error =  1
    do while (nml_error > 0)
@@ -514,11 +493,6 @@ if (my_task == master_task) then
    nml_name = 'shortwave_nml'
    write(nu_diag,*) ' Reading ', trim(nml_name)
 
-   ! goto namelist in file
-   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
-   ! if (nml_error /= 0) then
-   !    call abort_ice('ERROR: searching for '// trim(nml_name))
-   ! endif
 
    ! read namelist
    nml_error =  1
@@ -538,11 +512,6 @@ if (my_task == master_task) then
    nml_name = 'ponds_nml'
    write(nu_diag,*) ' Reading ', trim(nml_name)
 
-   ! goto namelist in file
-   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
-   ! if (nml_error /= 0) then
-   !    call abort_ice('ERROR: searching for '// trim(nml_name))
-   ! endif
 
    ! read namelist
    nml_error =  1
@@ -562,11 +531,6 @@ if (my_task == master_task) then
    nml_name = 'forcing_nml'
    write(nu_diag,*) ' Reading ', trim(nml_name)
 
-   ! goto namelist in file
-   ! call goto_nml(nu_nml,trim(nml_name),nml_error)
-   ! if (nml_error /= 0) then
-   !    call abort_ice('ERROR: searching for '// trim(nml_name))
-   ! endif
 
    ! read namelist
    nml_error =  1
