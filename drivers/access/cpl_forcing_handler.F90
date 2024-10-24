@@ -437,11 +437,11 @@ if ( file_exist(fname) ) then
   endif
   call ice_open_nc(fname, ncid_o2i)
 !B: 20170825 ==> need maicen_saved variables
-  call ice_read_nc(ncid_o2i, 1, 'maicen1',   maicen_saved(:,:,1,:), dbug)
-  call ice_read_nc(ncid_o2i, 1, 'maicen2',   maicen_saved(:,:,2,:), dbug)
-  call ice_read_nc(ncid_o2i, 1, 'maicen3',   maicen_saved(:,:,3,:), dbug)
-  call ice_read_nc(ncid_o2i, 1, 'maicen4',   maicen_saved(:,:,4,:), dbug)
-  call ice_read_nc(ncid_o2i, 1, 'maicen5',   maicen_saved(:,:,5,:), dbug)
+  ! call ice_read_nc(ncid_o2i, 1, 'maicen1',   maicen_saved(:,:,1,:), dbug)
+  ! call ice_read_nc(ncid_o2i, 1, 'maicen2',   maicen_saved(:,:,2,:), dbug)
+  ! call ice_read_nc(ncid_o2i, 1, 'maicen3',   maicen_saved(:,:,3,:), dbug)
+  ! call ice_read_nc(ncid_o2i, 1, 'maicen4',   maicen_saved(:,:,4,:), dbug)
+  ! call ice_read_nc(ncid_o2i, 1, 'maicen5',   maicen_saved(:,:,5,:), dbug)
 !b.
   call ice_read_nc(ncid_o2i, 1, 'maice',     maice,     dbug)
   call ice_read_nc(ncid_o2i, 1, 'mstrocnxT', mstrocnxT, dbug)
@@ -452,8 +452,8 @@ if ( file_exist(fname) ) then
   call ice_read_nc(ncid_o2i, 1, 'mfswthru',  mfswthru,  dbug)
   call ice_read_nc(ncid_o2i, 1, 'msicemass', msicemass, dbug)
 !20171024: added 2 more:
-  call ice_read_nc(ncid_o2i, 1, 'lice_sth',  lice_sth,  dbug)
-  call ice_read_nc(ncid_o2i, 1, 'lice_nth',  lice_nth,  dbug)
+  ! call ice_read_nc(ncid_o2i, 1, 'lice_sth',  lice_sth,  dbug)
+  ! call ice_read_nc(ncid_o2i, 1, 'lice_nth',  lice_nth,  dbug)
 
   if (my_task == master_task) then
     call ice_close_nc(ncid_o2i)
