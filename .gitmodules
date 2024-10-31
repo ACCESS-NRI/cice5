@@ -1,3 +1,0 @@
-[submodule "ParallelIO"]
-	path = ParallelIO
-	url = https://github.com/NCAR/ParallelIO.git
