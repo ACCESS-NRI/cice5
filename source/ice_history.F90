@@ -344,6 +344,7 @@
       call broadcast_scalar (f_sidmassgrowthbot, master_task)
       call broadcast_scalar (f_sidmasssi, master_task)
       call broadcast_scalar (f_sidmassevapsubl, master_task)
+      call broadcast_scalar (f_sndmasssubl, master_task)
       call broadcast_scalar (f_sidmassmelttop, master_task)
       call broadcast_scalar (f_sidmassmeltbot, master_task)
       call broadcast_scalar (f_sidmasslat, master_task)
@@ -1156,6 +1157,11 @@
              "none", c1, c0,         & 
             ns1, f_sidmassevapsubl)
 
+         call define_hist_field(n_sndmasssubl,"sndmasssubl","kg m^-2 s^-1",tstr2D, tcstr,  & 
+            "snow mass change from evaporation and sublimation",                      &
+             "none", c1, c0,         & 
+            ns1, f_sndmasssubl)
+
          call define_hist_field(n_sidmassmelttop,"sidmassmelttop","kg m^-2 s^-1",tstr2D, tcstr,  & 
             "sea ice mass change from top ice melt",                      &
              "none", c1, c0,         &       
@@ -1546,7 +1552,8 @@
       use ice_dyn_shared, only: kdyn, principal_stress,a_min
       use ice_flux, only: fsw, flw, fsnow, frain, sst, sss, uocn, vocn, &
           frzmlt_init, fswfac, fswabs, fswthru, alvdr, alvdf, alidr, alidf, &
-          albice, albsno, albpnd, coszen, flat, fsens, flwout, evap, &
+          albice, albsno, albpnd, coszen, flat, fsens, flwout, evap,
+          evap_ice evap_snow, &
           Tair, Tref, Qref, congel, frazil, snoice, dsnow, &
           melts, meltb, meltt, meltl, fresh, fsalt, fresh_ai, fsalt_ai, &
           fhocn, fhocn_ai, uatm, vatm, &
@@ -2344,11 +2351,23 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*evap(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)
               endif
            enddo
            enddo
            call accum_hist_field(n_sidmassevapsubl, iblk, worka(:,:), a2D)
+          endif
+
+         if (f_sndmasssubl(1:1) /= 'x') then
+           worka(:,:) = c0
+           do j = jlo, jhi
+           do i = ilo, ihi
+              if (aice(i,j,iblk) > puny) then
+                 worka(i,j) = rhos*evap_snow(i,j,iblk)
+              endif
+           enddo
+           enddo
+           call accum_hist_field(n_sidmasssubl, iblk, worka(:,:), a2D)
           endif
 
          if (f_sidmassmelttop(1:1) /= 'x') then
@@ -3215,6 +3234,20 @@
                              a2D(i,j,n_sidmassevapsubl(ns),iblk) = &
                              a2D(i,j,n_sidmassevapsubl(ns),iblk)*avgct(ns)*ravgip(i,j)
                              if (ravgip(i,j) == c0) a2D(i,j,n_sidmassevapsubl(ns),iblk) = spval_dbl
+                       endif
+                    enddo             ! i
+                    enddo             ! j
+                 endif
+              endif
+
+              if (index(avail_hist_fields(n)%vname,'sndmasssubl') /= 0) then
+                 if (f_sndmasssubl(1:1) /= 'x' .and.  n_sndmasssubl(ns) /= 0) then
+                    do j = jlo, jhi
+                    do i = ilo, ihi
+                       if (tmask(i,j,iblk)) then
+                             a2D(i,j,n_sndmasssubl(ns),iblk) = &
+                             a2D(i,j,n_sndmasssubl(ns),iblk)*avgct(ns)*ravgip(i,j)
+                             if (ravgip(i,j) == c0) a2D(i,j,n_sndmasssubl(ns),iblk) = spval_dbl
                        endif
                     enddo             ! i
                     enddo             ! j

@@ -285,8 +285,8 @@
          fadvocn(i,j) = c0
          fcondbotn(i,j) = c0
          ice_freeboardn(i,j) = c0
-
-
+         evapn_ice(i,j)= c0
+         evapn_snow(i,j)=c0
 
          meltt  (i,j) = c0
          meltb  (i,j) = c0
