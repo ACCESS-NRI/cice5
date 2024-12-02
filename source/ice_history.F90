@@ -1553,7 +1553,7 @@
       use ice_flux, only: fsw, flw, fsnow, frain, sst, sss, uocn, vocn, &
           frzmlt_init, fswfac, fswabs, fswthru, alvdr, alvdf, alidr, alidf, &
           albice, albsno, albpnd, coszen, flat, fsens, flwout, evap,
-          evap_ice evap_snow, &
+          evap_ice,evap_snow, &
           Tair, Tref, Qref, congel, frazil, snoice, dsnow, &
           melts, meltb, meltt, meltl, fresh, fsalt, fresh_ai, fsalt_ai, &
           fhocn, fhocn_ai, uatm, vatm, &
@@ -2363,7 +2363,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = rhos*evap_snow(i,j,iblk)
+                 worka(i,j) = rhos*aice(i,j,iblk)*evap_snow(i,j,iblk)
               endif
            enddo
            enddo
