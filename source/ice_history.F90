@@ -2001,6 +2001,8 @@
               worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)
            enddo
            enddo
+           !FLAG  CICE6 added Tffresh to seitch to Kelvin we may need
+           !to alighn with them and any ACCESS-NRI post processing
            call accum_hist_field(n_sitemptop, iblk, worka(:,:), a2D)
          endif
 
@@ -2016,6 +2018,9 @@
               endif
            enddo
            enddo    
+
+           !FLAG  CICE6 has added Tffresh to this term to switch to
+           !Kelvins for CESM we had Centigrade in our output.
          call accum_hist_field(n_sitempsnic, iblk, worka(:,:), a2D)
          endif
 
@@ -2024,7 +2029,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) &
-               worka(i,j) = aice(i,j,iblk)*(Ti_bot(i,j,iblk)+Tffresh)    
+               worka(i,j) = &
+           aice(i,j,iblk)*(Ti_bot(i,j,iblk)/aice_init(i,j,iblk)+Tffresh)    
             enddo
             enddo    
             call accum_hist_field(n_sitempbot, iblk, worka(:,:), a2D)
@@ -2312,10 +2318,15 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*frazil(i,j,iblk)*rhoi / aice_init(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*frazil(i,j,iblk)*rhoi / &
+           (dt*aice_init(i,j,iblk))
               endif
            enddo
            enddo
+           !FLAG  revisit to see if frazil still needs aice/aice_init
+           !but data can be noisy. NOT still in CICE6. No aice weighting
+           !either
+
            call accum_hist_field(n_sidmassgrowthwat, iblk, worka(:,:), a2D)
          endif
 
@@ -2324,10 +2335,16 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*congel(i,j,iblk)*rhoi / aice_init(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*congel(i,j,iblk)*rhoi / &
+         (dt *aice_init(i,j,iblk))
               endif
            enddo
            enddo
+
+           ! FLAG similar to frazil aice/aice_init no longer there but
+           ! noisy field. aice_init is there as first flag, so on off
+           ! switch check there.
+
            call accum_hist_field(n_sidmassgrowthbot, iblk, worka(:,:), a2D)
          endif
 
@@ -2336,10 +2353,14 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*snoice(i,j,iblk)*rhoi / aice_init(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*snoice(i,j,iblk)*rhoi /&
+          (dt * aice_init(i,j,iblk))
               endif
            enddo
            enddo
+
+           !FLAG same as frazil/congel issue
+
            call accum_hist_field(n_sidmasssi, iblk, worka(:,:), a2D)
          endif
 
@@ -2352,6 +2373,8 @@
               endif
            enddo
            enddo
+           !FLAG CICE6  has dropped aice muliplier
+
            call accum_hist_field(n_sidmassevapsubl, iblk, worka(:,:), a2D)
           endif
 
@@ -2364,6 +2387,8 @@
               endif
            enddo
            enddo
+
+           !FLAG CICE6  has dropped aice muliplier
            call accum_hist_field(n_sidmasssubl, iblk, worka(:,:), a2D)
           endif
 
@@ -2372,10 +2397,14 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*meltt(i,j,iblk)*rhoi / aice_init(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*meltt(i,j,iblk)*rhoi /&
+           (dt * aice_init(i,j,iblk))
               endif
            enddo
            enddo
+
+           !FLAG as above aice/aice_init factor 
+
            call accum_hist_field(n_sidmassmelttop, iblk, worka(:,:), a2D)
          endif
 
@@ -2384,10 +2413,12 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*meltb(i,j,iblk)*rhoi / aice_init(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*meltb(i,j,iblk)*rhoi / &
+           (dt * aice_init(i,j,iblk))
               endif
            enddo
            enddo
+           !FLAG as above
            call accum_hist_field(n_sidmassmeltbot, iblk, worka(:,:), a2D)
          endif
 
@@ -2396,10 +2427,12 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*meltl(i,j,iblk)*rhoi / aice_init(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*meltl(i,j,iblk)*rhoi / &
+            (dt * aice_init(i,j,iblk))
               endif
            enddo
            enddo
+           !FLAG as above
            call accum_hist_field(n_sidmasslat, iblk, worka(:,:), a2D)
          endif
 
@@ -2408,7 +2441,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk) * fsnow(i,j,iblk) * dt
+                 worka(i,j) = aice(i,j,iblk) * fsnow(i,j,iblk) * rhos
               endif
            enddo
            enddo
@@ -2420,11 +2453,14 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*melts(i,j,iblk)*rhoi / aice_init(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*melts(i,j,iblk)*rhos/ & 
+           (dt *aice_init(i,j,iblk))
               endif
            enddo
            enddo
-           call accum_hist_field(n_sndmassmelt, iblk, worka(:,:), a2D)
+           !FLAG as above aice/aice_init still here
+
+          call accum_hist_field(n_sndmassmelt, iblk, worka(:,:), a2D)
          endif
 
          if (f_siflswdtop(1:1) /= 'x') then
@@ -2545,6 +2581,7 @@
               endif
            enddo
            enddo
+           !FLAG aice/aice_init survived in CICE6 here!!
            call accum_hist_field(n_siflcondbot, iblk, worka(:,:), a2D)
          endif
 
