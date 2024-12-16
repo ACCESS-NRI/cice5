@@ -359,6 +359,7 @@
       call broadcast_scalar (f_siflsensupbot, master_task)
       call broadcast_scalar (f_sifllatstop, master_task)
       call broadcast_scalar (f_siflcondtop, master_task)
+      call broadcast_scalar (f_siflfwdrain, master_task)
       call broadcast_scalar (f_siflcondbot, master_task)
       call broadcast_scalar (f_sipr, master_task)
       call broadcast_scalar (f_siflsaltbot, master_task)
@@ -1238,6 +1239,11 @@
             "positive downward", c1, c0,                            &
              ns1, f_siflcondbot)
 
+         call define_hist_field(n_siflfwdrain,"siflfwdrain","kg m-2 s-1",tstr2D, tcstr, &
+         "freshwater drainage through sea ice", &  
+           "positive downward", c1, c0,                            &
+             ns1, f_siflfwdrain)
+
          call define_hist_field(n_sipr,"sipr","kg m^-2 s^-1",tstr2D, tcstr, &    
          "rainfall over sea ice", &
              "none", c1, c0,                            &
@@ -2004,8 +2010,13 @@
               worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)
            enddo
            enddo
-           !FLAG  CICE6 added Tffresh to seitch to Kelvin we may need
-           !to alighn with them and any ACCESS-NRI post processing
+           !FLAG  CICE6 added Tffresh to switch to Kelvin we may need
+           !to align with them and any ACCESS-NRI post processing,
+           !discus with MED team. It was in deg C in the APP4
+           ! Sensible data in CM2 not clear it will be IN ESM1.6
+           ! not defined in ESM1.5 in APP4.  I dont think it was in ACCESS
+           ! 1-0/1-3 zero-layer model set ups.
+
            call accum_hist_field(n_sitemptop, iblk, worka(:,:), a2D)
          endif
 
@@ -2023,7 +2034,9 @@
            enddo    
 
            !FLAG  CICE6 has added Tffresh to this term to switch to
-           !Kelvins for CESM we had Centigrade in our output.
+           !Kelvins for CESM we had Centigrade in our CM2 output
+           ! also the field was not defined so will not be sensible in
+           ! ESM1.6 so not worth adjusting.
          call accum_hist_field(n_sitempsnic, iblk, worka(:,:), a2D)
          endif
 
@@ -2372,11 +2385,13 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)*rhoi
               endif
            enddo
            enddo
            !FLAG CICE6  has dropped aice muliplier
+           !check back after looking at data ouput with and without aice
+           ! frain also has aice weights in CICE6 so its not connsitent.
 
            call accum_hist_field(n_sidmassevapsubl, iblk, worka(:,:), a2D)
           endif
@@ -2392,6 +2407,11 @@
            enddo
 
            !FLAG CICE6  has dropped aice muliplier
+           !check back after looking at data ouput with and without aice
+           ! here less clear as it could be wighted with snow area as
+           ! well ice area, so CICE6 may be correct all other fluxes do
+           ! retain the aice reighting in CICE6 including flat
+
            call accum_hist_field(n_sidmasssubl, iblk, worka(:,:), a2D)
           endif
 
@@ -2649,6 +2669,19 @@
            call accum_hist_field(n_siflsaltbot, iblk, worka(:,:), a2D)
          endif
 
+
+         if (f_siflfwdrain(1:1) /= 'x') then
+           worka(:,:) = c0
+           do j = jlo, jhi
+           do i = ilo, ihi
+              if (aice(i,j,iblk) > puny) then
+                 worka(i,j) = aice(i,j,iblk)*(frain(i,j,iblk) &
+             + melts(i,j,iblk)+meltt(i,j,iblk))
+              endif
+           enddo
+           enddo
+           call accum_hist_field(n_siflfwdrain, iblk, worka(:,:), a2D)
+         endif
 !3D category fields
 
          if (f_aicen   (1:1) /= 'x') &
@@ -3470,6 +3503,20 @@
                              a2D(i,j,n_sifllatstop(ns),iblk) = &
                              a2D(i,j,n_sifllatstop(ns),iblk)*avgct(ns)*ravgip(i,j)
                              if (ravgip(i,j) == c0) a2D(i,j,n_sifllatstop(ns),iblk) = spval_dbl
+                       endif
+                    enddo             ! i
+                    enddo             ! j
+                 endif
+              endif
+
+              if (index(avail_hist_fields(n)%vname,'siflfwdrain') /= 0) then
+                 if (f_sifllatstop(1:1) /= 'x' .and. n_siflfwdrain(ns) /= 0) then
+                    do j = jlo, jhi
+                    do i = ilo, ihi
+                       if (tmask(i,j,iblk)) then
+                             a2D(i,j,n_siflfwdrain(ns),iblk) = &
+                             a2D(i,j,n_siflfwdrain(ns),iblk)*avgct(ns)*ravgip(i,j)
+                             if (ravgip(i,j) == c0) a2D(i,j,n_siflfwdrain(ns),iblk) = spval_dbl
                        endif
                     enddo             ! i
                     enddo             ! j
