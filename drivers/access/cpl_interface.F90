@@ -449,30 +449,7 @@
     cl_writ(nsend_i2a)='co2_i2'
     nsend_i2a = nsend_i2a + 1
     cl_writ(nsend_i2a)='co2fx_i2'
-    ! new fields sending to UM GA7
-    nsend_i2a = nsend_i2a + 1
-    cl_writ(nsend_i2a)='sstfz_ia'
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'foifr',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'itopt',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'itopk',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'pndfn',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'pndtn',jf
-    enddo
- 
+
     if (my_task == 0) then
       write(il_out,*) 'init_cpl: Number of fields sent to atm: ',nsend_i2a
     endif
@@ -593,19 +570,6 @@
     cl_read(nrecv_a2i) = 'co2_ai'
     nrecv_a2i = nrecv_a2i + 1
     cl_read(nrecv_a2i) = 'wnd_ai'
-    ! new fields recving from UM GA7 
-    nrecv_a2i = nrecv_a2i + 1
-    cl_read(nrecv_a2i) = 'icenth_i'
-    nrecv_a2i = nrecv_a2i + 1
-    cl_read(nrecv_a2i) = 'icesth_i'
-    do jf = 1, ncat
-      nrecv_a2i = nrecv_a2i + 1
-      write(cl_read(nrecv_a2i), '(a6,i2.2)')'tsfice',jf
-    enddo
-    do jf = 1, ncat
-      nrecv_a2i = nrecv_a2i + 1
-      write(cl_read(nrecv_a2i), '(a6,i2.2)')'iceevp',jf
-    enddo
 
     if (my_task==0 .or. ll_comparal) then
       write(il_out,*) 'init_cpl: Number of fields rcvd from atm: ',nrecv_a2i
@@ -687,21 +651,8 @@
   allocate (um_bmlt(nx_block,ny_block,ncat,max_blocks)); um_bmlt(:,:,:,:) = 0
   allocate (um_co2(nx_block,ny_block,max_blocks)); um_co2(:,:,:) = 0
   allocate (um_wnd(nx_block,ny_block,max_blocks)); um_wnd(:,:,:) = 0
-  allocate (um_icenth(nx_block,ny_block,max_blocks)); um_icenth(:,:,:) = 0
-  allocate (um_icesth(nx_block,ny_block,max_blocks)); um_icesth(:,:,:) = 0
-  allocate (um_tsfice(nx_block,ny_block,ncat,max_blocks)); um_tsfice(:,:,:,:) = 0
-  allocate (um_iceevp(nx_block,ny_block,ncat,max_blocks)); um_iceevp(:,:,:,:) = 0
-  !20171024: 6 more arrays added (for land ice discharge into ocean)
-  allocate (lice_nth(nx_block,ny_block,max_blocks)); lice_nth(:,:,:) = 0
-  allocate (lice_sth(nx_block,ny_block,max_blocks)); lice_sth(:,:,:) = 0
-  allocate (msk_nth(nx_block,ny_block,max_blocks));  msk_nth(:,:,:) = 0
-  allocate (msk_sth(nx_block,ny_block,max_blocks));  msk_sth(:,:,:) = 0
-  allocate (amsk_nth(nx_block,ny_block,max_blocks)); amsk_nth(:,:,:) = 0
-  allocate (amsk_sth(nx_block,ny_block,max_blocks)); amsk_sth(:,:,:) = 0
-
   !
   allocate ( core_runoff(nx_block,ny_block,max_blocks));  core_runoff(:,:,:) = 0.
-  !
 
   ! from ocn:
   allocate (ocn_sst(nx_block,ny_block,max_blocks)); ocn_sst(:,:,:) = 0
@@ -715,7 +666,7 @@
   allocate (ocn_co2fx(nx_block,ny_block,max_blocks)); ocn_co2fx(:,:,:) = 0
 
   ! fields out: (local domain)
-  !
+  
   ! to atm:
   allocate (ia_sst(nx_block,ny_block,max_blocks));  ia_sst(:,:,:) = 0
   allocate (ia_uvel(nx_block,ny_block,max_blocks)); ia_uvel(:,:,:) = 0
@@ -725,12 +676,6 @@
   allocate (ia_thikn(nx_block,ny_block,ncat,max_blocks)); ia_thikn(:,:,:,:) = 0
   allocate (ia_co2(nx_block,ny_block,max_blocks)); ia_co2(:,:,:) = 0
   allocate (ia_co2fx(nx_block,ny_block,max_blocks)); ia_co2fx(:,:,:) = 0
-  allocate (ia_sstfz(nx_block,ny_block,max_blocks)); ia_sstfz(:,:,:) = 0
-  allocate (ia_foifr(nx_block,ny_block,ncat,max_blocks)); ia_foifr(:,:,:,:) = 0
-  allocate (ia_itopt(nx_block,ny_block,ncat,max_blocks)); ia_itopt(:,:,:,:) = 0
-  allocate (ia_itopk(nx_block,ny_block,ncat,max_blocks)); ia_itopk(:,:,:,:) = 0
-  allocate (ia_pndfn(nx_block,ny_block,ncat,max_blocks)); ia_pndfn(:,:,:,:) = 0
-  allocate (ia_pndtn(nx_block,ny_block,ncat,max_blocks)); ia_pndtn(:,:,:,:) = 0
   !
   ! to ocn:
   allocate (io_strsu(nx_block,ny_block,max_blocks)); io_strsu(:,:,:) = 0
@@ -773,20 +718,22 @@
   allocate (mssv(nx_block,ny_block,max_blocks));  mssv(:,:,:) = 0
   allocate (mco2(nx_block,ny_block,max_blocks));  mco2(:,:,:) = 0
   allocate (mco2fx(nx_block,ny_block,max_blocks));  mco2fx(:,:,:) = 0
-  allocate (msstfz(nx_block,ny_block,max_blocks));  msstfz(:,:,:) = 0
   ! IA cpl int time-average (4D)
   allocate (maicen(nx_block,ny_block,ncat,max_blocks)); maicen(:,:,:,:) = 0
   allocate (msnown(nx_block,ny_block,ncat,max_blocks)); msnown(:,:,:,:) = 0
   allocate (mthikn(nx_block,ny_block,ncat,max_blocks)); mthikn(:,:,:,:) = 0
-  allocate (mfoifr(nx_block,ny_block,ncat,max_blocks)); mfoifr(:,:,:,:) = 0
-  allocate (mitopt(nx_block,ny_block,ncat,max_blocks)); mitopt(:,:,:,:) = 0
-  allocate (mitopk(nx_block,ny_block,ncat,max_blocks)); mitopk(:,:,:,:) = 0
-  allocate (mpndfn(nx_block,ny_block,ncat,max_blocks)); mpndfn(:,:,:,:) = 0
-  allocate (mpndtn(nx_block,ny_block,ncat,max_blocks)); mpndtn(:,:,:,:) = 0
-!BX:
+  !BX:
   allocate (maicen_saved(nx_block,ny_block,ncat,max_blocks)); maicen_saved(:,:,:,:) = 0
-!
+
+  !202410: variables associated with iceberg flux:
   allocate (icebergfw(nx_block,ny_block,12,max_blocks)); icebergfw(:,:,:,:) = 0
+  !global domain runoff for runoff "deduction"
+  allocate (grunoff(nx_global,ny_global)); grunoff(:,:) = 0
+  allocate (gtarea(nx_global,ny_global)); gtarea(:,:) = 0
+  allocate (gwet(nx_global,ny_global)); gwet(:,:) = 0
+  allocate (ticeberg_s(12)); ticeberg_s(:) = 0
+  allocate (ticeberg_n(12)); ticeberg_n(:) = 0
+  allocate (gicebergfw(nx_global,ny_global,12)); gicebergfw(:,:,:) = 0
 
   allocate (vwork(nx_block,ny_block,max_blocks)); vwork(:,:,:) = 0
   allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0
@@ -889,9 +836,6 @@
         um_runoff(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) =vwork2d(:,:)
     case ('wme_i');
         um_wme(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
-!    case ('rain_i');  um_rain(:,:,:) = vwork(:,:,:)
-!    case ('snow_i');  um_snow(:,:,:) = vwork(:,:,:)
-!---20100825 -- just be cauious: -------------------------
     case ('rain_i');
         um_rain(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) =max(0.0,vwork2d(:,:))
     case ('snow_i');
@@ -917,18 +861,6 @@
     case ('press_i');um_press(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
     case ('co2_ai');um_co2(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
     case ('wnd_ai');um_wnd(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
-    case ('icenth_i');um_icenth(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
-    case ('icesth_i');um_icesth(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
-    case ('tsfice01');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1,1) = vwork2d(:,:)
-    case ('tsfice02');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,2,1) = vwork2d(:,:)
-    case ('tsfice03');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,3,1) = vwork2d(:,:)
-    case ('tsfice04');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,4,1) = vwork2d(:,:)
-    case ('tsfice05');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,5,1) = vwork2d(:,:)
-    case ('iceevp01');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1,1) = vwork2d(:,:)
-    case ('iceevp02');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,2,1) = vwork2d(:,:)
-    case ('iceevp03');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,3,1) = vwork2d(:,:)
-    case ('iceevp04');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,4,1) = vwork2d(:,:)
-    case ('iceevp05');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,5,1) = vwork2d(:,:)
     end select 
 
     if (my_task == 0 .or. ll_comparal) then
@@ -956,10 +888,6 @@
     call ice_HaloUpdate(um_press, halo_info,field_loc_center,field_type_vector)
     call ice_HaloUpdate(um_co2, halo_info, field_loc_center, field_type_vector)
     call ice_HaloUpdate(um_wnd, halo_info, field_loc_center, field_type_vector)
-    call ice_HaloUpdate(um_icenth,halo_info, field_loc_center,field_type_vector)
-    call ice_HaloUpdate(um_icesth,halo_info, field_loc_center,field_type_vector)
-    call ice_HaloUpdate(um_tsfice,halo_info, field_loc_center,field_type_vector)
-    call ice_HaloUpdate(um_iceevp,halo_info, field_loc_center,field_type_vector)
 
   IF (rotate_winds) THEN   !rotate_winds=.t. means oasis does not do the vector rotation.
 
@@ -1088,11 +1016,11 @@
     case ('ssly_i'); 
        ocn_ssly(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d
     case ('pfmice_i');
-       ocn_pfmice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost, 1) =vwork2d
+       ocn_pfmice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost, 1) = vwork2d
     case ('co2_oi'); 
        ocn_co2(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d
     case ('co2fx_oi');
-       ocn_co2fx(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost, 1) =vwork2d
+       ocn_co2fx(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost, 1) = vwork2d
     end select
 
   enddo
@@ -1324,9 +1252,6 @@
   call u2tgrid_vector(ia_uvel)
   call u2tgrid_vector(ia_vvel) 
 
-  !hxy599 debug 
-  !call read_restart_i2a("i2a.nc", 0)
-
   write(il_out,*) "prism_put into_atm at sec: ", isteps
   do jf = 1, nsend_i2a
 
@@ -1350,34 +1275,11 @@
     !20100305: test effect of ssuv on the tropical cooling biases (as per Harry Henden)
     case('uvel_ia');  vwork = ia_uvel * ocn_ssuv_factor     !note ice u/v are also 
     case('vvel_ia');  vwork = ia_vvel * ocn_ssuv_factor     !     included here.
-    case('sstfz_ia'); vwork = ia_sstfz
+    !        
+    !case('sstfz_ia'); vwork = ia_sstfz
+    !
     case('co2_i2');  vwork = ia_co2
     case('co2fx_i2');  vwork = ia_co2fx
-    case('foifr01'); vwork(:,:,:) = ia_foifr(:,:,1,:)
-    case('foifr02'); vwork(:,:,:) = ia_foifr(:,:,2,:)
-    case('foifr03'); vwork(:,:,:) = ia_foifr(:,:,3,:)
-    case('foifr04'); vwork(:,:,:) = ia_foifr(:,:,4,:)
-    case('foifr05'); vwork(:,:,:) = ia_foifr(:,:,5,:)
-    case('itopt01'); vwork(:,:,:) = ia_itopt(:,:,1,:)
-    case('itopt02'); vwork(:,:,:) = ia_itopt(:,:,2,:)
-    case('itopt03'); vwork(:,:,:) = ia_itopt(:,:,3,:)
-    case('itopt04'); vwork(:,:,:) = ia_itopt(:,:,4,:)
-    case('itopt05'); vwork(:,:,:) = ia_itopt(:,:,5,:)
-    case('itopk01'); vwork(:,:,:) = ia_itopk(:,:,1,:)
-    case('itopk02'); vwork(:,:,:) = ia_itopk(:,:,2,:)
-    case('itopk03'); vwork(:,:,:) = ia_itopk(:,:,3,:)
-    case('itopk04'); vwork(:,:,:) = ia_itopk(:,:,4,:)
-    case('itopk05'); vwork(:,:,:) = ia_itopk(:,:,5,:)
-    case('pndfn01'); vwork(:,:,:) = ia_pndfn(:,:,1,:)
-    case('pndfn02'); vwork(:,:,:) = ia_pndfn(:,:,2,:)
-    case('pndfn03'); vwork(:,:,:) = ia_pndfn(:,:,3,:)
-    case('pndfn04'); vwork(:,:,:) = ia_pndfn(:,:,4,:)
-    case('pndfn05'); vwork(:,:,:) = ia_pndfn(:,:,5,:)
-    case('pndtn01'); vwork(:,:,:) = ia_pndtn(:,:,1,:)
-    case('pndtn02'); vwork(:,:,:) = ia_pndtn(:,:,2,:)
-    case('pndtn03'); vwork(:,:,:) = ia_pndtn(:,:,3,:)
-    case('pndtn04'); vwork(:,:,:) = ia_pndtn(:,:,4,:)
-    case('pndtn05'); vwork(:,:,:) = ia_pndtn(:,:,5,:)
     end select
     
     if (.not. ll_comparal) then
@@ -1771,32 +1673,9 @@ do jf = 1, nsend_i2a
     !20100305: test effect of ssuv on the tropical cooling biases (as per Harry Henden)
     case('uvel_ia');  vwork = ia_uvel !* ocn_ssuv_factor     !note ice u/v are also
     case('vvel_ia');  vwork = ia_vvel !* ocn_ssuv_factor     !     included here.
-    case('sstfz_ia'); vwork = ia_sstfz
-    case('foifr01'); vwork(:,:,:) = ia_foifr(:,:,1,:)
-    case('foifr02'); vwork(:,:,:) = ia_foifr(:,:,2,:)
-    case('foifr03'); vwork(:,:,:) = ia_foifr(:,:,3,:)
-    case('foifr04'); vwork(:,:,:) = ia_foifr(:,:,4,:)
-    case('foifr05'); vwork(:,:,:) = ia_foifr(:,:,5,:)
-    case('itopt01'); vwork(:,:,:) = ia_itopt(:,:,1,:)
-    case('itopt02'); vwork(:,:,:) = ia_itopt(:,:,2,:)
-    case('itopt03'); vwork(:,:,:) = ia_itopt(:,:,3,:)
-    case('itopt04'); vwork(:,:,:) = ia_itopt(:,:,4,:)
-    case('itopt05'); vwork(:,:,:) = ia_itopt(:,:,5,:)
-    case('itopk01'); vwork(:,:,:) = ia_itopk(:,:,1,:)
-    case('itopk02'); vwork(:,:,:) = ia_itopk(:,:,2,:)
-    case('itopk03'); vwork(:,:,:) = ia_itopk(:,:,3,:)
-    case('itopk04'); vwork(:,:,:) = ia_itopk(:,:,4,:)
-    case('itopk05'); vwork(:,:,:) = ia_itopk(:,:,5,:)
-    case('pndfn01'); vwork(:,:,:) = ia_pndfn(:,:,1,:)
-    case('pndfn02'); vwork(:,:,:) = ia_pndfn(:,:,2,:)
-    case('pndfn03'); vwork(:,:,:) = ia_pndfn(:,:,3,:)
-    case('pndfn04'); vwork(:,:,:) = ia_pndfn(:,:,4,:)
-    case('pndfn05'); vwork(:,:,:) = ia_pndfn(:,:,5,:)
-    case('pndtn01'); vwork(:,:,:) = ia_pndtn(:,:,1,:)
-    case('pndtn02'); vwork(:,:,:) = ia_pndtn(:,:,2,:)
-    case('pndtn03'); vwork(:,:,:) = ia_pndtn(:,:,3,:)
-    case('pndtn04'); vwork(:,:,:) = ia_pndtn(:,:,4,:)
-    case('pndtn05'); vwork(:,:,:) = ia_pndtn(:,:,5,:)
+    !        
+    !case('sstfz_ia'); vwork = ia_sstfz
+    !
     end select
 
 !    if (.not. ll_comparal) then

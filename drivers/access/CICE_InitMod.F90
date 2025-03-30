@@ -15,13 +15,11 @@
 
       use ice_kinds_mod
 
-!ars599: 11042014: remove details of forcing handler, interface, arrays setup, and gather scatter
 #ifdef AusCOM
       use cpl_parameters
       use cpl_forcing_handler
       use cpl_interface
-!ars599: 27032014: defind my_task
-      use ice_communicate, only: my_task, master_task
+      use ice_communicate, only: my_task
 #endif
 
       implicit none
@@ -29,9 +27,7 @@
       public :: CICE_Initialize, cice_init
       save
 
-#ifdef AusCOM
       integer :: nrec
-#endif
 
 !=======================================================================
 
@@ -68,7 +64,6 @@
       use ice_algae, only: get_forcing_bgc
       use ice_calendar, only: dt, dt_dyn, time, istep, istep1, write_ic, &
           init_calendar, calendar, idate, month
-!ars599: 27032014
       use ice_communicate, only: MPI_COMM_ICE
       use ice_communicate, only: init_communicate
       use ice_coupling, only: top_layer_Tandk_init
@@ -110,33 +105,40 @@
       MPI_COMM_ICE = il_commlocal
 !      call init_cpl     ! initialize message passing
       call get_cpl_timecontrol
-      if (my_task == master_task) then
-         write(il_out,*)' CICE (cice_init) 1    jobnum = ',jobnum
-         write(il_out,*)' CICE (cice_init) 1   inidate = ',inidate
-         write(il_out,*)' CICE (cice_init) 1 init_date = ',init_date
-         write(il_out,*)' CICE (cice_init) 1  runtime0 = ',runtime0
-         write(il_out,*)' CICE (cice_init) 1   runtime = ',runtime
-         write(il_out,*)' CICE (cice_init) 1     idate = ',my_task, idate
-         !write(il_out,*)' CICE (cice_init) 1   runtype = ',runtype
-      end if
+      write(il_out,*)' CICE (cice_init) 1    jobnum = ',jobnum
+      write(il_out,*)' CICE (cice_init) 1   inidate = ',inidate
+      write(il_out,*)' CICE (cice_init) 1 init_date = ',init_date
+      write(il_out,*)' CICE (cice_init) 1  runtime0 = ',runtime0
+      write(il_out,*)' CICE (cice_init) 1   runtime = ',runtime
+      write(il_out,*)' CICE (cice_init) 1     idate = ',my_task, idate
+      !write(il_out,*)' CICE (cice_init) 1   runtype = ',runtype
 #endif
       call init_fileunits       ! unit numbers
+      write(il_out,*)' CICE (cice_init) 2 called init_fileunits. '
 
+      write(il_out,*)' CICE (cice_init) 3 calling input_data...'
       call input_data           ! namelist variables
+      write(il_out,*)' CICE (cice_init) 3 called input_data. '
+
       if (trim(runid) == 'bering') call check_finished_file
       call init_zbgc            ! vertical biogeochemistry namelist
+      write(il_out,*)' CICE (cice_init) 4 called init_zbgc. '
 
       call init_domain_blocks   ! set up block decomposition
       call init_grid1           ! domain distribution
+      write(il_out,*)' CICE (cice_init) 5 called init_grid1. '
 #ifdef AusCOM
       call init_cpl     ! initialize message passing
+      write(il_out,*)' CICE (cice_init) 6 called init_cpl. '
 #endif
       call init_ice_timers      ! initialize all timers
       call ice_timer_start(timer_total)   ! start timing entire run
       call init_grid2           ! grid variables
+      write(il_out,*)' CICE (cice_init) 7 called init_grid2. '
 
       call init_calendar        ! initialize some calendar stuff
       call init_hist (dt)       ! initialize output history file
+      write(il_out,*)' CICE (cice_init) 8 called init_hist. '
 
       if (kdyn == 2) then
          call init_eap (dt_dyn) ! define eap dynamics parameters, variables
@@ -145,15 +147,16 @@
       endif
 
       call init_coupler_flux    ! initialize fluxes exchanged with coupler
+      write(il_out,*)' CICE (cice_init) 9 called init_coupler_flux. '
+
 #ifdef popcice
       call sst_sss              ! POP data for CICE initialization
 #endif 
       call init_thermo_vertical ! initialize vertical thermodynamics
       call init_itd(calc_Tsfc, heat_capacity)! initialize ice thickness distribution
-      call calendar(time)       ! determine the initial date
+      call calendar(time)       ! determine the initial date 
+      write(il_out,*)' CICE (cice_init) 10 called calendar. '
 
-!ars599: 11042014: remove most of the lines based on cice4.1_fm
-!	however try to keep idate_save
 #ifdef AusCOM
       idate_save = idate  !save for late re-set in case 'restart' is used for jobnum=1
                           !and mess up the calendar idate for this exp...!
@@ -168,7 +171,6 @@
 #endif
       call init_state           ! initialize the ice state
       call init_transport       ! initialize horizontal transport
-!ars599: 08052014 remove markout HaloRestore_init
       call ice_HaloRestore_init ! restored boundary conditions
 !ars599: 11042014: note:
 !	the "if (runtype == 'continue') then ! start from core restart file"
@@ -176,14 +178,14 @@
 !	tracer part
 !	however transport and Halorestore might keep in OM but not in CM??
 
+      write(il_out,*)' CICE (cice_init) 11 calling init_restart ...'
       call init_restart         ! initialize restart variables
+      write(il_out,*)' CICE (cice_init) 11 init_restart called!'
 
 #ifdef AusCOM
-      if (my_task == master_task) then
-         write(il_out,*) 'CICE (cice_init) 2      time = ', my_task, time
-         write(il_out,*) 'CICE (cice_init) 2  runtime0 = ', my_task, runtime0
-         !write(il_out,*) 'CICE (cice_init) 2     idate = ', my_task, idate
-      end if
+      write(il_out,*) 'CICE (cice_init) 2      time = ', my_task, time
+      write(il_out,*) 'CICE (cice_init) 2  runtime0 = ', my_task, runtime0
+      !write(il_out,*) 'CICE (cice_init) 2     idate = ', my_task, idate
  
       if (jobnum == 1 ) then
         time = 0.0            !NOTE, the first job must be set back to 0 and 
@@ -203,20 +205,16 @@
       if (trim(runtype) == 'continue' .or. restart) &
          call init_shortwave    ! initialize radiative transfer
 
-         istep  = istep  + 1    ! update time step counters
-         istep1 = istep1 + 1
-         time = time + dt       ! determine the time and date
+      istep  = istep  + 1    ! update time step counters
+      istep1 = istep1 + 1
+      time = time + dt       ! determine the time and date
 #ifndef AusCOM
-         call calendar(time)    ! at the end of the first timestep
+      call calendar(time)    ! at the end of the first timestep
 #else
-!ars599: 26032014 original code
-!         call calendar(time)    ! at the end of the first timestep
       call calendar(time-runtime0)
-      if (my_task == master_task) then
-         write(il_out,*) 'CICE (cice_init) 3     time = ', my_task, time
-         write(il_out,*) 'CICE (cice_init) 3 runtime0 = ', my_task, runtime0
-         write(il_out,*) 'CICE (cice_init) 3    idate = ', my_task, idate
-      end if
+      write(il_out,*) 'CICE (cice_init) 3     time = ', my_task, time
+      write(il_out,*) 'CICE (cice_init) 3 runtime0 = ', my_task, runtime0
+      write(il_out,*) 'CICE (cice_init) 3    idate = ', my_task, idate
 #endif
 
    !--------------------------------------------------------------------
@@ -248,11 +246,6 @@
          call top_layer_Tandk_init      ! initialise top layer temperature and
                                         ! effective conductivity  
 
-!ars599: 11042014: ice_write_hist is no longer there now change to accum_hist
-!	so wrapup this line n use the new code
-!dhb599 20111128: this call is moved here from 'downstair', because it *re-initilaise*
-!     the o2i fileds read in from o2i.nc (e.g., sst=>-1.84 sss=>34.) !!!  
-!      call ice_write_hist(dt)   ! write initial conditions if write_ic = T
       if (write_ic) call accum_hist(dt) ! write initial conditions 
 
 #ifdef AusCOM
@@ -263,33 +256,32 @@
       ! for continue runs, need restart o2i forcing fields and time-averaged ice 
       ! variables ('mice')saved at the end of last run from ice models; 
       ! for initial run, pre-processed o2i (and maybe mice) fields are required.
-      call get_restart_o2i(trim(restartdir)//'/o2i.nc')
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      write(il_out,*)' calling get_restart_o2i at time_sec = ',0
+      if ( file_exist(trim(restartdir)//'/o2i.nc') ) then
+        call get_restart_o2i(trim(restartdir)//'/o2i.nc')
+      else
+        write(il_out,*)' file NOT found: ', trim(restartdir)//'/o2i.nc'
+      endif
       !if no lag for ice to atm coupling, then cice has to read restart file i2a.nc and 
       !put the data to atm. the call is not needed if there is lag for ice2atm coupling
-      !must call after get_restart_o2i(), by which the ocn_sst ect are read in and re-used by put_restart_i2a()  
+      !must call after get_restart_o2i(), by which the ocn_sst ect are read in and 
+      !re-used by put_restart_i2a()  
 !      call put_restart_i2a('i2a.nc', 0)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if ( file_exist(trim(restartdir)//'/mice.nc') ) then
         !for continue runs, mice data MUST be available.
         call get_restart_mice(trim(restartdir)//'/mice.nc')
       else
-        if (my_task == master_task) then
-          write(6,*)'* WARNING: No initial mice.nc data available here! *'
-          write(6,*)'* WARNING: ALL mice variables will be set to ZERO! *'
-          write(6,*)'* WARNING: This is allowed for the init run ONLY ! *' 
-        endif
+        write(6,*)'* WARNING: No initial mice.nc data available here! *'
+        write(6,*)'* WARNING: ALL mice variables will be set to ZERO! *'
+        write(6,*)'* WARNING: This is allowed for the init run ONLY ! *' 
       endif
-if (use_core_runoff) then
-      call get_core_runoff(trim(inputdir)//'/core_runoff_regrid.nc',&
-      'runoff',1)
-endif
+      if (use_core_runoff) then
+         call get_core_runoff(trim(inputdir)//'/core_runoff_regrid.nc',&
+                              'runoff',1)
+      endif
 
-      if (my_task == master_task) then
-        write(il_out,*)' calling ave_ocn_fields_4_i2a time_sec = ',0 !time_sec
-      endif
+      write(il_out,*)' calling ave_ocn_fields_4_i2a time_sec = ',0 !time_sec
       call time_average_ocn_fields_4_i2a  
       !accumulate/average ocn fields needed for IA coupling
 
@@ -299,20 +291,22 @@ endif
 #ifdef ACCESS
       !!! options for land ice discharged as iceberg melting around AA and Gnld
       !   0: "even" distribution as for u-ar676;
-      !   1: use AC2 data but GC3.1 iceberg climatological pattern, each month takes the 
-      !          total discharge as that diagnosed in u-ar676 (yrs2-101);
-      !   2: use GC3 iceberg climatological pattern, each month enhanced by ac2/gc3 annual ratio 
-      !          of land ice discharge to make sure the annual total discharge is same as case 1;
+      !================== for ESM1.5/1.6, "0" option is NOT used ===============!
+      !   1: use AC2 data but GC3.1 iceberg climatological pattern, each month takes
+      !          the total discharge as that diagnosed in u-ar676 (yrs2-101);
+      !   2: use GC3 iceberg climatological pattern, each month enhanced by ac2/gc3 
+      !          annual ratio of land ice discharge to make sure the annual total 
+      !          discharge is same as case 1;
       !   3: as case 1 but use annual mean    
       !   4: as case 2 but use annual mean
-      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have idential annual 
-      !!! discharge of land ice (as iceberg) into ocean. 
+      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have idential 
+      !!! annual discharge of land ice (as iceberg) into ocean. 
 
       if ( file_exist(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') ) then
-          call get_lice_discharge_masks_or_iceberg(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') 
+          call get_lice_discharge(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') 
       else
-          write(6,*)'* CICE stopped -- land ice discharge masks and iceberg datafile missing.*' 
-          call abort_ice ('ice: land ice discharge masks and iceberg datafile missing!')
+          write(6,*)'* CICE stopped -- iceberg datafile missing.*' 
+          call abort_ice ('ice: land ice discharge iceberg datafile missing!')
       endif
 #endif
 
@@ -353,12 +347,15 @@ endif
 
       if (trim(runtype) == 'continue') then 
          ! start from core restart file
+         write(il_out, *)'(init_restart) calling restartfile() ...'
          call restartfile()           ! given by pointer in ice_in
+         write(il_out, *)'(init_restart) called restartfile()!'
 !ars599: 11042014: markout call calendar
 !	according to dhb599 initmod at cice4.1_fm
          call calendar(time)          ! update time parameters
          if (kdyn == 2) call read_restart_eap ! EAP
       else if (restart) then          ! ice_ic = core restart file
+         write(il_out, *)'(init_restart) calling restartfile(ice_ic))'
          call restartfile (ice_ic)    !  or 'default' or 'none'
          !!! uncomment to create netcdf
          ! call restartfile_v4 (ice_ic)  ! CICE v4.1 binary restart file

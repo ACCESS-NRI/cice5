@@ -59,8 +59,7 @@
 
 #ifdef ACCESS 
       use ice_timers, only: ice_timer_start, &
-          ice_timer_stop, timer_couple, timer_step, &
-          timer_from_atm, timer_into_atm, timer_from_ocn, timer_into_ocn
+          ice_timer_stop, timer_couple, timer_step
       use ice_grid, only: t2ugrid_vector, u2tgrid_vector
       integer (kind=int_kind) :: time_sec, itap, icpl_ai, tmp_time
       integer (kind=int_kind) :: rtimestamp_ai, stimestamp_ai
@@ -92,38 +91,44 @@
 
         !receive a2i fields 
         rtimestamp_ai = time_sec
-        call ice_timer_start(timer_from_atm)  ! atm/ice coupling
+        !call ice_timer_start(timer_from_atm)  ! atm/ice coupling
         write(il_out,*)' calling from_atm at icpl_ai, time_sec = ', icpl_ai, time_sec
         !===========================
         call from_atm(rtimestamp_ai)
         !===========================
-        call ice_timer_stop(timer_from_atm)  ! atm/ice coupling
+        !call ice_timer_stop(timer_from_atm)  ! atm/ice coupling
 
         !"TTI" approach ice fluxes converted to GBM units 
-        call atm_icefluxes_back2GBM
+        !call atm_icefluxes_back2GBM  (CM2 requires)
 
-        do itap = 1, num_ice_ai   ! cice time loop 
+        write(il_out,*)'CICE_Run into itap loop --- '
+
+        do itap = 1, num_ice_ai ! cice time loop 
                                 ! Note I <==> O coupling happens at each time step
  
           stimestamp_io = time_sec
 
           !"combine" a2i fields and ice fields to get i2o fields 
+          write(il_out,*)' calling get_i2o_fields at icpl_ai, itap = ', icpl_ai, itap
           call get_i2o_fields
 
           !shift stresses from T onto U grid before sending into ocn
+          write(il_out,*)' calling t2ugrid_vector 1 at icpl_ai, itap = ', icpl_ai, itap
           call t2ugrid_vector(io_strsu)
+          write(il_out,*)' calling t2ugrid_vector 2 at icpl_ai, itap = ', icpl_ai, itap
           call t2ugrid_vector(io_strsv)
 
           write(il_out,'(a,3i10)') &
                 ' calling into_ocn at icpl_ai, itap, time_sec = ', icpl_ai, itap, time_sec
-          call ice_timer_start(timer_into_ocn)  ! atm/ocn coupling
+          !call ice_timer_start(timer_into_ocn)  ! atm/ocn coupling
           !===========================
           !call check_iceberg_fields('chk_iceberg_i2o.nc')
           call into_ocn(stimestamp_io)
           !===========================
-          call ice_timer_stop(timer_into_ocn)  ! atm/ocn coupling
+          !call ice_timer_stop(timer_into_ocn)  ! atm/ocn coupling
 
           !set boundary condition (forcing) 
+          write(il_out,*)' calling get_sbc_ice at icpl_ai, itap = ', icpl_ai, itap
           call get_sbc_ice
 
           !Debug: 20170825 -- check sbc_ice variables from "get_sbc_ice"
@@ -137,6 +142,7 @@
           !endif
  
           !*** ice "update" ***!
+          write(il_out,*)' calling ice_step at icpl_ai, itap = ', icpl_ai, itap
           call ice_step
 
           !Debug: 20170827 -- check updated ice varables after ice_step
@@ -148,7 +154,7 @@
 
           tmp_time = time_sec + dt
           if ( mod(tmp_time, dt_cpl_ai) == 0  ) then  !this happens at itap = num_ice_ai 
-            call ice_timer_start(timer_into_atm)  
+            !call ice_timer_start(timer_into_atm)  
             !i2a fields ready to be sent for next IA cpl int in atm.
             call get_i2a_fields
 
@@ -163,7 +169,7 @@
             !set time averaged ice and ocn variables back to 0
             call initialize_mocn_fields_4_i2a
             call initialize_mice_fields_4_i2a  
-            call ice_timer_stop(timer_into_atm)  ! atm/ocn coupling
+            !call ice_timer_stop(timer_into_atm)  ! atm/ocn coupling
           endif 
 
           istep  = istep  + 1    ! update time step counters
@@ -183,24 +189,17 @@
             !get o2i fields for next time step ice update 
             write(il_out,'(a,3i10)') &
                 ' calling from_ocn at icpl_ai, itap, time_sec = ',icpl_ai, itap, time_sec
-            call ice_timer_start(timer_from_ocn)
+            !call ice_timer_start(timer_from_ocn)
             !===========================
             call from_ocn(rtimestamp_io)
             !===========================
-            call ice_timer_stop(timer_from_ocn)
+            !call ice_timer_stop(timer_from_ocn)
             !accumulate/average ocn fields needed for IA coupling        
             call time_average_ocn_fields_4_i2a  
           end if
 
         end do      !itap
 
-        !reset land ice amount lice_nth and lice_sth for "previous" a2i step:
-
-        !debug: check landice fields----
-        !call check_landice_fields_1('chk_lice_fields_ai.nc')
-
-        lice_nth = um_icenth
-        lice_sth = um_icesth
         newstep_ai = .true.
 
       END DO      !icpl_ai
@@ -307,6 +306,7 @@
       ! initialize diagnostics
       !-----------------------------------------------------------------
 
+         write(il_out,*) 'XXX (ice_step) initialzing diagnostics ...'
          call ice_timer_start(timer_diags)  ! diagnostics/history
          call init_mass_diags   ! diagnostics per timestep
          call init_history_therm
@@ -328,14 +328,17 @@
       !-----------------------------------------------------------------
       ! thermodynamics
       !-----------------------------------------------------------------
-            
+            write(il_out,*) 'XXX (ice_step) calling step_therm1 ...'
             call step_therm1     (dt, iblk) ! vertical thermodynamics
+            write(il_out,*) 'XXX (ice_step) calling biogeochemistry ...'
             call biogeochemistry (dt, iblk) ! biogeochemistry
+            write(il_out,*) 'XXX (ice_step) calling step_therm2 ...'
             call step_therm2     (dt, iblk) ! ice thickness distribution thermo
 
          enddo ! iblk
          !$OMP END PARALLEL DO
 
+         write(il_out,*) 'XXX (ice_step) calling post_thermo ...'
          call post_thermo (dt)             ! finalize thermo update
 
          call ice_timer_stop(timer_thermo) ! thermodynamics

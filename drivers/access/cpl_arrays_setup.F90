@@ -27,11 +27,6 @@ module cpl_arrays_setup
 ! (24) surface pressure					um_press
 ! (25) co2                                              um_co2
 ! (26) wind speed                                       um_wnd
-! --------- add new fields for ACCESS2 --------
-! (27) north (greenland) ice amount                     um_icenth
-! (28) south (antarctic) ice amount                     um_icesth
-! (29 - 33) ice surface/skin temperature                um_tsfice(,,1:5)
-! (34 - 38) ice surface evaporation (sublimation)       um_iceevp(,,1:5)
 !
 ! B> ocn (MOM4) ==> ice (CICE) [* at T or U cell center *]
 !                          
@@ -55,13 +50,6 @@ module cpl_arrays_setup
 ! (18) ice/ocn velocity 'meridional'			ia_vvel
 ! (19) co2                                              ia_co2
 ! (20) co2 flux                                         ia_co2fx
-! --------- add new fields for ACCESS2 --------
-! (21) ocean surface freezing temperature               ia_sstfz
-! (22 - 26 ) first order ice concentration              ia_foifr(,,1:5)
-! (27 - 31 ) ice top layer temperature                  ia_itopt(,,1:5)
-! (32 - 36 ) ice top layer effective conductivity       ia_itopk(,,1:5)
-! (37 - 41 ) ice melt pond concentration                ia_pndfn(,,1:5)
-! (42 - 46 ) ice melt pond thickness                    ia_pndtn(,,1:5)
 !
 ! D> ice (CICE) ==> ocn (MOM4) [* at T or U cell center *]
 !             
@@ -99,7 +87,7 @@ module cpl_arrays_setup
 !
 ! Therefore, currently we have 
 ! 
-! *for ACCESS1.x, 31 in, 33 out => thus jpfldout=33, jpfldin=31 in cpl_parameters.
+! *for ACCESS-ESM1.x, (26 + 9) in, (20 + 19) out => thus jpfldout=39, jpfldin=35 in cpl_parameters.
 ! for ACCESS-CM2, 47 in, 63 out => thus jpfldout=63, jpfldin=47 in cpl_parameters. 
 ! now (20171024)  47 in, 65 out                  65          47
 !----------------------------------------------------------------------------------
@@ -116,13 +104,10 @@ implicit none
 real(kind=dbl_kind), dimension(:,:,:), allocatable :: &   !from atm (UM)
     um_thflx, um_pswflx, um_runoff, um_wme, um_snow, um_rain, &
     um_evap,  um_lhflx,  um_taux,   um_tauy, &
-    um_swflx, um_lwflx,  um_shflx,  um_press,um_co2, um_wnd, &
-    um_icenth, um_icesth, &
-    !!20171024 added for calculation of land ice increment
-    lice_nth, lice_sth, msk_nth, msk_sth, amsk_nth, amsk_sth
+    um_swflx, um_lwflx,  um_shflx,  um_press,um_co2, um_wnd
 
 real(kind=dbl_kind), dimension(:,:,:,:), allocatable :: &   
-    um_tmlt, um_bmlt, um_tsfice, um_iceevp
+    um_tmlt, um_bmlt
 
 ! CORE runoff remapped onto the AusCOM grid (optional)
 real(kind=dbl_kind), dimension(:,:,:), allocatable :: & 
@@ -140,10 +125,9 @@ real(kind=dbl_kind), dimension(:,:,:), allocatable :: vwork
 ! Fields out:
 !============
 real(kind=dbl_kind),dimension(:,:,:), allocatable :: &     !to atm (timeaveraged)
-    ia_sst, ia_uvel, ia_vvel, ia_co2, ia_co2fx, ia_sstfz
+    ia_sst, ia_uvel, ia_vvel, ia_co2, ia_co2fx !!!, ia_sstfz
 real(kind=dbl_kind), dimension(:,:,:,:), allocatable :: &
-    ia_aicen, ia_snown, ia_thikn, &
-    ia_foifr, ia_itopt, ia_itopk, ia_pndfn, ia_pndtn
+    ia_aicen, ia_snown, ia_thikn
 
 real(kind=dbl_kind),dimension(:,:,:), allocatable :: &     !to ocn (time averaged)
     io_strsu, io_strsv, io_rain,  io_snow,  io_stflx, io_htflx, io_swflx, &
@@ -158,8 +142,7 @@ real(kind=dbl_kind),dimension(:,:,:), allocatable :: &     !to ocn (time average
 real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
     maiu, muvel, mvvel
 real(kind=dbl_kind), dimension(:,:,:,:), allocatable :: &
-    maicen, msnown, mthikn, &
-    mfoifr, mitopt, mitopk, mpndfn, mpndtn
+    maicen, msnown, mthikn
 real(kind=dbl_kind), dimension(:,:,:,:), allocatable :: &       !BX: just in case......
     maicen_saved
 
@@ -172,7 +155,7 @@ real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
 
 ! 3. ocn fields averaged over IA cpl interval:
 real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
-    msst, mssu, mssv, mco2, mco2fx, msstfz
+    msst, mssu, mssv, mco2, mco2fx !!!, msstfz
 
 
 ! other stuff 
@@ -182,6 +165,17 @@ real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
 
 real(kind=dbl_kind),dimension(:,:,:,:), allocatable :: &
     icebergfw   !land ice discharge into ocean as monthly iceberg melt waterflux ==>io_licefw
+real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
+    gicebergfw     !monthly iceberg flux on global domain
+!202407-11: note gwet added here is landsea mask for global domain (1 = wet, 0 = dry), 
+!passed from kmt.nc which is read in ice_grid. It is used to axe off "extra" runoff for 
+!global/domain "effective" runoff amount calculation, required by the "iceberg scheme"!    
+real(kind=dbl_kind),dimension(:,:), allocatable :: &
+    gtarea,     &  !tarea on global domain
+    grunoff,    &  !runoff on global domain
+    gwet
+real(kind=dbl_kind),dimension(:), allocatable :: &
+    ticeberg_s, ticeberg_n  !monthly land ice off Anrarctica and Greenland (NH)
 
 !===========================================================================
 end module cpl_arrays_setup
