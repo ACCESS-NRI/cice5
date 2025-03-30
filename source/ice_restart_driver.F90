@@ -24,7 +24,7 @@
           runid, runtype, use_restart_time, restart_format, lcdf64, lenstr
       use ice_restart
 #ifdef AusCOM
-      use cpl_parameters, only: runtime0
+      use cpl_parameters, only: runtime0, il_out
 #endif
 
       implicit none
@@ -244,7 +244,9 @@
 
       character (len=3) :: nchar
 
+      write(il_out,*) 'XXX (restartfile) calling init_restart_read...'
       call init_restart_read(ice_ic)
+      write(il_out,*) 'XXX (restartfile) called init_restart_read!'
 
       diag = .true.
 
@@ -256,18 +258,23 @@
       if (my_task == master_task) &
            write(nu_diag,*) ' min/max area, vol ice, vol snow, Tsfc'
 
+      write(il_out,*) 'XXX (restartfile) reading aicen ...'
       call read_restart_field(nu_restart,0,aicen,'ruf8', &
               'aicen',ncat,diag,field_loc_center, field_type_scalar)
+      write(il_out,*) 'XXX (restartfile) reading vicen ...'
       call read_restart_field(nu_restart,0,vicen,'ruf8', &
               'vicen',ncat,diag,field_loc_center, field_type_scalar)
+      write(il_out,*) 'XXX (restartfile) reading vsnon ...'
       call read_restart_field(nu_restart,0,vsnon,'ruf8', &
               'vsnon',ncat,diag,field_loc_center, field_type_scalar)
+      write(il_out,*) 'XXX (restartfile) reading Tsfcn ...'
       call read_restart_field(nu_restart,0,trcrn(:,:,nt_Tsfc,:,:),'ruf8', &
               'Tsfcn',ncat,diag,field_loc_center, field_type_scalar)
 
       if (my_task == master_task) &
          write(nu_diag,*) 'min/max sice for each layer'
       do k=1,nilyr
+         write(il_out,*) 'XXX (restartfile) reading sice k= ',k
          write(nchar,'(i3.3)') k
          call read_restart_field(nu_restart,0,trcrn(:,:,nt_sice+k-1,:,:),'ruf8', &
               'sice'//trim(nchar),ncat,diag,field_loc_center,field_type_scalar)
@@ -276,6 +283,7 @@
       if (my_task == master_task) &
          write(nu_diag,*) 'min/max qice for each layer'
       do k=1,nilyr
+         write(il_out,*) 'XXX (restartfile) reading qice k= ',k
          write(nchar,'(i3.3)') k
          call read_restart_field(nu_restart,0,trcrn(:,:,nt_qice+k-1,:,:),'ruf8', &
               'qice'//trim(nchar),ncat,diag,field_loc_center,field_type_scalar)
@@ -284,6 +292,7 @@
       if (my_task == master_task) &
          write(nu_diag,*) 'min/max qsno for each layer'
       do k=1,nslyr
+         write(il_out,*) 'XXX (restartfile) reading qsno k= ',k
          write(nchar,'(i3.3)') k
          call read_restart_field(nu_restart,0,trcrn(:,:,nt_qsno+k-1,:,:),'ruf8', &
               'qsno'//trim(nchar),ncat,diag,field_loc_center,field_type_scalar)
@@ -295,8 +304,10 @@
       if (my_task == master_task) &
            write(nu_diag,*) 'min/max velocity components'
 
+      write(il_out,*) 'XXX (restartfile) reading uvel... '
       call read_restart_field(nu_restart,0,uvel,'ruf8', &
            'uvel',1,diag,field_loc_NEcorner, field_type_vector)
+      write(il_out,*) 'XXX (restartfile) reading vvel... '
       call read_restart_field(nu_restart,0,vvel,'ruf8', &
            'vvel',1,diag,field_loc_NEcorner, field_type_vector)
 
@@ -311,14 +322,19 @@
       call read_restart_field(nu_restart,0,coszen,'ruf8', &
            'coszen',1,diag, field_loc_center, field_type_scalar)
 #endif
+      write(il_out,*) 'XXX (restartfile) reading scale_factor... '
       call read_restart_field(nu_restart,0,scale_factor,'ruf8', &
            'scale_factor',1,diag, field_loc_center, field_type_scalar)
+      write(il_out,*) 'XXX (restartfile) reading swvdr... '
       call read_restart_field(nu_restart,0,swvdr,'ruf8', &
            'swvdr',1,diag,field_loc_center, field_type_scalar)
+      write(il_out,*) 'XXX (restartfile) reading swvdf... '
       call read_restart_field(nu_restart,0,swvdf,'ruf8', &
            'swvdf',1,diag,field_loc_center, field_type_scalar)
+      write(il_out,*) 'XXX (restartfile) reading swidr... '
       call read_restart_field(nu_restart,0,swidr,'ruf8', &
            'swidr',1,diag,field_loc_center, field_type_scalar)
+      write(il_out,*) 'XXX (restartfile) reading swvdf... '
       call read_restart_field(nu_restart,0,swidf,'ruf8', &
            'swidf',1,diag,field_loc_center, field_type_scalar)
 
@@ -328,8 +344,10 @@
       if (my_task == master_task) &
            write(nu_diag,*) 'min/max ocean stress components'
 
+      write(il_out,*) 'XXX (restartfile) reading strocnxT... '
       call read_restart_field(nu_restart,0,strocnxT,'ruf8', &
            'strocnxT',1,diag,field_loc_center, field_type_vector)
+      write(il_out,*) 'XXX (restartfile) reading strocnyT... '
       call read_restart_field(nu_restart,0,strocnyT,'ruf8', &
            'strocnyT',1,diag,field_loc_center, field_type_vector)
 
@@ -341,31 +359,42 @@
       if (my_task == master_task) write(nu_diag,*) &
            'internal stress components'
       
+      write(il_out,*) 'XXX (restartfile) reading stressp_1... '
       call read_restart_field(nu_restart,0,stressp_1,'ruf8', &
            'stressp_1',1,diag,field_loc_center,field_type_scalar) ! stressp_1
+      write(il_out,*) 'XXX (restartfile) reading stressp_3... '
       call read_restart_field(nu_restart,0,stressp_3,'ruf8', &
            'stressp_3',1,diag,field_loc_center,field_type_scalar) ! stressp_3
+      write(il_out,*) 'XXX (restartfile) reading stressp_2... '
       call read_restart_field(nu_restart,0,stressp_2,'ruf8', &
            'stressp_2',1,diag,field_loc_center,field_type_scalar) ! stressp_2
+      write(il_out,*) 'XXX (restartfile) reading stressp_4... '
       call read_restart_field(nu_restart,0,stressp_4,'ruf8', &
            'stressp_4',1,diag,field_loc_center,field_type_scalar) ! stressp_4
 
+      write(il_out,*) 'XXX (restartfile) reading stressm_1... '
       call read_restart_field(nu_restart,0,stressm_1,'ruf8', &
            'stressm_1',1,diag,field_loc_center,field_type_scalar) ! stressm_1
+      write(il_out,*) 'XXX (restartfile) reading stressm_3... '
       call read_restart_field(nu_restart,0,stressm_3,'ruf8', &
            'stressm_3',1,diag,field_loc_center,field_type_scalar) ! stressm_3
+      write(il_out,*) 'XXX (restartfile) reading stressm_2... '
       call read_restart_field(nu_restart,0,stressm_2,'ruf8', &
            'stressm_2',1,diag,field_loc_center,field_type_scalar) ! stressm_2
+      write(il_out,*) 'XXX (restartfile) reading stressm_4... '
       call read_restart_field(nu_restart,0,stressm_4,'ruf8', &
            'stressm_4',1,diag,field_loc_center,field_type_scalar) ! stressm_4
 
+      write(il_out,*) 'XXX (restartfile) reading stress12_1... '
       call read_restart_field(nu_restart,0,stress12_1,'ruf8', &
            'stress12_1',1,diag,field_loc_center,field_type_scalar) ! stress12_1
+      write(il_out,*) 'XXX (restartfile) reading stress12_3... '
       call read_restart_field(nu_restart,0,stress12_3,'ruf8', &
-           'stress12_3',1,diag,field_loc_center,field_type_scalar) ! stress12_1
-
+           'stress12_3',1,diag,field_loc_center,field_type_scalar) ! stress12_3
+      write(il_out,*) 'XXX (restartfile) reading stress12_2... '
       call read_restart_field(nu_restart,0,stress12_2,'ruf8', &
            'stress12_2',1,diag,field_loc_center,field_type_scalar) ! stress12_2
+      write(il_out,*) 'XXX (restartfile) reading stress12_4... '
       call read_restart_field(nu_restart,0,stress12_4,'ruf8', &
            'stress12_4',1,diag,field_loc_center,field_type_scalar) ! stress12_4
 
@@ -404,6 +433,7 @@
       if (my_task == master_task) &
            write(nu_diag,*) 'ice mask for dynamics'
 
+      write(il_out,*) 'XXX (restartfile) reading iceumask... '
       call read_restart_field(nu_restart,0,work1,'ruf8', &
            'iceumask',1,diag,field_loc_center, field_type_scalar)
 
@@ -424,8 +454,10 @@
          if (my_task == master_task) &
               write(nu_diag,*) 'min/max sst, frzmlt'
 
+         write(il_out,*) 'XXX (restartfile) reading sst... '
          call read_restart_field(nu_restart,0,sst,'ruf8', &
               'sst',1,diag,field_loc_center, field_type_scalar)
+         write(il_out,*) 'XXX (restartfile) reading frzmlt... '
          call read_restart_field(nu_restart,0,frzmlt,'ruf8', &
               'frzmlt',1,diag,field_loc_center, field_type_scalar)
       endif
@@ -484,6 +516,7 @@
       !-----------------------------------------------------------------
 
       !$OMP PARALLEL DO PRIVATE(iblk)
+      write(il_out,*)'XXX (restartfile) calling aggregate ... ', nblocks
       do iblk = 1, nblocks
 
          call aggregate (nx_block, ny_block, &
@@ -585,10 +618,21 @@
          write(nu_diag,*) 'Read ',pointer_file(1:lenstr(pointer_file))
       endif
 
+      write(il_out,*)'XXX openning restart dump ',trim(filename)
+
+      if (my_task == master_task) then
+         write(nu_diag,*) 'XXX: openning restart dump ',trim(filename)
+      endif
+
       call ice_open(nu_restart,filename,0)
 
-      if (my_task == master_task) &
+      write(il_out,*)'XXX restart dump opened! ',trim(filename)
+
+      if (my_task == master_task) then
          write(nu_diag,*) 'Using restart dump=', trim(filename)
+         write(nu_diag,*) 'XXX, it is opened!' 
+         write(nu_diag,*) 'XXX use_restart_time = ', use_restart_time
+      endif
 
       if (use_restart_time) then
 
@@ -597,9 +641,9 @@
             write(nu_diag,*) 'Restart read at istep=',istep0,time,time_forc
          endif
 #ifndef AusCOM
-      call calendar(time)
+         call calendar(time)
 #else
-      call calendar(time-runtime0)
+         call calendar(time-runtime0)
 #endif
          call broadcast_scalar(istep0,master_task)
          istep1 = istep0
@@ -608,10 +652,12 @@
          call calendar(time)
 
       else
-
-         if (my_task == master_task) &
+         if (my_task == master_task) then
+            write(nu_diag,*) 'reading iignore,rignore,rignore...'      
             read (nu_restart) iignore,rignore,rignore
-
+            write(nu_diag,*) 'iignore,rignore,rignore = ', &
+                              iignore,rignore,rignore
+         endif
       endif
 
       diag = .true.     ! write min/max diagnostics for field
@@ -621,6 +667,8 @@
       ! Tsfc is the only tracer read in this file.  All other
       ! tracers are in their own dump/restart files.
       !-----------------------------------------------------------------
+      if (my_task == master_task) &
+         write(nu_diag,*) 'into loop n=1,ncat ...'
       do n=1,ncat
          if (my_task == master_task) &
               write(nu_diag,*) 'cat ',n, &
