@@ -270,6 +270,8 @@
       istop = 0
       jstop = 0
 
+      enum = c0
+
       do j=1, ny_block
       do i=1, nx_block
       
