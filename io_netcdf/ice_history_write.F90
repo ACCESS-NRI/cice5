@@ -203,7 +203,7 @@
            if (status /= nf90_noerr) call abort_ice( &
                          'ice Error: time calendar')
         elseif (use_leap_years) then
-           status = nf90_put_att(ncid,varid,'calendar','Gregorian')
+           status = nf90_put_att(ncid,varid,'calendar','proleptic_gregorian')
            if (status /= nf90_noerr) call abort_ice( &
                          'ice Error: time calendar')
         else
