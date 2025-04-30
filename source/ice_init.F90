@@ -439,9 +439,6 @@
       endif
       call release_fileunit(nu_nml)
 
-      write(nu_diag,*)'XXX (input_data), ktherm = ', ktherm
-      write(il_out, *)'XXX (input_data), ktherm = ', ktherm
-  
       !-----------------------------------------------------------------
       ! set up diagnostics output and resolve conflicts
       !-----------------------------------------------------------------

@@ -1153,6 +1153,12 @@
          endif
 #endif
 
+         if (status /= nf90_noerr) then
+            call abort_ice ( & 
+               'ice_read_nc_xy: Cannot read variable '//trim(varname)//&
+               ' - '//nf90_strerror(status) )
+         endif
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------
@@ -1330,6 +1336,12 @@
                count=(/nx,ny,ncat,1/) )
          endif
 #endif
+
+      if (status /= nf90_noerr) then
+         call abort_ice ( & 
+            'ice_read_nc_xyz: Cannot read variable '//trim(varname)//&
+            ' - '//nf90_strerror(status) )
+      endif
 
       endif                     ! my_task = master_task
 
