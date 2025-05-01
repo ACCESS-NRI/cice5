@@ -653,6 +653,7 @@
   allocate (um_wnd(nx_block,ny_block,max_blocks)); um_wnd(:,:,:) = 0
   !
   allocate ( core_runoff(nx_block,ny_block,max_blocks));  core_runoff(:,:,:) = 0.
+  !
 
   ! from ocn:
   allocate (ocn_sst(nx_block,ny_block,max_blocks)); ocn_sst(:,:,:) = 0
@@ -666,7 +667,7 @@
   allocate (ocn_co2fx(nx_block,ny_block,max_blocks)); ocn_co2fx(:,:,:) = 0
 
   ! fields out: (local domain)
-  
+  !
   ! to atm:
   allocate (ia_sst(nx_block,ny_block,max_blocks));  ia_sst(:,:,:) = 0
   allocate (ia_uvel(nx_block,ny_block,max_blocks)); ia_uvel(:,:,:) = 0
@@ -722,10 +723,9 @@
   allocate (maicen(nx_block,ny_block,ncat,max_blocks)); maicen(:,:,:,:) = 0
   allocate (msnown(nx_block,ny_block,ncat,max_blocks)); msnown(:,:,:,:) = 0
   allocate (mthikn(nx_block,ny_block,ncat,max_blocks)); mthikn(:,:,:,:) = 0
-  !BX:
+!BX:
   allocate (maicen_saved(nx_block,ny_block,ncat,max_blocks)); maicen_saved(:,:,:,:) = 0
-
-  !202410: variables associated with iceberg flux:
+!
   allocate (icebergfw(nx_block,ny_block,12,max_blocks)); icebergfw(:,:,:,:) = 0
   !global domain runoff for runoff "deduction"
   allocate (grunoff(nx_global,ny_global)); grunoff(:,:) = 0
@@ -1016,11 +1016,11 @@
     case ('ssly_i'); 
        ocn_ssly(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d
     case ('pfmice_i');
-       ocn_pfmice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost, 1) = vwork2d
+       ocn_pfmice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost, 1) =vwork2d
     case ('co2_oi'); 
        ocn_co2(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d
     case ('co2fx_oi');
-       ocn_co2fx(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost, 1) = vwork2d
+       ocn_co2fx(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost, 1) =vwork2d
     end select
 
   enddo
@@ -1275,9 +1275,7 @@
     !20100305: test effect of ssuv on the tropical cooling biases (as per Harry Henden)
     case('uvel_ia');  vwork = ia_uvel * ocn_ssuv_factor     !note ice u/v are also 
     case('vvel_ia');  vwork = ia_vvel * ocn_ssuv_factor     !     included here.
-    !        
     !case('sstfz_ia'); vwork = ia_sstfz
-    !
     case('co2_i2');  vwork = ia_co2
     case('co2fx_i2');  vwork = ia_co2fx
     end select
@@ -1673,9 +1671,7 @@ do jf = 1, nsend_i2a
     !20100305: test effect of ssuv on the tropical cooling biases (as per Harry Henden)
     case('uvel_ia');  vwork = ia_uvel !* ocn_ssuv_factor     !note ice u/v are also
     case('vvel_ia');  vwork = ia_vvel !* ocn_ssuv_factor     !     included here.
-    !        
     !case('sstfz_ia'); vwork = ia_sstfz
-    !
     end select
 
 !    if (.not. ll_comparal) then

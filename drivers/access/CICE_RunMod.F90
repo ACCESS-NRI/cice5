@@ -59,7 +59,8 @@
 
 #ifdef ACCESS 
       use ice_timers, only: ice_timer_start, &
-          ice_timer_stop, timer_couple, timer_step
+          ice_timer_stop, timer_couple, timer_step, &
+          timer_from_atm, timer_into_atm, timer_from_ocn, timer_into_ocn
       use ice_grid, only: t2ugrid_vector, u2tgrid_vector
       integer (kind=int_kind) :: time_sec, itap, icpl_ai, tmp_time
       integer (kind=int_kind) :: rtimestamp_ai, stimestamp_ai
@@ -101,7 +102,6 @@
         !"TTI" approach ice fluxes converted to GBM units 
         !call atm_icefluxes_back2GBM  (CM2 requires)
 
-        write(il_out,*)'CICE_Run into itap loop --- '
 
         do itap = 1, num_ice_ai ! cice time loop 
                                 ! Note I <==> O coupling happens at each time step
@@ -306,7 +306,6 @@
       ! initialize diagnostics
       !-----------------------------------------------------------------
 
-         write(il_out,*) 'XXX (ice_step) initialzing diagnostics ...'
          call ice_timer_start(timer_diags)  ! diagnostics/history
          call init_mass_diags   ! diagnostics per timestep
          call init_history_therm
@@ -328,17 +327,14 @@
       !-----------------------------------------------------------------
       ! thermodynamics
       !-----------------------------------------------------------------
-            write(il_out,*) 'XXX (ice_step) calling step_therm1 ...'
+            
             call step_therm1     (dt, iblk) ! vertical thermodynamics
-            write(il_out,*) 'XXX (ice_step) calling biogeochemistry ...'
             call biogeochemistry (dt, iblk) ! biogeochemistry
-            write(il_out,*) 'XXX (ice_step) calling step_therm2 ...'
             call step_therm2     (dt, iblk) ! ice thickness distribution thermo
 
          enddo ! iblk
          !$OMP END PARALLEL DO
 
-         write(il_out,*) 'XXX (ice_step) calling post_thermo ...'
          call post_thermo (dt)             ! finalize thermo update
 
          call ice_timer_stop(timer_thermo) ! thermodynamics

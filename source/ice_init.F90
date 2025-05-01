@@ -385,20 +385,10 @@
       nml_filename  = 'ice_in'//trim(inst_suffix)
 #endif
 
-      write(il_out, *) 'CICE: starting input_data: nml_filename = ', nml_filename
-      !write(6, *) 'CICE: starting input_data: nml_filename = ', nml_filename
-
       call get_fileunit(nu_nml)
-
-      write(il_out, *) 'CICE input_data: called get_fileunit, nu_nml = ', nu_nml
-      !write(6, *) 'CICE input_data: called get_fileunit, nu_nml = ', nu_nml
 
       if (my_task == master_task) then
          open (nu_nml, file=trim(nml_filename), status='old',iostat=nml_error)
-         !write(il_out, *) 'CICE input_data: nml_file opened, nml_error = ', nml_error
-         !write(6, *) 'CICE input_data: nml_file opened, nml_error = ', nml_error
-
-
          if (nml_error /= 0) then
             nml_error = -1
          else
@@ -651,7 +641,7 @@
          'WARNING: For consistency, set tfrz_option = linear_salt'
          endif
       endif
-!---------      
+
       if (ktherm == 1 .and. trim(tfrz_option) /= 'linear_salt') then
          if (my_task == master_task) then
          write (nu_diag,*) &
@@ -1283,10 +1273,6 @@
       !-----------------------------------------------------------------
       ! Check number of layers in ice and snow.
       !-----------------------------------------------------------------
-
-      write(il_out,*) 'XXX (init_state) ktherm = ', ktherm
-      write(il_out,*) 'XXX (init_state) nslyr  = ', nslyr
-      write(il_out,*) 'XXX (init_state) heat_capacity = ', heat_capacity
 
       if (my_task == master_task) then
  

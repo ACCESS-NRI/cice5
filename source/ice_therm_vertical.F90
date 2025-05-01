@@ -2570,12 +2570,9 @@
 
          if (ferr > ferrmax) then
 
-!XXXXXX 20250214: for temporary test -- allowing BIG ferr ......
            if (ferr > 10.0 * ferrmax) then
-             !l_stop = .true.
-             !write(nu_diag,*) 'BBB: TOO BAD --- CICE is to stop!'
-             l_stop = .false.  
-             write(nu_diag,*) 'BBB: TOO BAD -- CICE should be stopped!' 
+             l_stop = .true.
+             write(nu_diag,*) 'BBB: TOO BAD --- CICE is to stop!' 
            else 
              write(nu_diag,*) 'BBB: WARNING -- too big flux error --'
            endif

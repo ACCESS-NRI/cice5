@@ -13,9 +13,6 @@
 
       use ice_constants
       use ice_kinds_mod
-
-      use cpl_parameters, only: il_out
-
       implicit none
       private
       save
@@ -543,8 +540,6 @@
             endif
 
             vsnon_init(:,:) = vsnon(:,:,n,iblk)
-
-          write(il_out,*) 'XXX (step_therm1) calling thermo_vertical...'
 
             call thermo_vertical(nx_block,           ny_block,            &
                                 dt,                  icells,              &

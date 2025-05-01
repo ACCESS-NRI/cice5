@@ -365,40 +365,22 @@ if ( file_exist(fname) ) then
   endif
 
   call ice_open_nc(fname, ncid_o2i)
-
-  if (my_task==0) then
-    write(il_out,*) '(get_restart_mice) reading in mice variables......'
-  endif
-    
   IF (.false.) THEN     !no use is 0-layer?
-  call ice_read_nc(ncid_o2i, 1, 'maicen1',   maicen_saved(:,:,1,:), dbug)
-  write(il_out,*) '(get_restart_mice) reading done with maicen1. '  
-  call ice_read_nc(ncid_o2i, 1, 'maicen2',   maicen_saved(:,:,2,:), dbug)
-  write(il_out,*) '(get_restart_mice) reading done with maicen2. '
-  call ice_read_nc(ncid_o2i, 1, 'maicen3',   maicen_saved(:,:,3,:), dbug)
-  write(il_out,*) '(get_restart_mice) reading done with maicen3. '
-  call ice_read_nc(ncid_o2i, 1, 'maicen4',   maicen_saved(:,:,4,:), dbug)
-  write(il_out,*) '(get_restart_mice) reading done with maicen4. '
-  call ice_read_nc(ncid_o2i, 1, 'maicen5',   maicen_saved(:,:,5,:), dbug)
-  write(il_out,*) '(get_restart_mice) reading done with maicen4. '
+    call ice_read_nc(ncid_o2i, 1, 'maicen1',   maicen_saved(:,:,1,:), dbug)
+    call ice_read_nc(ncid_o2i, 1, 'maicen2',   maicen_saved(:,:,2,:), dbug)
+    call ice_read_nc(ncid_o2i, 1, 'maicen3',   maicen_saved(:,:,3,:), dbug)
+    call ice_read_nc(ncid_o2i, 1, 'maicen4',   maicen_saved(:,:,4,:), dbug)
+    call ice_read_nc(ncid_o2i, 1, 'maicen5',   maicen_saved(:,:,5,:), dbug)
   ENDIF
 
   call ice_read_nc(ncid_o2i, 1, 'maice',     maice,     dbug)
-  write(il_out,*) '(get_restart_mice) reading done with maice. '
   call ice_read_nc(ncid_o2i, 1, 'mstrocnxT', mstrocnxT, dbug)
-  write(il_out,*) '(get_restart_mice) reading done with mstrocnxT. '
   call ice_read_nc(ncid_o2i, 1, 'mstrocnyT', mstrocnyT, dbug)
-  write(il_out,*) '(get_restart_mice) reading done with mstrocnyT. '
   call ice_read_nc(ncid_o2i, 1, 'mfresh',    mfresh,    dbug)
-  write(il_out,*) '(get_restart_mice) reading done with mfresh. '
   call ice_read_nc(ncid_o2i, 1, 'mfsalt',    mfsalt,    dbug)
-  write(il_out,*) '(get_restart_mice) reading done with mfsalt. '
   call ice_read_nc(ncid_o2i, 1, 'mfhocn',    mfhocn,    dbug)
-  write(il_out,*) '(get_restart_mice) reading done with mfhocn. '
   call ice_read_nc(ncid_o2i, 1, 'mfswthru',  mfswthru,  dbug)
-  write(il_out,*) '(get_restart_mice) reading done with mfswthru. '
   call ice_read_nc(ncid_o2i, 1, 'msicemass', msicemass, dbug)
-  write(il_out,*) '(get_restart_mice) reading done with msicemass. '
   write(il_out,*) '(get_restart_mice) ALL variables read in! '
 
   if (my_task == master_task) then
@@ -432,7 +414,6 @@ logical :: dbug = .true.
 call ice_open_nc(trim(fname), ncid_i2o)
 
 write(il_out,*) '(get_lice_discharge) opened datafile: ', trim(fname)
-write(il_out,*) '(get_lice_discharge) ncid_i2o= ', ncid_i2o
 
 if (iceberg == 0 .or. iceberg .gt. 4) then
   write(il_out,*) '(get_lice_discharge) in ESM onl support iceberg = 1,2,3,4) '
@@ -559,9 +540,9 @@ else
   !!!above call results in segmentation fault !?!!!
 
 endif
-
-if (my_task == master_task) call ice_close_nc(ncid_i2o)
-write(il_out,*) '(get_lice_discharge) reading completed!'
+if (my_task == master_task) then
+  call ice_close_nc(ncid_i2o)
+endif
 
 return
 
@@ -571,7 +552,7 @@ end subroutine get_lice_discharge
 subroutine get_iceberg_distribution(fname) !, mychoice)
 
 ! This routine is called at beginning of each job.
-! *** It's NOT used! 'get_lice_dischargee ' is used instead. ***
+! *** It's NOT used! 'get_lice_discharge ' is used instead. ***
 
 implicit none
 
@@ -669,7 +650,7 @@ if ( file_exist(fname) ) then
     case ('form_io');  io_form  = vwork
     case ('co2_i1');  io_co2  = vwork
     case ('wnd_i1');  io_wnd  = vwork
-    !2 more added 20171024:
+!2 more added 20171024:
     case ('lice_fw');  io_licefw = vwork
     case ('lice_ht');  io_liceht = vwork
     end select
@@ -730,7 +711,9 @@ do i = 1, nx_block
       flatn_f(i,j,1,k) = um_lhflx(i,j,k) 
     else
       do cat = 1, ncat
-        flatn_f(i,j,cat,k) = um_lhflx(i,j,k) * maicen(i,j,cat,k)/maice(i,j,k)
+        !!!B: flatn_f(i,j,cat,k) = um_lhflx(i,j,k) * maicen(i,j,cat,k)/maice(i,j,k)
+        !???: flatn_f(i,j,cat,k) = um_iceevp(i,j,cat,k) * Lsub 
+        flatn_f(i,j,cat,k) = - um_iceevp(i,j,cat,k) * Lsub
       enddo
     endif
   enddo
@@ -885,7 +868,7 @@ if (limit_icemelt) then
 endif
 
 !(2) SST
-sst = ocn_sst - 273.15
+sst = ocn_sst -273.15
 
 !(3) SSS
 sss = ocn_sss
@@ -1169,8 +1152,6 @@ real (kind=dbl_kind) :: &
 ! (Taux, Tauy) should be shifted on to U point as required
 !------------------------------------------------------------------------------- 
 
-write(il_out,*) 'XXX Now in get_i2o_fields......'
-
 !(1-2) air/ice - sea stress TAUX/TAUY
 !    Caution: in nemo, "strocnx/y" are NOT weighted by aice here, 'cos strocnx/y
 !    have already been 'weighted' using aice (when calculated in "evp_finish". 
@@ -1194,8 +1175,8 @@ io_stflx = mfsalt
 io_htflx = mfhocn
 
 !(7) short wave radiation 
-! (The (1-aice) weight should not be here 'cos all fluxes passed in from
-! UM have already been aice-weighted when they are calculated there!!!) 
+!(CH: the (1-aice) weight should not be here 'cos all fluxes passed in from
+!     UM have already been aice-weighted when they are calculated there!!!) 
 !io_swflx = um_swflx * (1. - maice) + mfswthru
 io_swflx = um_swflx + mfswthru
 
@@ -1244,8 +1225,6 @@ call scatter_global(vwork, grunoff, master_task, distrb_info, &
                                   field_loc_center, field_type_scalar)
 io_runof(:,:,:) = vwork(:,:,:)
 
-write(il_out,*) 'XXX (get_i2o_fields) io_runof obtained!'
-
 !2 new flux items associated with the iceberg discharged into ocean
 !(18) water flux due to land ice melt off Antarctica and Greenland (kg/m^2/s)
 !(19) heat  flux due to land ice melt off Antarctica and Greenland
@@ -1253,30 +1232,23 @@ write(il_out,*) 'XXX (get_i2o_fields) io_runof obtained!'
 !XXXXXX 
 IF (my_task == master_task) THEN
 
-write(il_out,*) 'XXX (get_i2o_fields) m, ticeberg_s(m), ticeberg_n = ',&
-        month, ticeberg_s(month), ticeberg_n(month)
-
-gwork(:,:) = 0.0
-do i = 1, nx_global
-  do j = 1, iceberg_je_s
-    gwork(i, j) = gicebergfw(i, j, month) * iceberg_rate_s * trunoff_s / ticeberg_s(month)
+  gwork(:,:) = 0.0
+  do i = 1, nx_global
+    do j = 1, iceberg_je_s
+      gwork(i, j) = gicebergfw(i, j, month) * iceberg_rate_s * trunoff_s / ticeberg_s(month)
+    enddo
+    do j = iceberg_js_n, ny_global
+      gwork(i, j) = gicebergfw(i, j, month) * iceberg_rate_n * trunoff_n / ticeberg_n(month)
+    enddo
   enddo
-  do j = iceberg_js_n, ny_global
-    gwork(i, j) = gicebergfw(i, j, month) * iceberg_rate_n * trunoff_n / ticeberg_n(month)
-  enddo
-enddo
-!Now global iceberg has been defined (using the deduction from runoff)
+  !Now global iceberg has been defined (using the deduction from runoff)
 
 ENDIF
 !XXXXXX
 
-write(il_out,*) 'XXX (get_i2o_fields) calling scatter_global to get io_licefw ......'
-
 call scatter_global(vwork, gwork, master_task, distrb_info, &
                     field_loc_center, field_type_scalar)
 io_licefw(:,:,:) = vwork(:,:,:)         !i2o field No 18.
-
-write(il_out,*) 'XXX (get_i2o_fields) io_licefw obtained!'
 
 !Also count in the latent heat carried with the runoff part, as done below, thus allowing
 !for (rough) consistency of energy exchange no matter what iceberg_rate_s/n are used.
@@ -1309,14 +1281,10 @@ enddo
 
 ENDIF
 
-write(il_out,*) 'XXX (get_i2o_fields) calling scatter_global to get io_liceht ......'
-
 call scatter_global(vwork, gwork, master_task, distrb_info, &
                     field_loc_center, field_type_scalar)
 io_liceht = - vwork * Lfresh * iceberg_lh       !FW converted into LH flux (W/m^2).
                                                 !!i2o field No 19.
-write(il_out,*) 'XXX (get_i2o_fields) io_liceht obtained!'
-                                                
 !(12) pressure
 pice = gravit * msicemass
 !----------------------------------------------------------------------------
@@ -1339,8 +1307,6 @@ io_form = min(0.0,mfresh(:,:,:))
 io_co2 = um_co2
 !(17) 10m winnspeed
 io_wnd = um_wnd
-
-write(il_out,*) 'XXX (get_i2o_fields) done!'
 
 return
 end subroutine get_i2o_fields
