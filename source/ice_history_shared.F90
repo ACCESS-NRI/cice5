@@ -271,6 +271,7 @@
            f_sidmasslat = 'x', &
            f_sndmasssnf = 'x', &
            f_sndmassmelt = 'x', &
+           f_sndmasssubl = 'x', &
            f_sidivvel = 'x', &
            f_siflswdtop = 'x', &
            f_siflswutop = 'x', &
@@ -285,6 +286,7 @@
            f_sipr = 'x', &
            f_siflsaltbot = 'x', &
            f_siflfwbot = 'x', &
+           f_siflfwdrain = 'x', &
            f_sisaltmass = 'x', &
            f_aicen     = 'x', f_vicen      = 'x', &
            f_vsnon     = 'x',                     &
@@ -400,6 +402,7 @@
            f_sidmasslat, &
            f_sndmasssnf, &
            f_sndmassmelt, &
+           f_sndmasssubl, &
            f_siflswdtop, &
            f_siflswutop, &
            f_siflswdbot, &
@@ -413,6 +416,7 @@
            f_sipr, &
            f_siflsaltbot, &
            f_siflfwbot, &
+           f_siflfwdrain, &
            f_sisaltmass, &
            f_aicen,     f_vicen    , &
            f_vsnon,                  &
@@ -521,12 +525,14 @@
            n_sidmassgrowthwat, &
            n_sidmassgrowthbot,  &
            n_sidmasssi,  &
+           n_sidmasssubl, &
            n_sidmassevapsubl,  &
            n_sidmassmelttop,  &
            n_sidmassmeltbot,  &
            n_sidmasslat,  &
            n_sndmasssnf,  &
            n_sndmassmelt,  &
+           n_sndmasssubl, &
            n_siflswdtop,  &
            n_siflswutop,  &
            n_siflswdbot,  &
@@ -540,6 +546,7 @@
            n_sipr,  &
            n_siflsaltbot,  &
            n_siflfwbot,  &
+           n_siflfwdrain, &
            n_sisaltmass, &
            n_vsnon,                        &
            n_fhocn      , n_fhocn_ai   , &
@@ -573,13 +580,13 @@
            n_keffn_top   , &
            n_Tinz        , n_Sinz      , &
            n_Tsnz, &
-	   n_a11	 , n_a12	, &
-	   n_e11	 , n_e12 	, &
-	   n_e22	 , &
-	   n_s11	 , n_s12	, &
-	   n_s22	 , &
-	   n_yieldstress11, n_yieldstress12,  &
-	   n_yieldstress22
+           n_a11	 , n_a12	, &
+           n_e11	 , n_e12 	, &
+           n_e22	 , &
+           n_s11	 , n_s12	, &
+           n_s22	 , &
+           n_yieldstress11, n_yieldstress12,  &
+           n_yieldstress22
 
       interface accum_hist_field ! generic interface
            module procedure accum_hist_field_2D, &

@@ -37,7 +37,7 @@
       private
       public :: init_hist, accum_hist
       save
-      
+
 !=======================================================================
 
       contains
@@ -1555,7 +1555,7 @@
       use ice_dyn_shared, only: kdyn, principal_stress,a_min
       use ice_flux, only: fsw, flw, fsnow, frain, sst, sss, uocn, vocn, &
           frzmlt_init, fswfac, fswabs, fswthru, alvdr, alvdf, alidr, alidf, &
-          albice, albsno, albpnd, coszen, flat, fsens, flwout, evap,
+          albice, albsno, albpnd, coszen, flat, fsens, flwout, evap, &
           evap_ice,evap_snow, &
           Tair, Tref, Qref, congel, frazil, snoice, dsnow, &
           melts, meltb, meltt, meltl, fresh, fsalt, fresh_ai, fsalt_ai, &
