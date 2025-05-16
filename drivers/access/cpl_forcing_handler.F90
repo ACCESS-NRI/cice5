@@ -711,9 +711,9 @@ do i = 1, nx_block
       flatn_f(i,j,1,k) = um_lhflx(i,j,k) 
     else
       do cat = 1, ncat
-        !!!B: flatn_f(i,j,cat,k) = um_lhflx(i,j,k) * maicen(i,j,cat,k)/maice(i,j,k)
+        flatn_f(i,j,cat,k) = um_lhflx(i,j,k) * maicen(i,j,cat,k)/maice(i,j,k)
         !???: flatn_f(i,j,cat,k) = um_iceevp(i,j,cat,k) * Lsub 
-        flatn_f(i,j,cat,k) = - um_iceevp(i,j,cat,k) * Lsub
+        !flatn_f(i,j,cat,k) = - um_iceevp(i,j,cat,k) * Lsub
       enddo
     endif
   enddo
