@@ -33,9 +33,9 @@
          cp_ice    = 2106._dbl_kind   ,&! specific heat of fresh ice (J/kg/K)
 !ars599: 11042014: add AusCOM
 #ifdef AusCOM
-!         cp_ocn    = 3989._dbl_kind   ,&! specific heat of ocn    (J/kg/K)
-         cp_ocn    = 3992.10322329649_dbl_kind,& 
-                                        ! freshwater value needed for enthalpy
+
+         cp_ocn    = 3989.24495292815_dbl_kind, & ! mom5 constant
+         ! cp_ocn    = 3992.10322329649_dbl_kind,& ! used for cm2
 #else
          cp_ocn    = 4218._dbl_kind   ,&! specific heat of ocn    (J/kg/K)
                                         ! freshwater value needed for enthalpy
