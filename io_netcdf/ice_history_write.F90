@@ -115,13 +115,14 @@
 
       if (my_task == master_task) then
 #if defined(AusCOM) || defined(ACCESS)
+        ! set timestamp in middle of time interval
         if (histfreq(ns) == 'm' .or. histfreq(ns) == 'M') then
             if (month /= 1) then
                 ltime=time/int(secday)-real(daymo(month-1))/2.0
             else
                 ltime=time/int(secday)-real(daymo(12))/2.0
             endif
-        else if(histfreq(ns) == 'd') then 
+        else if(histfreq(ns) == 'd' .or. histfreq(ns) == 'D') then 
             ltime=time/int(secday) - 0.5
         else
             ltime=time/int(secday)
