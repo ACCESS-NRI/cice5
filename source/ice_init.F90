@@ -44,7 +44,7 @@
       use ice_broadcast, only: broadcast_scalar, broadcast_array
 !ars599: 24042015 for the namelist variables
       use ice_constants, only: c0, c1, puny, dragio, &
-          awtvdr, awtidr, awtvdf, awtidf, Tocnfrz, ice_ref_salinity
+          awtvdr, awtidr, awtvdf, awtidf, Tocnfrz
       use ice_diagnostics, only: diag_file, print_global, print_points, latpnt, lonpnt
       use ice_domain_size, only: max_nstrm, nilyr, nslyr, max_ntrcr, ncat, n_aero
       use ice_fileunits, only: nu_nml, nu_diag, nml_filename, diag_type, &
@@ -146,7 +146,7 @@
         a_rapid_mode,   Rac_rapid_mode,  aspect_rapid_mode,             &
 !ars599: 24092014 (CODE: petteri)
 #ifdef AusCOM
-	chio, ice_ref_salinity,                                              &
+	chio,                                                           &
 #endif
         saltmax, dSdt_slow_mode, phi_c_slow_mode, phi_i_mushy
 
@@ -317,7 +317,6 @@
       Tocnfrz  = -1.8_dbl_kind   ! freezing temp of seawater (C),
                                  ! used as Tsfcn for open water
       chio     = 0.006_dbl_kind  ! unitless param for basal heat flx ala McPhee and Maykut
-      ice_ref_salinity = 5._dbl_kind
 #endif
       atmbndy   = 'default'       ! or 'constant'
 
@@ -803,7 +802,6 @@
       call broadcast_scalar(sinw,               master_task)
       call broadcast_scalar(dragio,             master_task)
       call broadcast_scalar(chio,               master_task)
-      call broadcast_scalar(ice_ref_salinity,   master_task)
       call broadcast_scalar(Tocnfrz,            master_task)
 #endif
       call broadcast_scalar(atmbndy,            master_task)
@@ -1044,8 +1042,6 @@
          write(nu_diag,1005) ' sinw                      = ', sinw
          write(nu_diag,1005) ' dragio                    = ', dragio
          write(nu_diag,1005) ' chio                      = ', chio
-         write(nu_diag,1005) ' ice_ref_salinity          = ', ice_ref_salinity
-
 #endif
          write(nu_diag,1005) ' ustar_min                 = ', ustar_min
          write(nu_diag, *)   ' fbot_xfer_type            = ', &

@@ -73,6 +73,7 @@
          Lfresh    = Lsub-Lvap        ,&! latent heat of melting of fresh ice (J/kg)
          Timelt    = 0.0_dbl_kind     ,&! melting temperature, ice top surface  (C)
          Tsmelt    = 0.0_dbl_kind     ,&! melting temperature, snow top surface (C)
+         ice_ref_salinity = 5._dbl_kind, &!8._dbl_kind ,&! (ppt)
 !        ocn_ref_salinity = 34.7_dbl_kind,&! (ppt)
          spval_dbl = 1.0e30_dbl_kind    ! special value (double precision)
 
@@ -110,9 +111,8 @@
 !ars599: 24042015: remove dragio!!
       real (kind=dbl_kind), public :: &
          dragio   , & ! ice-ocn drag coefficient
-         Tocnfrz , &! freezing temp of seawater (C),
+         Tocnfrz ! freezing temp of seawater (C),
                  ! used as Tsfcn for open water
-         ice_ref_salinity ! (ppt)
 #endif
 
       ! weights for albedos 
