@@ -366,14 +366,11 @@ if ( file_exist(fname) ) then
   endif
 
   call ice_open_nc(fname, ncid_o2i)
-  IF (.false.) THEN     !no use is 0-layer?
-    call ice_read_nc(ncid_o2i, 1, 'maicen1',   maicen_saved(:,:,1,:), dbug)
-    call ice_read_nc(ncid_o2i, 1, 'maicen2',   maicen_saved(:,:,2,:), dbug)
-    call ice_read_nc(ncid_o2i, 1, 'maicen3',   maicen_saved(:,:,3,:), dbug)
-    call ice_read_nc(ncid_o2i, 1, 'maicen4',   maicen_saved(:,:,4,:), dbug)
-    call ice_read_nc(ncid_o2i, 1, 'maicen5',   maicen_saved(:,:,5,:), dbug)
-  ENDIF
-
+  call ice_read_nc(ncid_o2i, 1, 'maicen1',   maicen_saved(:,:,1,:), dbug)
+  call ice_read_nc(ncid_o2i, 1, 'maicen2',   maicen_saved(:,:,2,:), dbug)
+  call ice_read_nc(ncid_o2i, 1, 'maicen3',   maicen_saved(:,:,3,:), dbug)
+  call ice_read_nc(ncid_o2i, 1, 'maicen4',   maicen_saved(:,:,4,:), dbug)
+  call ice_read_nc(ncid_o2i, 1, 'maicen5',   maicen_saved(:,:,5,:), dbug)
   call ice_read_nc(ncid_o2i, 1, 'maice',     maice,     dbug)
   call ice_read_nc(ncid_o2i, 1, 'mstrocnxT', mstrocnxT, dbug)
   call ice_read_nc(ncid_o2i, 1, 'mstrocnyT', mstrocnyT, dbug)
@@ -1044,21 +1041,21 @@ endif
 !
 !B: 20170825 ==> add maicen_saved for atm_icefluxes_back2GBM calculation!
 !        note maicen_saved is the last ia interval mean.  
-!vwork(:,:,:) = maicen_saved(:,:,1,:)
-!call gather_global(gwork, vwork, master_task, distrb_info)
-!if (my_task == 0) call write_nc2D(ncid, 'maicen1', gwork, 2, il_im, il_jm, 1, ilout=il_out)
-!vwork(:,:,:) = maicen_saved(:,:,2,:)
-!call gather_global(gwork, vwork, master_task, distrb_info)
-!if (my_task == 0) call write_nc2D(ncid, 'maicen2', gwork, 2, il_im, il_jm, 1, ilout=il_out)
-!vwork(:,:,:) = maicen_saved(:,:,3,:)
-!call gather_global(gwork, vwork, master_task, distrb_info)
-!if (my_task == 0) call write_nc2D(ncid, 'maicen3', gwork, 2, il_im, il_jm, 1, ilout=il_out)
-!vwork(:,:,:) = maicen_saved(:,:,4,:)
-!call gather_global(gwork, vwork, master_task, distrb_info)
-!if (my_task == 0) call write_nc2D(ncid, 'maicen4', gwork, 2, il_im, il_jm, 1, ilout=il_out)
-!vwork(:,:,:) = maicen_saved(:,:,5,:)
-!call gather_global(gwork, vwork, master_task, distrb_info)
-!if (my_task == 0) call write_nc2D(ncid, 'maicen5', gwork, 2, il_im, il_jm, 1, ilout=il_out)
+vwork(:,:,:) = maicen_saved(:,:,1,:)
+call gather_global(gwork, vwork, master_task, distrb_info)
+if (my_task == 0) call write_nc2D(ncid, 'maicen1', gwork, 2, il_im, il_jm, 1, ilout=il_out)
+vwork(:,:,:) = maicen_saved(:,:,2,:)
+call gather_global(gwork, vwork, master_task, distrb_info)
+if (my_task == 0) call write_nc2D(ncid, 'maicen2', gwork, 2, il_im, il_jm, 1, ilout=il_out)
+vwork(:,:,:) = maicen_saved(:,:,3,:)
+call gather_global(gwork, vwork, master_task, distrb_info)
+if (my_task == 0) call write_nc2D(ncid, 'maicen3', gwork, 2, il_im, il_jm, 1, ilout=il_out)
+vwork(:,:,:) = maicen_saved(:,:,4,:)
+call gather_global(gwork, vwork, master_task, distrb_info)
+if (my_task == 0) call write_nc2D(ncid, 'maicen4', gwork, 2, il_im, il_jm, 1, ilout=il_out)
+vwork(:,:,:) = maicen_saved(:,:,5,:)
+call gather_global(gwork, vwork, master_task, distrb_info)
+if (my_task == 0) call write_nc2D(ncid, 'maicen5', gwork, 2, il_im, il_jm, 1, ilout=il_out)
 !b.
 
 !The following fields are actually the ice state of last timestep 
