@@ -103,19 +103,16 @@
         !call atm_icefluxes_back2GBM  (CM2 requires)
 
 
-        do itap = 1, num_ice_ai ! cice time loop 
+        do itap = 1, num_ice_ai   ! cice time loop 
                                 ! Note I <==> O coupling happens at each time step
  
           stimestamp_io = time_sec
 
           !"combine" a2i fields and ice fields to get i2o fields 
-          write(il_out,*)' calling get_i2o_fields at icpl_ai, itap = ', icpl_ai, itap
           call get_i2o_fields
 
           !shift stresses from T onto U grid before sending into ocn
-          write(il_out,*)' calling t2ugrid_vector 1 at icpl_ai, itap = ', icpl_ai, itap
           call t2ugrid_vector(io_strsu)
-          write(il_out,*)' calling t2ugrid_vector 2 at icpl_ai, itap = ', icpl_ai, itap
           call t2ugrid_vector(io_strsv)
 
           write(il_out,'(a,3i10)') &
@@ -128,7 +125,6 @@
           !call ice_timer_stop(timer_into_ocn)  ! atm/ocn coupling
 
           !set boundary condition (forcing) 
-          write(il_out,*)' calling get_sbc_ice at icpl_ai, itap = ', icpl_ai, itap
           call get_sbc_ice
 
           !Debug: 20170825 -- check sbc_ice variables from "get_sbc_ice"
@@ -142,7 +138,6 @@
           !endif
  
           !*** ice "update" ***!
-          write(il_out,*)' calling ice_step at icpl_ai, itap = ', icpl_ai, itap
           call ice_step
 
           !Debug: 20170827 -- check updated ice varables after ice_step

@@ -271,9 +271,9 @@
       endif
       !if no lag for ice to atm coupling, then cice has to read restart file i2a.nc and 
       !put the data to atm. the call is not needed if there is lag for ice2atm coupling
-      !must call after get_restart_o2i(), by which the ocn_sst ect are read in and 
-      !re-used by put_restart_i2a()  
+      !must call after get_restart_o2i(), by which the ocn_sst ect are read in and re-used by put_restart_i2a()  
 !      call put_restart_i2a('i2a.nc', 0)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if ( file_exist(trim(restartdir)//'/mice.nc') ) then
         !for continue runs, mice data MUST be available.
@@ -310,8 +310,8 @@
       !          discharge is same as case 1;
       !   3: as case 1 but use annual mean    
       !   4: as case 2 but use annual mean
-      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have idential 
-      !!! annual discharge of land ice (as iceberg) into ocean. 
+      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have idential annual 
+      !!! discharge of land ice (as iceberg) into ocean. 
 
       if ( file_exist(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') ) then
           call get_lice_discharge(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') 

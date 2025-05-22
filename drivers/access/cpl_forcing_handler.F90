@@ -8,12 +8,13 @@ use ice_read_write
 use ice_domain_size
 use ice_domain,    only : distrb_info, nblocks 
 use ice_flux            !forcing data definition (Tair, Qa, uocn, etc.)
+                        !Tn_top, keffn_top ...(for multilayer configuration)   
 !use ice_state,     only : aice, aicen, trcr, trcrn, nt_hpnd   !ice concentration and tracers
 use ice_state,     only : aice, aicen, trcr !!!, trcrn, nt_hpnd, nt_Tsfc   !ice concentration and tracers
 use ice_state,     only: uvel, vvel, vsnon, vicen
 use ice_gather_scatter
 use ice_broadcast
-use ice_constants !, only : gravit, Lvap, Lsub
+use ice_constants
 use ice_grid,      only : tmask, to_ugrid
 use ice_communicate, only : my_task, master_task
 !use ice_ocean,     only : cprho
