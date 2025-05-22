@@ -41,7 +41,7 @@
       use ice_blocks, only: nx_block, ny_block
       use ice_broadcast, only: broadcast_scalar
       use ice_calendar, only: time, sec, idate, idate0, write_ic, &
-          histfreq, dayyr, days_per_year, use_leap_years
+          histfreq, dayyr, days_per_year, use_leap_years, month, daymo
       use ice_communicate, only: my_task, master_task
       use ice_constants, only: c0, c360, secday, spval, rad_to_deg
       use ice_domain, only: distrb_info
@@ -114,8 +114,21 @@
       CHARACTER (char_len), dimension(ncoord) :: coord_bounds
 
       if (my_task == master_task) then
-
+#if defined(AusCOM) || defined(ACCESS)
+        if (histfreq(ns) == 'm' .or. histfreq(ns) == 'M') then
+            if (month /= 1) then
+                ltime=time/int(secday)-real(daymo(month-1))/2.0
+            else
+                ltime=time/int(secday)-real(daymo(12))/2.0
+            endif
+        else if(histfreq(ns) == 'd') then 
+            ltime=time/int(secday) - 0.5
+        else
+            ltime=time/int(secday)
+        endif
+#else
         ltime=time/int(secday)
+#endif
 
         call construct_filename(ncfile(ns),'nc',ns)
 
