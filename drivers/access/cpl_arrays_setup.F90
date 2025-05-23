@@ -155,7 +155,7 @@ real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
 
 ! 3. ocn fields averaged over IA cpl interval:
 real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
-    msst, mssu, mssv, mco2, mco2fx !!!, msstfz
+    msst, mssu, mssv, mco2, mco2fx
 
 
 ! other stuff 

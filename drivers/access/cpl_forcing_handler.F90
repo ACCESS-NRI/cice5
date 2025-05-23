@@ -1105,7 +1105,7 @@ ia_vvel(:,:,:) = mssv(:,:,:) * (1. - maiu(:,:,:)) + mvvel(:,:,:) * maiu(:,:,:)
 !(4-8) ice concentration
 ia_aicen(:,:,:,:) = maicen(:,:,:,:)
 !BX: save it for use in atm_icefluxes_back2GBM ---
-!???!maicen_saved = maicen
+maicen_saved = maicen
 
 !(9-13) ice thickness
 ia_thikn(:,:,:,:) = mthikn(:,:,:,:)
@@ -1116,9 +1116,6 @@ ia_snown(:,:,:,:) = msnown(:,:,:,:)
 !(19-20) co2 flux stuff
 ia_co2 = mco2
 ia_co2fx = mco2fx
-
-!(21) ocean surface freezing temperature
-!!!ia_sstfz(:,:,:) = msstfz(:,:,:) + 273.15
 
 return
 end subroutine get_i2a_fields
@@ -1352,7 +1349,6 @@ mssu = 0.
 mssv = 0.
 mco2 = 0.
 mco2fx = 0.
-!msstfz = 0.
 
 return
 end subroutine initialize_mocn_fields_4_i2a
@@ -1367,7 +1363,6 @@ mssu(:,:,:) = mssu(:,:,:) + ocn_ssu(:,:,:) * coef_ai
 mssv(:,:,:) = mssv(:,:,:) + ocn_ssv(:,:,:) * coef_ai
 mco2(:,:,:) = mco2(:,:,:) + ocn_co2(:,:,:) * coef_ai
 mco2fx(:,:,:) = mco2fx(:,:,:) + ocn_co2fx(:,:,:) * coef_ai
-!msstfz(:,:,:) = msstfz(:,:,:) + Tf(:,:,:) * coef_ai
 
 return
 end subroutine time_average_ocn_fields_4_i2a
