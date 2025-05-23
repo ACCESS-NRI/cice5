@@ -410,7 +410,7 @@
              status = nf90_def_var(ncid, var(i)%req%short_name, &
                                    nf90_float, dimid(1:2), varid)
              if (status /= nf90_noerr) call abort_ice( &
-                  'Error defining variable '//var(i)%req%short_name//' - '//trim(nf90_strerror(status)))
+                  'Error defining variable '//var(i)%req%short_name)
              status = nf90_put_att(ncid,varid, 'long_name', var(i)%req%long_name)
              if (status /= nf90_noerr) call abort_ice( &
                   'Error defining long_name for '//var(i)%req%short_name)
@@ -438,7 +438,7 @@
              status = nf90_def_var(ncid, var_nverts(i)%short_name, &
                                    nf90_float,dimid_nverts, varid)
              if (status /= nf90_noerr) call abort_ice( &
-                  'Error defining variable '//var(i)%req%short_name//' - '//trim(nf90_strerror(status)))
+                  'Error defining variable '//var_nverts(i)%short_name)
              status = nf90_put_att(ncid,varid, 'long_name', var_nverts(i)%long_name)
              if (status /= nf90_noerr) call abort_ice( &
                   'Error defining long_name for '//var_nverts(i)%short_name)
@@ -459,7 +459,7 @@
             status  = nf90_def_var(ncid, avail_hist_fields(n)%vname, &
                          nf90_float, dimid, varid)
             if (status /= nf90_noerr) call abort_ice( &
-               'Error defining variable '//var(i)%req%short_name//' - '//trim(nf90_strerror(status)))
+               'Error defining variable '//avail_hist_fields(n)%vname)
             status = nf90_put_att(ncid,varid,'units', &
                         avail_hist_fields(n)%vunit)
             if (status /= nf90_noerr) call abort_ice( &
@@ -518,7 +518,7 @@
             status  = nf90_def_var(ncid, avail_hist_fields(n)%vname, &
                          nf90_float, dimidz, varid)
             if (status /= nf90_noerr) call abort_ice( &
-               'Error defining variable '//var(i)%req%short_name//' - '//trim(nf90_strerror(status)))
+               'Error defining variable '//avail_hist_fields(n)%vname)
             status = nf90_put_att(ncid,varid,'units', &
                         avail_hist_fields(n)%vunit)
             if (status /= nf90_noerr) call abort_ice( &
@@ -569,7 +569,7 @@
             status  = nf90_def_var(ncid, avail_hist_fields(n)%vname, &
                          nf90_float, dimidz, varid)
             if (status /= nf90_noerr) call abort_ice( &
-               'Error defining variable '//var(i)%req%short_name//' - '//trim(nf90_strerror(status)))
+               'Error defining variable '//avail_hist_fields(n)%vname)
             status = nf90_put_att(ncid,varid,'units', &
                         avail_hist_fields(n)%vunit)
             if (status /= nf90_noerr) call abort_ice( &
@@ -606,7 +606,7 @@
             status  = nf90_def_var(ncid, avail_hist_fields(n)%vname, &
                          nf90_float, dimidz, varid)
             if (status /= nf90_noerr) call abort_ice( &
-               'Error defining variable '//var(i)%req%short_name//' - '//trim(nf90_strerror(status)))
+               'Error defining variable '//avail_hist_fields(n)%vname)
             status = nf90_put_att(ncid,varid,'units', &
                         avail_hist_fields(n)%vunit)
             if (status /= nf90_noerr) call abort_ice( &
@@ -645,7 +645,7 @@
 !                             nf90_float, dimidcz, varid)
                              nf90_float, dimidcz(1:4), varid) ! ferret    
             if (status /= nf90_noerr) call abort_ice( &
-               'Error defining variable '//var(i)%req%short_name//' - '//trim(nf90_strerror(status)))
+               'Error defining variable '//avail_hist_fields(n)%vname)
             status = nf90_put_att(ncid,varid,'units', &
                         avail_hist_fields(n)%vunit)
             if (status /= nf90_noerr) call abort_ice( &
