@@ -1660,9 +1660,7 @@
          status = nf90_put_var( fid, varid, work_g1, &
                start=(/1,1,nrec/), & 
                count=(/nx,ny,1/) )
-         if (status /= nf90_noerr) then
-            call abort_ice('ice: Error nf90_put_var in ice_write_nc_xy')
-         endif
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------
@@ -1778,9 +1776,7 @@
          status = nf90_put_var( fid, varid, work_g1, &
                start=(/1,1,1,nrec/), & 
                count=(/nx,ny,ncat,1/) )
-         if (status /= nf90_noerr) then
-            call abort_ice('ice: Error nf90_put_var in ice_write_nc_xyz')
-         endif
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------

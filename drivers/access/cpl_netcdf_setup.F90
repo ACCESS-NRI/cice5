@@ -104,7 +104,7 @@ integer(kind=int_kind), intent(out) :: ncid
 if (present(ilout)) write(ilout,*) 'creating a new netcdf file: ',ncfile
 
 !create a new NetCDF and define the grid:
-call ncheck(nf_create(trim(ncfile),ior(nf_write,nf_netcdf4),ncid))
+call ncheck(nf_create(trim(ncfile),nf_write,ncid))
 
 !define the dimensions
 if (present(ll)) call ncheck(nf_def_dim(ncid,"time", nf_unlimited,  timeDimId))
@@ -169,7 +169,7 @@ print *
 print *, 'creating a new netcdf file: ',ncfile
 
 !create a new NetCDF and define the grid:
-call ncheck(nf_create(trim(ncfile),ior(nf_write,nf_netcdf4),ncid))
+call ncheck(nf_create(trim(ncfile),nf_write,ncid))
 
 !define the dimensions
 call ncheck(nf_def_dim(ncid,"ny", jj,  pLatDimId))

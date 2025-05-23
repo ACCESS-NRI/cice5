@@ -24,7 +24,7 @@
           runid, runtype, use_restart_time, restart_format, lcdf64, lenstr
       use ice_restart
 #ifdef AusCOM
-      use cpl_parameters, only: runtime0, il_out
+      use cpl_parameters, only: runtime0
 #endif
 
       implicit none

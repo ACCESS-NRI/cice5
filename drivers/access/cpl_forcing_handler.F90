@@ -202,9 +202,7 @@ if ( file_exist(fname) ) then
   call ice_read_nc(ncid, 1, 'vvel_ia',    ia_vvel,  dbug)
   call ice_read_nc(ncid, 1, 'co2_i2',     ia_co2,   dbug)
   call ice_read_nc(ncid, 1, 'co2fx_i2',   ia_co2fx, dbug)
-  !
-  !call ice_read_nc(ncid, 1, 'sstfz_ia',   ia_sstfz, dbug)
-  !
+
   if (my_task == master_task) then
     call ice_close_nc(ncid)
     write(il_out,*) '(read_restart_i2a) has read in 18 i2a fields.'
@@ -1037,8 +1035,7 @@ if (my_task == 0) then
   call write_nc_1Dtime(real(nstep), 1, 'time', ncid)
 endif
 
-!202410: maicen_saved is needed for CICE5-UM7.3 coupling or not?!
-!
+! maicen_saved appears to be the same as maicen in CICE5-UM7.3 
 !B: 20170825 ==> add maicen_saved for atm_icefluxes_back2GBM calculation!
 !        note maicen_saved is the last ia interval mean.  
 vwork(:,:,:) = maicen_saved(:,:,1,:)
@@ -1451,7 +1448,6 @@ do jf = 1, nsend_i2a
     case('vvel_ia');  vwork = ia_vvel 
     case('co2_i2');  vwork = ia_co2
     case('co2fx_i2');  vwork = ia_co2fx
-    !case('sstfz_ia'); vwork = ia_sstfz
   end select
 
   call gather_global(gwork, vwork, master_task, distrb_info)

@@ -16,8 +16,6 @@
       use ice_kinds_mod
       use ice_communicate, only: my_task, master_task
 
-      use cpl_parameters, only: il_out
-
       implicit none
       save
 
@@ -428,9 +426,6 @@
          call abort_ice('ice: error reading namelist')
       endif
       call release_fileunit(nu_nml)
-
-      write(nu_diag,*)'XXX (input_data), ktherm = ', ktherm
-      write(il_out, *)'XXX (input_data), ktherm = ', ktherm
   
       !-----------------------------------------------------------------
       ! set up diagnostics output and resolve conflicts

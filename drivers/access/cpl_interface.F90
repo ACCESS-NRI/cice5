@@ -1275,7 +1275,6 @@
     !20100305: test effect of ssuv on the tropical cooling biases (as per Harry Henden)
     case('uvel_ia');  vwork = ia_uvel * ocn_ssuv_factor     !note ice u/v are also 
     case('vvel_ia');  vwork = ia_vvel * ocn_ssuv_factor     !     included here.
-    !case('sstfz_ia'); vwork = ia_sstfz
     case('co2_i2');  vwork = ia_co2
     case('co2fx_i2');  vwork = ia_co2fx
     end select
@@ -1671,7 +1670,6 @@ do jf = 1, nsend_i2a
     !20100305: test effect of ssuv on the tropical cooling biases (as per Harry Henden)
     case('uvel_ia');  vwork = ia_uvel !* ocn_ssuv_factor     !note ice u/v are also
     case('vvel_ia');  vwork = ia_vvel !* ocn_ssuv_factor     !     included here.
-    !case('sstfz_ia'); vwork = ia_sstfz
     end select
 
 !    if (.not. ll_comparal) then
