@@ -317,7 +317,8 @@
           call get_lice_discharge(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') 
       else
           write(6,*)'* CICE stopped -- iceberg datafile missing.*' 
-          call abort_ice ('ice: land ice discharge iceberg datafile missing!')
+          call abort_ice ('ice: land ice discharge iceberg datafile missing: '//&
+                          trim(inputdir)//'/lice_discharge_masks_iceberg.nc'//' *')
       endif
 #endif
 
