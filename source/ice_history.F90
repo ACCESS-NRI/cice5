@@ -2314,6 +2314,9 @@
          endif
 
          if (f_sidmassgrowthwat(1:1) /= 'x') then
+           !Sea-Ice Mass Change Through Growth in Supercooled Open Water (Frazil) 
+           !To-do: revisit to see if frazil still needs aice/aice_init weighting
+           !Data can be noisy. Weigthing not used in CICE6.
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2323,14 +2326,11 @@
               endif
            enddo
            enddo
-           !FLAG  revisit to see if frazil still needs aice/aice_init
-           !but data can be noisy. NOT still in CICE6. No aice weighting
-           !either
-
            call accum_hist_field(n_sidmassgrowthwat, iblk, worka(:,:), a2D)
          endif
 
          if (f_sidmassgrowthbot(1:1) /= 'x') then
+           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2340,15 +2340,11 @@
               endif
            enddo
            enddo
-
-           ! FLAG similar to frazil aice/aice_init no longer there but
-           ! noisy field. aice_init is there as first flag, so on off
-           ! switch check there.
-
            call accum_hist_field(n_sidmassgrowthbot, iblk, worka(:,:), a2D)
          endif
 
          if (f_sidmasssi(1:1) /= 'x') then
+           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2358,13 +2354,11 @@
               endif
            enddo
            enddo
-
-           !FLAG same as frazil/congel issue
-
            call accum_hist_field(n_sidmasssi, iblk, worka(:,:), a2D)
          endif
 
          if (f_sidmassevapsubl(1:1) /= 'x') then
+           !To-do: revisit to see if aice weighting is correct, looks like evap_ice is already weighted
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2373,14 +2367,11 @@
               endif
            enddo
            enddo
-           !FLAG CICE6  has dropped aice muliplier
-           !check back after looking at data ouput with and without aice
-           ! frain also has aice weights in CICE6 so its not connsitent.
-
            call accum_hist_field(n_sidmassevapsubl, iblk, worka(:,:), a2D)
           endif
 
          if (f_sndmasssubl(1:1) /= 'x') then
+           !To-do: revisit to see if aice weighting is correct, looks like evap_snow is already weighted
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2389,17 +2380,11 @@
               endif
            enddo
            enddo
-
-           !FLAG CICE6  has dropped aice muliplier
-           !check back after looking at data ouput with and without aice
-           ! here less clear as it could be wighted with snow area as
-           ! well ice area, so CICE6 may be correct all other fluxes do
-           ! retain the aice reighting in CICE6 including flat
-
            call accum_hist_field(n_sidmasssubl, iblk, worka(:,:), a2D)
           endif
 
          if (f_sidmassmelttop(1:1) /= 'x') then
+           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2409,13 +2394,11 @@
               endif
            enddo
            enddo
-
-           !FLAG as above aice/aice_init factor 
-
            call accum_hist_field(n_sidmassmelttop, iblk, worka(:,:), a2D)
          endif
 
          if (f_sidmassmeltbot(1:1) /= 'x') then
+           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2425,11 +2408,11 @@
               endif
            enddo
            enddo
-           !FLAG as above
            call accum_hist_field(n_sidmassmeltbot, iblk, worka(:,:), a2D)
          endif
 
        if (f_sidmasslat(1:1) /= 'x') then
+           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2439,7 +2422,6 @@
               endif
            enddo
            enddo
-           !FLAG as above
            call accum_hist_field(n_sidmasslat, iblk, worka(:,:), a2D)
          endif
 
@@ -2456,6 +2438,7 @@
          endif
 
          if (f_sndmassmelt(1:1) /= 'x') then
+           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2465,8 +2448,6 @@
               endif
            enddo
            enddo
-           !FLAG as above aice/aice_init still here
-
           call accum_hist_field(n_sndmassmelt, iblk, worka(:,:), a2D)
          endif
 
@@ -2580,6 +2561,7 @@
          endif
 
          if (f_siflcondbot(1:1) /= 'x') then
+           !to-do: check about aice_init, still in CICE6 but different to siflcondtop
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2588,7 +2570,6 @@
               endif
            enddo
            enddo
-           !FLAG aice/aice_init survived in CICE6 here!!
            call accum_hist_field(n_siflcondbot, iblk, worka(:,:), a2D)
          endif
 
@@ -2640,7 +2621,6 @@
            call accum_hist_field(n_siflfwbot, iblk, worka(:,:), a2D)
          endif
 
-
          if (f_siflsaltbot(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
@@ -2652,7 +2632,6 @@
            enddo
            call accum_hist_field(n_siflsaltbot, iblk, worka(:,:), a2D)
          endif
-
 
          if (f_siflfwdrain(1:1) /= 'x') then
            worka(:,:) = c0
@@ -2666,6 +2645,7 @@
            enddo
            call accum_hist_field(n_siflfwdrain, iblk, worka(:,:), a2D)
          endif
+
 !3D category fields
 
          if (f_aicen   (1:1) /= 'x') &
