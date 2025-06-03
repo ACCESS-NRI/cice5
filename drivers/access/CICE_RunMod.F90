@@ -48,7 +48,8 @@
       use ice_calendar, only: istep, istep1, time, dt, stop_now, calendar
       use ice_forcing, only: get_forcing_atmo, get_forcing_ocn
 #ifdef ACCESS
-      use ice_calendar, only: month, mday, istep, istep1, time, dt, stop_now, calendar
+      use ice_calendar, only: month, mday, istep, istep1, time, dt, stop_now, calendar, &
+          write_restart, dump_last
       use ice_restart_driver, only: dumpfile     !temporary debug
 #endif
       use ice_flux, only: init_flux_atm, init_flux_ocn
@@ -135,6 +136,11 @@
           !      ' calling dumpfile at icpl_ai, itap, time_sec, idate = ', icpl_ai, itap, time_sec, idate
           !  call dumpfile
           !endif
+
+          ! Write restart on final timestep
+          if (dump_last .and. (itap == num_ice_ai) .and. (icpl_ai == num_cpl_ai)) then
+            write_restart = 1
+          endif
  
           !*** ice "update" ***!
           call ice_step
