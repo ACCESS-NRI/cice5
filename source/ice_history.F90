@@ -1114,12 +1114,11 @@
              "none", c1, c0,         &
              ns1, f_sisnhc)
 
-
-
           call define_hist_field(n_sidconcth,"sidconcth","1/s",tstr2D, tcstr,  &
           "sea ice area change from thermodynamics",              &
              "none", c1, c0,         &  
               ns1, f_sidconcth)
+
           call define_hist_field(n_sidconcdyn,"sidconcdyn","1/s",tstr2D, tcstr,  &  
             "sea ice area change from dynamics", &
              "none", c1, c0,         &         
@@ -2004,16 +2003,9 @@
            worka(:,:) = c0 
            do j = jlo, jhi
            do i = ilo, ihi
-              worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)
+              worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)+Tffresh
            enddo
            enddo
-           !FLAG  CICE6 added Tffresh to switch to Kelvin we may need
-           !to align with them and any ACCESS-NRI post processing,
-           !discus with MED team. It was in deg C in the APP4
-           ! Sensible data in CM2 not clear it will be IN ESM1.6
-           ! not defined in ESM1.5 in APP4.  I dont think it was in ACCESS
-           ! 1-0/1-3 zero-layer model set ups.
-
            call accum_hist_field(n_sitemptop, iblk, worka(:,:), a2D)
          endif
 
