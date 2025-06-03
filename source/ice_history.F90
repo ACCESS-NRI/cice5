@@ -2014,18 +2014,13 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi     
-         if (vsno(i,j,iblk) > puny .and.  aice_init(i,j,iblk) > puny) then  
-               worka(i,j) = aice(i,j,iblk)*Tsnic(i,j,iblk)/aice_init(i,j,iblk)
-              else         
-               worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)
-              endif
+            if (vsno(i,j,iblk) > puny .and.  aice_init(i,j,iblk) > puny) then  
+               worka(i,j) = aice(i,j,iblk)*Tsnic(i,j,iblk)/aice_init(i,j,iblk)+Tffresh
+            else         
+               worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)+Tffresh
+            endif
            enddo
            enddo    
-
-           !FLAG  CICE6 has added Tffresh to this term to switch to
-           !Kelvins for CESM we had Centigrade in our CM2 output
-           ! also the field was not defined so will not be sensible in
-           ! ESM1.6 so not worth adjusting.
          call accum_hist_field(n_sitempsnic, iblk, worka(:,:), a2D)
          endif
 
