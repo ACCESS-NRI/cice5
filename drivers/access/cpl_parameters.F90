@@ -91,7 +91,7 @@ integer(kind=int_kind) :: &
          runoff_je_s  = 45, &   !(runoff_js_s =1, always)
          iceberg_js_n = 201, &  !(iceberg_je_n=300, always)
          runoff_is_n  = 222, &  !------
-         runoff_ie_n  = 270, &  !These 4 indice define the
+         runoff_ie_n  = 270, &  !These 4 indices define the
          runoff_js_n  = 230, &  !Greenland runoff domain
          runoff_je_n  = 300     !-----
 !202412: add option for "fixing" ocean water mass imbalance: ESM1.5 sees ~ 0.18543417E+08 kg/s
