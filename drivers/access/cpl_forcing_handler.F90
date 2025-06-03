@@ -394,77 +394,6 @@ endif
 return
 end subroutine get_restart_mice
 
-!=================================================
-subroutine get_lice_discharge_doubt(fname)
-
-! Called at beginning of each run trunk to read in land ice discharge mask or iceberg
-! (off Antarctica and Greenland).
-
-implicit none
-
-character(len=*), intent(in) :: fname
-character*80 :: myvar = 'ficeberg'
-integer(kind=int_kind) :: ncid_i2o, im, k, i, j
-logical :: dbug = .true.
-
-call ice_open_nc(trim(fname), ncid_i2o)
-
-write(il_out,*) '(get_lice_discharge) opened datafile: ', trim(fname)
-
-if (iceberg == 0 .or. iceberg .gt. 4) then
-  write(il_out,*) '(get_lice_discharge) in ESM onl support iceberg = 1,2,3,4) '
-  call abort_ice('CICE stopped: ESM does not support iceberg = 0. Please set it to 1/2/3/4')
-else
-  call gather_global(gtarea, tarea, master_task, distrb_info)
-  select case (iceberg)
-    case (1); myvar = 'FICEBERG_AC2'
-    case (2); myvar = 'FICEBERG_GC3'
-    case (3); myvar = 'FICEBERG_AC2_AVE'
-    case (4); myvar = 'FICEBERG_GC3_AVE'
-  end select
-  write(il_out,*)'(get_lice_discharge), iceberg = ', iceberg
-  write(il_out,'(a,a)') '(get_lice_discharge) reading in iceberg data, myvar= ',trim(myvar)
-  do im = 1, 12
-    write(il_out,*) '(get_lice_discharge) reading in data, month= ',im
-    !call ice_read_nc(ncid_i2o, im, trim(myvar), vwork, dbug)
-    !icebergfw(:,:,im,:) = vwork(:,:,:)
-    !call gather_global(gwork, vwork, master_task, distrb_info)
-    !gicebergfw(:,:,im) = gwork(:,:)
-
-    call ice_read_global_nc(ncid_i2o,1,trim(myvar),gicebergfw(:,:,im),.true.)
-    call broadcast_array(gicebergfw(:,:,im), master_task) 
-
-    ticeberg_s(im) = 0.0
-    do j = 1, iceberg_je_s  !1, ny_global/2 (iceberg_je_s smaller than ny_global/2 thus saves time)
-      do i = 1, nx_global
-        ticeberg_s(im) = ticeberg_s(im) + gtarea(i,j) * gwork(i,j)
-      enddo
-    enddo
-    ticeberg_n(im) = 0.0
-    do j = iceberg_js_n, ny_global  !ny_global/2 + 1, ny_global !(iceberg_js_n bigger than ny_global/2 +1)
-      do i = 1, nx_global
-        ticeberg_n(im) = ticeberg_n(im) + gtarea(i,j) * gwork(i,j)
-      enddo
-    enddo
-
-    write(il_out, *) '(get_lice_discharge) check: im, ticeberg_s, ticeberg_n = ',im, ticeberg_s(im), ticeberg_n(im)
-
-  enddo
-
-  write(il_out,*) '(get_lice_discharge) reading in gwet...'
-  !call ice_read_nc(ncid_i2o, 1, 'GWET', vwork, dbug)
-  !call gather_global(gwet, vwork, master_task, distrb_info)
-  call ice_read_global_nc(ncid_i2o,1,'GWET',gwet,.true.)
-  call broadcast_array(gwet, master_task) 
-
-endif
-
-if (my_task == master_task) call ice_close_nc(ncid_i2o)
-write(il_out,*) '(get_lice_discharge) reading completed!'
-
-return
-
-end subroutine get_lice_discharge_doubt
 
 !=================================================
 subroutine get_lice_discharge(fname)
@@ -544,69 +473,6 @@ return
 
 end subroutine get_lice_discharge
 
-!=================================================
-subroutine get_iceberg_distribution(fname) !, mychoice)
-
-! This routine is called at beginning of each job.
-! *** It's NOT used! 'get_lice_discharge ' is used instead. ***
-
-implicit none
-
-character*(*), intent(in) :: fname
-!integer(kind=int_kind), intent(in) :: mychoice  !iceberg distribution option (1,2,3,4)
-logical :: dbug
-integer(kind=int_kind) :: ncid, im
-
-dbug = .true.
-!dbug = .false.
-
-IF (file_exist(fname)) THEN
-
-if (my_task==0) then
-  write(*,*) '(get_iceberg_distribution) opening ncfile: ',fname
-  write(il_out,*) '(get_iceberg_distribution) opening ncfile: ',fname
-endif
-
-call ice_open_nc(trim(fname), ncid)
-if (my_task==0) then
-  write(*,*) '(get_iceberg_distribution) reading in iceberg data, option: ',iceberg !mychoice
-  write(il_out,'(a,a)') '(get_iceberg_distribution) reading in iceberg data, option: ',iceberg !mychoice
-endif
-!!if (mychoice == 1) then
-if (iceberg == 1) then
-  do im = 1, 12 
-    call ice_read_nc(ncid, im, 'FICEBERG_AC2', icebergfw(:,:,im,:), dbug)
-  enddo
-!!else if (mychoice == 2) then
-else if (iceberg == 2) then
-  do im = 1, 12
-    call ice_read_nc(ncid, im, 'FICEBERG_GC3', icebergfw(:,:,im,:), dbug)
-  enddo
-!!else if (mychoice == 3) then
-else if (iceberg == 3) then
-  do im = 1, 12
-    !set monthly to be annual mean:    
-    call ice_read_nc(ncid, 1, 'FICEBERG_AC2_AVE', icebergfw(:,:,im,:), dbug)
-  enddo
-else if (iceberg == 4) then
-  do im = 1, 12
-    !set monthly to be annual mean:    
-    call ice_read_nc(ncid, 1, 'FICEBERG_GC3_AVE', icebergfw(:,:,im,:), dbug)
-  enddo
-endif
-
-if (my_task == master_task) call ice_close_nc(ncid)
-
-ELSE
-
-write(6,'(a,a)')'CICE stopped -- iceberg data missing ----> ', fname
-write(il_out,'(a,a)')'CICE stopped -- iceberg data missing ----> ', fname
-call abort_ice ('ice: iceberg data missing!') 
-
-ENDIF
-
-return 
-end subroutine get_iceberg_distribution
 
 !=================================================
 subroutine get_restart_i2o(fname)
@@ -1133,12 +999,6 @@ real (kind=dbl_kind) :: &
         r_s = 1.0, &
         r_n = 1.0, &
         r_runoff=1.0        !=(1-min(r_max_iceberg. r_s(or r_n))
-!temporary use (for checking if algorithm conserves water mass):
-real (kind=dbl_kind) :: &
-        newtrunoff_s  = 0.0, &
-        newtrunoff_n  = 0.0, &
-        newiceberg_s  = 0.0, &
-        newiceberg_n  = 0.0
 
 ! Fields obtained here are all at T cell center. before being sent to MOM4, vector 
 ! (Taux, Tauy) should be shifted on to U point as required
@@ -1183,7 +1043,10 @@ io_lwflx = um_lwflx
 
 !(11) runoff 
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 call gather_global(grunoff, um_runoff, master_task, distrb_info)
 
 !*** mask off "extra/useless" runoff on dry points ***
