@@ -167,13 +167,10 @@ real(kind=dbl_kind),dimension(:,:,:,:), allocatable :: &
     icebergfw   !land ice discharge into ocean as monthly iceberg melt waterflux ==>io_licefw
 real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
     gicebergfw     !monthly iceberg flux on global domain
-!202407-11: note gwet added here is landsea mask for global domain (1 = wet, 0 = dry), 
-!passed from kmt.nc which is read in ice_grid. It is used to axe off "extra" runoff for 
-!global/domain "effective" runoff amount calculation, required by the "iceberg scheme"!    
 real(kind=dbl_kind),dimension(:,:), allocatable :: &
     gtarea,     &  !tarea on global domain
-    grunoff,    &  !runoff on global domain
-    gwet
+    grunoff        !runoff on global domain
+
 real(kind=dbl_kind),dimension(:), allocatable :: &
     ticeberg_s, ticeberg_n  !monthly land ice off Anrarctica and Greenland (NH)
 

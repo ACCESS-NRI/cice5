@@ -455,12 +455,6 @@ else
 
   enddo
 
-  write(il_out,*) '(get_lice_discharge) reading in gwet...'
-  call ice_read_nc(ncid_i2o, 1, 'GWET', vwork, dbug)
-  call gather_global(gwet, vwork, master_task, distrb_info)
-
-  call broadcast_array(gwet, master_task)
-
   !call check_iceberg_reading('chk_iceberg_readin.nc')
   !!!above call results in segmentation fault !?!!!
 
@@ -1042,31 +1036,30 @@ io_shflx = um_shflx
 io_lwflx = um_lwflx
 
 !(11) runoff 
-
-call gather_global(grunoff, um_runoff, master_task, distrb_info)
-
 !*** mask off "extra/useless" runoff on dry points ***
-grunoff(:,:) = grunoff(:,:) * gwet(:,:)
-!
+io_runof = um_runoff * tmask
+call gather_global(grunoff, io_runof, master_task, distrb_info)
 
-trunoff_s = 0.0
-do j = 1, runoff_je_s
-  do i = 1, nx_global
-    trunoff_s = trunoff_s + gtarea(i,j) * grunoff(i,j)
-    grunoff(i,j) = grunoff(i,j) * (1.0 - iceberg_rate_s)  !do deduction
+if (my_task == master_task) then
+
+  trunoff_s = 0.0
+  do j = 1, runoff_je_s
+    do i = 1, nx_global
+      trunoff_s = trunoff_s + gtarea(i,j) * grunoff(i,j)
+      grunoff(i,j) = grunoff(i,j) * (1.0 - iceberg_rate_s)  !do deduction
+    enddo
   enddo
-enddo
-trunoff_n = 0.0
-do j = runoff_js_n, runoff_je_n
-  do i = runoff_is_n, runoff_ie_n
-    trunoff_n = trunoff_n + gtarea(i,j) * grunoff(i,j)
-    grunoff(i,j) = grunoff(i,j) * (1.0 - iceberg_rate_n)  !do deduction
+  trunoff_n = 0.0
+  do j = runoff_js_n, runoff_je_n
+    do i = runoff_is_n, runoff_ie_n
+      trunoff_n = trunoff_n + gtarea(i,j) * grunoff(i,j)
+      grunoff(i,j) = grunoff(i,j) * (1.0 - iceberg_rate_n)  !do deduction
+    enddo
   enddo
-enddo
-!Now global runoff has been "updated" (deduction done for iceberg).
+  !Now global runoff has been "updated" (deduction done for iceberg).
+endif
 
-!Get the resultant runoff and iceberg fluxes: 
-
+!distributed the resultant runoff and iceberg fluxes: 
 call scatter_global(vwork, grunoff, master_task, distrb_info, &
                                   field_loc_center, field_type_scalar)
 io_runof(:,:,:) = vwork(:,:,:)

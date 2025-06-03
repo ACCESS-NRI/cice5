@@ -730,7 +730,6 @@
   !global domain runoff for runoff "deduction"
   allocate (grunoff(nx_global,ny_global)); grunoff(:,:) = 0
   allocate (gtarea(nx_global,ny_global)); gtarea(:,:) = 0
-  allocate (gwet(nx_global,ny_global)); gwet(:,:) = 0
   allocate (ticeberg_s(12)); ticeberg_s(:) = 0
   allocate (ticeberg_n(12)); ticeberg_n(:) = 0
   allocate (gicebergfw(nx_global,ny_global,12)); gicebergfw(:,:,:) = 0
