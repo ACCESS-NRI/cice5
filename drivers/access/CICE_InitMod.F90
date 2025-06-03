@@ -310,7 +310,7 @@
       !          discharge is same as case 1;
       !   3: as case 1 but use annual mean    
       !   4: as case 2 but use annual mean
-      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have idential annual 
+      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have identical annual 
       !!! discharge of land ice (as iceberg) into ocean. 
 
       if ( file_exist(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') ) then

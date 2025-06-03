@@ -484,9 +484,9 @@ call ice_open_nc(trim(fname), ncid_i2o)
 write(il_out,*) '(get_lice_discharge) opened datafile: ', trim(fname)
 write(il_out,*) '(get_lice_discharge) ncid_i2o= ', ncid_i2o
 
-if (iceberg == 0 .or. iceberg .gt. 4) then
-  write(il_out,*) '(get_lice_discharge) in ESM onl support iceberg = 1,2,3,4) '
-  call abort_ice('CICE stopped: ESM does not support iceberg = 0. Please set it to 1/2/3/4')
+if (iceberg .lt. 1 .or. iceberg .gt. 4) then
+  write(il_out,*) '(get_lice_discharge) in ESM only supports iceberg = 1,2,3,4) '
+  call abort_ice('CICE stopped: ESM only supports iceberg = 1,2,3,4. Please set it to 1,2,3,4')
 else
   call gather_global(gtarea, tarea, master_task, distrb_info)
   select case (iceberg)
@@ -1183,7 +1183,6 @@ io_lwflx = um_lwflx
 
 !(11) runoff 
 
-io_runof = um_runoff
 
 call gather_global(grunoff, um_runoff, master_task, distrb_info)
 
@@ -1195,18 +1194,14 @@ trunoff_s = 0.0
 do j = 1, runoff_je_s
   do i = 1, nx_global
     trunoff_s = trunoff_s + gtarea(i,j) * grunoff(i,j)
-    !
     grunoff(i,j) = grunoff(i,j) * (1.0 - iceberg_rate_s)  !do deduction
-    !
   enddo
 enddo
 trunoff_n = 0.0
 do j = runoff_js_n, runoff_je_n
   do i = runoff_is_n, runoff_ie_n
     trunoff_n = trunoff_n + gtarea(i,j) * grunoff(i,j)
-    !
     grunoff(i,j) = grunoff(i,j) * (1.0 - iceberg_rate_n)  !do deduction
-    !
   enddo
 enddo
 !Now global runoff has been "updated" (deduction done for iceberg).
