@@ -1043,10 +1043,6 @@ io_lwflx = um_lwflx
 
 !(11) runoff 
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 call gather_global(grunoff, um_runoff, master_task, distrb_info)
 
 !*** mask off "extra/useless" runoff on dry points ***
