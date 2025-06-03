@@ -85,7 +85,9 @@ real(kind=dbl_kind) :: &
          iceberg_lh = 1.0             !iceberg latent heat (=0 if CABLE already calculated melting)
              
 logical :: runoff_lh = .true.         !allow runoff to carry LH when discharged into ocean
-                                      !which would lead to ocean surface cooling
+                                      !which would lead to ocean surface cooling,
+                                      !when .false., only carry LH to areas where 
+                                      !runoff spread by the lice (iceberg) mask
 integer(kind=int_kind) :: &
          iceberg_je_s = 70, &   !(iceberg_js_s=1, always)
          runoff_je_s  = 45, &   !(runoff_js_s =1, always)

@@ -1091,8 +1091,7 @@ io_licefw(:,:,:) = vwork(:,:,:)         !i2o field No 18.
 
 !Also count in the latent heat carried with the runoff part, as done below, thus allowing
 !for (rough) consistency of energy exchange no matter what iceberg_rate_s/n are used.
-!Warning: the follow approach would lose all the runoff LH in no-iceberg case ***
-!    if we (have to) chose runoff_lh = .false. to avoid model crash(?).
+!Warning: the follow approach would lose all the runoff LH, if runoff_lh=.false., in no-iceberg case 
 
 IF ( runoff_lh ) THEN
 
@@ -1106,9 +1105,9 @@ do i = runoff_is_n, runoff_ie_n
     gwork(i,j) = gwork(i,j) + grunoff(i,j)
   enddo
 enddo
-      !If runoff with latent heat flux crashes the model in no-iceberg case
-ELSE  !due probably to too big LH(?), (hope not!!!)
-      !all the LH carried by runoff is applied to iceberg areas.
+ELSE
+!If runoff with latent heat flux crashes the model in no-iceberg case, due probably to too big LH(?)
+!all the LH carried by runoff is applied to iceberg areas.
 do i = 1, nx_global
   do j = 1, iceberg_je_s
     gwork(i,j) = gwork(i,j)/max(iceberg_rate_s, 0.0001) !get the whole runoff LH onto iceberg
