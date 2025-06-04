@@ -263,23 +263,23 @@
       ! for continue runs, need restart o2i forcing fields and time-averaged ice 
       ! variables ('mice')saved at the end of last run from ice models; 
       ! for initial run, pre-processed o2i (and maybe mice) fields are required.
-      write(il_out,*)' calling get_restart_o2i at time_sec = ',0
-      if ( file_exist(trim(restartdir)//'/o2i.nc') ) then
-        call get_restart_o2i(trim(restartdir)//'/o2i.nc')
-      else
-        write(il_out,*)' file NOT found: ', trim(restartdir)//'/o2i.nc'
-      endif
-      !if no lag for ice to atm coupling, then cice has to read restart file i2a.nc and 
-      !put the data to atm. the call is not needed if there is lag for ice2atm coupling
-      !must call after get_restart_o2i(), by which the ocn_sst ect are read in and re-used by put_restart_i2a()  
-!      call put_restart_i2a('i2a.nc', 0)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       if ( trim(runtype) == 'continue' ) then
+        write(il_out,*)' calling get_restart_o2i at time_sec = ',0
+        if ( file_exist(trim(restartdir)//'/o2i.nc') ) then
+        call get_restart_o2i(trim(restartdir)//'/o2i.nc')
+        else
+        call abort_ice('file NOT found: '//trim(restartdir)//'/o2i.nc '//&
+                        "This is allowed for runtype='initial' ONLY")
+        endif
+        !if no lag for ice to atm coupling, then cice has to read restart file i2a.nc and 
+        !put the data to atm. the call is not needed if there is lag for ice2atm coupling
+        !must call after get_restart_o2i(), by which the ocn_sst ect are read in and re-used by put_restart_i2a()  
+  !      call put_restart_i2a('i2a.nc', 0)
         if ( file_exist(trim(restartdir)//'/mice.nc') ) then
           !for continue runs, mice data MUST be available.
           call get_restart_mice(trim(restartdir)//'/mice.nc')
         else
-          call abort_ice("No mice.nc restart file found. "//&
+          call abort_ice("file NOT found: "//trim(restartdir)//'/mice.nc '//&
                          "This is allowed for runtype='initial' ONLY")
         endif
       endif
