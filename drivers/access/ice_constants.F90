@@ -44,10 +44,7 @@
 
 !ars599: 26032014 new code (CODE: dragio)
 !	use new code, mark out #ifndef AusCOM
-#ifndef AusCOM
-         !!! dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
-         dragio    = 0.01_dbl_kind ,&!!! 20170922 test new value as per spo 
-#endif
+
          albocn    = 0.06_dbl_kind      ! ocean albedo
 
       real (kind=dbl_kind), parameter, public :: &
@@ -58,10 +55,7 @@
       real (kind=dbl_kind), parameter, public :: &
          secday    = 86400.0_dbl_kind ,&! seconds in calendar day
          viscosity_dyn = 1.79e-3_dbl_kind, & ! dynamic viscosity of brine (kg/m/s)
-#ifndef AusCOM
-         Tocnfrz   = -1.8_dbl_kind    ,&! freezing temp of seawater (C),
-                                        ! used as Tsfcn for open water
-#endif
+
          rhofresh  = 1000.0_dbl_kind  ,&! density of fresh water (kg/m^3)
          zvir      = 0.606_dbl_kind   ,&! rh2o/rair - 1.0
          vonkar    = 0.4_dbl_kind     ,&! von Karman constant
@@ -73,7 +67,6 @@
          Lfresh    = Lsub-Lvap        ,&! latent heat of melting of fresh ice (J/kg)
          Timelt    = 0.0_dbl_kind     ,&! melting temperature, ice top surface  (C)
          Tsmelt    = 0.0_dbl_kind     ,&! melting temperature, snow top surface (C)
-         ice_ref_salinity = 5._dbl_kind, &!8._dbl_kind ,&! (ppt)
 !        ocn_ref_salinity = 34.7_dbl_kind,&! (ppt)
          spval_dbl = 1.0e30_dbl_kind    ! special value (double precision)
 
@@ -98,21 +91,25 @@
          !!!ksno   = 0.50_dbl_kind  ,&!!! test new value as per spo
          zref   = 10._dbl_kind   ,&! reference height for stability (m)
 #ifndef AusCOM
+         snowpatch = 0.02_dbl_kind, & ! parameter for fractional snow area (m)
+#endif
          ! multilayers with the UM coupling
-         aicenmin_ml = 0.00001_dbl_kind, &! AEW: min aice we want to allow when using
-         snowpatch = 0.02_dbl_kind ! parameter for fractional snow area (m)
-#else
          aicenmin_ml = 0.00001_dbl_kind! AEW: min aice we want to allow when using
-#endif                    
-#ifdef AusCOM
-      ! in namelist therefore not parameter, which is counterintuitive,
-      ! since this modules name is ice_constants
-!ars599: 26032014: change to public
-!ars599: 24042015: remove dragio!!
+#ifndef AusCOM
+      real (kind=dbl_kind), parameter, public :: &
+         !!! dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
+         dragio    = 0.01_dbl_kind ,&!!! 20170922 test new value as per spo 
+         Tocnfrz   = -1.8_dbl_kind    ,&! freezing temp of seawater (C),
+                                        ! used as Tsfcn for open water
+         ice_ref_salinity = 5._dbl_kind ! reference salinity for ice–ocean exchanges (ppt)
+                                        ! n.b. CICE6 uses 4 ppt
+#else
+      ! get these in ice_init from namelist
       real (kind=dbl_kind), public :: &
-         dragio   , & ! ice-ocn drag coefficient
-         Tocnfrz ! freezing temp of seawater (C),
-                 ! used as Tsfcn for open water
+         dragio   ,  & ! ice-ocn drag coefficient
+         Tocnfrz ,   & ! freezing temp of seawater (C),
+                       ! used as Tsfcn for open water
+         ice_ref_salinity ! reference salinity for ice–ocean exchanges (ppt)
 #endif
 
       ! weights for albedos 
