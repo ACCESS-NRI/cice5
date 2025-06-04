@@ -91,13 +91,12 @@
          !!!ksno   = 0.50_dbl_kind  ,&!!! test new value as per spo
          zref   = 10._dbl_kind   ,&! reference height for stability (m)
 #ifndef AusCOM
-         ! multilayers with the UM coupling
-         aicenmin_ml = 0.00001_dbl_kind, &! AEW: min aice we want to allow when using
          snowpatch = 0.02_dbl_kind, & ! parameter for fractional snow area (m)
-#else
-         aicenmin_ml = 0.00001_dbl_kind! AEW: min aice we want to allow when using
 #endif
+         ! multilayers with the UM coupling
+         aicenmin_ml = 0.00001_dbl_kind! AEW: min aice we want to allow when using
 #ifndef AusCOM
+      real (kind=dbl_kind), parameter, public :: &
          !!! dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
          dragio    = 0.01_dbl_kind ,&!!! 20170922 test new value as per spo 
          Tocnfrz   = -1.8_dbl_kind    ,&! freezing temp of seawater (C),
