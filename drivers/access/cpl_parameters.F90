@@ -64,9 +64,6 @@ integer(kind=int_kind) :: init_date = 00010101 !beginning date of this EXP (yyyy
 integer(kind=int_kind) :: dt_cice = 3600       !time step of this model      (seconds) 
 integer(kind=int_kind) :: dt_cpl_ai = 21600    !atm<==>ice coupling interval (seconds) 
 integer(kind=int_kind) :: dt_cpl_io = 21600    !ice<==>ocn coupling interval (seconds)
-integer(kind=int_kind) :: caltype = 0          !calendar type: 0 (365daye/yr, 'Juilian' ) 
-                                               ! 1 (365/366 days/yr, 'Gregorian')
-                                               ! n (n days/month)
 !integer(kind=int_kind) :: runtime0    !accumulated run time by the end of last run (s)   
 real(kind=dbl_kind) :: runtime0 = 0.0  !  can be too large as int to read in correctly!
 integer(kind=int_kind) :: runtime = 86400      !the time length for this run segment (s)
@@ -82,7 +79,6 @@ integer(kind=int_kind) :: iceberg = 0
 real(kind=dbl_kind) :: iceberg_factor = 1.0
 !             
 namelist/coupling/       &
-         caltype,        &
          jobnum,         &
          inidate,        &
          init_date,      &
