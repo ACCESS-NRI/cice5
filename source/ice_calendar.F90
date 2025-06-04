@@ -296,7 +296,9 @@
       write(il_out,*) '(calendar)  idate = ', idate
 #endif
       if (istep >= npt+1)  stop_now = 1
+#ifndef ACCESS
       if (istep == npt .and. dump_last) write_restart = 1 ! last timestep
+#endif
       if (nyr   /= nyrp)   new_year = .true.
       if (month /= monthp) new_month = .true.
       if (mday  /= mdayp)  new_day = .true.
