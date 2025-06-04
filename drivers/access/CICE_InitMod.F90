@@ -274,15 +274,13 @@
       !must call after get_restart_o2i(), by which the ocn_sst ect are read in and re-used by put_restart_i2a()  
 !      call put_restart_i2a('i2a.nc', 0)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      if ( file_exist(trim(restartdir)//'/mice.nc') ) then
-        !for continue runs, mice data MUST be available.
-        call get_restart_mice(trim(restartdir)//'/mice.nc')
-      else
-        if (my_task == master_task) then
-          write(6,*)'* WARNING: No initial mice.nc data available here! *'
-          write(6,*)'* WARNING: ALL mice variables will be set to ZERO! *'
-          write(6,*)'* WARNING: This is allowed for the init run ONLY ! *' 
+      if ( trim(runtype) == 'continue' ) then
+        if ( file_exist(trim(restartdir)//'/mice.nc') ) then
+          !for continue runs, mice data MUST be available.
+          call get_restart_mice(trim(restartdir)//'/mice.nc')
+        else
+          call abort_ice("No mice.nc restart file found. "//&
+                         "This is allowed for runtype='initial' ONLY")
         endif
       endif
       if (use_core_runoff) then
@@ -316,7 +314,9 @@
       if ( file_exist(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') ) then
           call get_lice_discharge(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') 
       else
-          write(6,*)'* CICE stopped -- iceberg datafile missing.*' 
+          if (my_task == master_task) then
+            write(6,*)'* CICE stopped -- iceberg datafile missing.*' 
+          endif
           call abort_ice ('ice: land ice discharge iceberg datafile missing: '//&
                           trim(inputdir)//'/lice_discharge_masks_iceberg.nc'//' *')
       endif

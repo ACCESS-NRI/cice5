@@ -20,7 +20,6 @@ use ice_communicate, only : my_task, master_task
 !use ice_ocean,     only : cprho
 use ice_exit,      only : abort_ice
 use ice_shortwave, only : apeffn
-!202410:
 use ice_grid, only: tarea
 use ice_calendar, only: month
 
@@ -667,26 +666,15 @@ stray = um_tauy * aice      !*tmask ?
 do j = 1, ny_block
 do i = 1, nx_block
   do k = 1, nblocks
-!    !BX 20160826: as in NEMO sbccpl.F90, there is no "open water field" um_lhflx involved: 
-!    !    qla_ice(:,:,1:jpl) = - frcv(jpr_ievp)%z3(:,:,1:jpl) * lsub 
-!    !-------------------------------------------------------------------------------------
-!    !if (aice(i,j,k)==0.0) then
-!    !  do cat = 1, ncat
-!    !    flatn_f(i,j,cat,k) = 0.0
-!    !  enddo
-!    !  ! This will then be conserved in CICE (done in sfcflux_to_ocn)
-!    !  flatn_f(i,j,1,k) = um_lhflx(i,j,k)
-!    !else
-!      do cat = 1, ncat
-!        !!!BX: flatn_f(i,j,cat,k) = um_lhflx(i,j,k) * aicen(i,j,cat,k)/aice(i,j,k)
-!        !!!   Double check "Lsub" used here !!! 
-!        !?! flatn_f(i,j,cat,k) = um_iceevp(i,j,cat,k) * Lsub 
-!        flatn_f(i,j,cat,k) = - um_iceevp(i,j,cat,k) * Lsub
-!      enddo
-!    !endif
-!Drop the CM2 approach for flatn_f calculation (above) 'cuz um_iceevp is NOT used
-!    in the UM7.3 coupling framework -- may revist this part later...
-!Back to the ESM1.5 approach where um_lhflx is available for use. 
+    ! Notes from ACCESS-CM2:
+      !BX 20160826: as in NEMO sbccpl.F90, there is no "open water field" um_lhflx involved: 
+      !    qla_ice(:,:,1:jpl) = - frcv(jpr_ievp)%z3(:,:,1:jpl) * lsub 
+      !-------------------------------------------------------------------------------------
+    ! CM2 Uses this, as um_lhflx is not available:
+    !      do cat = 1, ncat
+    !        flatn_f(i,j,cat,k) = - um_iceevp(i,j,cat,k) * Lsub
+    !      enddo
+
     if (aice(i,j,k)==0.0) then
       do cat = 1, ncat
         flatn_f(i,j,cat,k) = 0.0
