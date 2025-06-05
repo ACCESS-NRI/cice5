@@ -31,7 +31,9 @@
       save
 
       private
-      public :: define_hist_field, accum_hist_field, icefields_nml, construct_filename
+      public :: define_hist_field, accum_hist_field, icefields_nml, construct_filename, &
+      accum_hist_field_2D_nomask
+
       logical (kind=log_kind), public :: &
          hist_avg  ! if true, write averaged data instead of snapshots
 
@@ -194,6 +196,12 @@
 
       character (len=max_nstrm), public :: &
 !          f_example   = 'md', &
+           f_um_runoff = 'm', &
+           f_io_runof = 'm', &
+           f_io_licefw = 'm', &
+           f_um_runoff_nm = 'm', &
+           f_io_runof_nm = 'm', &
+           f_io_licefw_nm = 'm', &
            f_hi        = 'm', f_hs         = 'm', &
            f_snowfrac  = 'x', f_snowfracn  = 'x', &
            f_Tsfc      = 'm', f_aice       = 'm', &
@@ -322,6 +330,12 @@
            f_VGRDi    , f_VGRDs    , &
            f_VGRDb    , &
 !          f_example  , &
+           f_um_runoff, &
+           f_io_runof, &
+           f_io_licefw, &
+           f_um_runoff_nm, &
+           f_io_runof_nm, &
+           f_io_licefw_nm, &
            f_hi,        f_hs       , &
            f_snowfrac,  f_snowfracn, &
            f_Tsfc,      f_aice     , &
@@ -465,6 +479,10 @@
 
       integer (kind=int_kind), dimension(max_nstrm), public :: &
 !          n_example    , &
+           n_um_runoff, n_io_runof,      &
+           n_io_licefw,                  &
+           n_um_runoff_nm, n_io_runof_nm,&
+           n_io_licefw_nm,                  &
            n_hi         , n_hs         , &
            n_snowfrac,    n_snowfracn,   &
            n_Tsfc       , n_aice       , &
@@ -877,6 +895,59 @@
        enddo
 
       end subroutine accum_hist_field_2D
+
+
+
+!     Accumulates a 2D history field without applying the mask
+
+      subroutine accum_hist_field_2D_nomask(id, iblk, field_accum, field)
+
+      use ice_blocks, only: block, get_block
+      use ice_calendar, only: nstreams
+      use ice_domain, only: blocks_ice
+      use ice_domain_size, only: max_nstrm
+
+      integer (int_kind), dimension(max_nstrm), intent(in) :: &
+         id                ! location in avail_fields array for use in
+                           ! later routines
+        
+      integer (kind=int_kind), intent(in) :: iblk
+
+      real (kind=dbl_kind), intent(in) :: &
+         field_accum(:,:)
+
+      real (kind=dbl_kind), intent(inout) :: &
+         field(:,:,:,:)
+
+      type (block) :: &
+         this_block           ! block information for current block
+
+      integer (kind=int_kind) :: i,j, ilo, ihi, jlo, jhi, ns, idns
+
+      !---------------------------------------------------------------
+      ! increment field
+      !---------------------------------------------------------------
+
+       do ns = 1, nstreams
+       idns = id(ns)
+       if (idns > 0) then
+
+       this_block = get_block(blocks_ice(iblk),iblk)
+       ilo = this_block%ilo
+       ihi = this_block%ihi
+       jlo = this_block%jlo
+       jhi = this_block%jhi
+
+       do j = jlo, jhi
+       do i = ilo, ihi
+             field(i,j,idns, iblk) = field(i,j,idns, iblk) + field_accum(i,j)
+       enddo
+       enddo
+
+       endif
+       enddo
+
+      end subroutine accum_hist_field_2D_nomask
 
 !=======================================================================
 

@@ -396,6 +396,13 @@
       call broadcast_scalar (f_yieldstress12, master_task)
       call broadcast_scalar (f_yieldstress22, master_task)
 
+      call broadcast_scalar (f_um_runoff, master_task)
+      call broadcast_scalar (f_io_runof, master_task)
+      call broadcast_scalar (f_io_licefw, master_task)
+      call broadcast_scalar (f_um_runoff_nm, master_task)
+      call broadcast_scalar (f_io_runof_nm, master_task)
+      call broadcast_scalar (f_io_licefw_nm, master_task)
+
       ! 2D variables
       do ns1 = 1, nstreams
       if (histfreq(ns1) /= 'x') then
@@ -406,6 +413,31 @@
 !            "ice volume per unit grid cell area", c1, c0,            &
 !            ns1, f_example)
 !!!!! end example
+         call define_hist_field(n_um_runoff ,"um_runoff","kg/m2/s?",tstr2D, tcstr,        & 
+            "runoff imported from um",                       &
+            "none", c1, c0,         &
+            ns1, f_um_runoff)
+         call define_hist_field(n_io_runof,"io_runoff","kg/m2/s?",tstr2D, tcstr,        & 
+            "liquid runoff out",                       &
+            "none", c1, c0,         &
+            ns1, f_io_runof)
+         call define_hist_field(n_io_licefw,"io_licefw","kg/m2/s?",tstr2D, tcstr,        & 
+            "iceberg flux",                       &
+            "none", c1, c0,         &
+            ns1, f_io_licefw)
+         call define_hist_field(n_um_runoff_nm ,"um_runoff_nm","kg/m2/s?",tstr2D, tcstr,        & 
+            "runoff imported from um no mask",                       &
+            "none", c1, c0,         &
+            ns1, f_um_runoff_nm)
+         call define_hist_field(n_io_runof_nm,"io_runoff_nm","kg/m2/s?",tstr2D, tcstr,        & 
+            "liquid runoff out no mask",                       &
+            "none", c1, c0,         &
+            ns1, f_io_runof_nm)
+         call define_hist_field(n_io_licefw_nm,"io_licefw_nm","kg/m2/s?",tstr2D, tcstr,        & 
+            "iceberg flux no mask",                       &
+            "none", c1, c0,         &
+            ns1, f_io_licefw_nm)
+
 
          call define_hist_field(n_hi,"hi","m",tstr2D, tcstr,        & 
             "grid cell mean ice thickness",                       &
@@ -1525,6 +1557,7 @@
           spval_dbl, Tffresh, ice_ref_salinity, c1000
       use ice_domain, only: blocks_ice, nblocks
       use ice_grid, only: tmask, lmask_n, lmask_s, tarea, HTE, HTN
+      use cpl_arrays_setup, only: um_runoff, io_runof, io_licefw
 #ifdef AusCOM
       use ice_grid, only: umask
 !ars599: 27032014 
@@ -1686,6 +1719,18 @@
 
 !        if (f_example(1:1) /= 'x') &
 !            call accum_hist_field(n_example,iblk, vice(:,:,iblk), a2D)
+         if (f_um_runoff     (1:1) /= 'x') &
+             call accum_hist_field(n_um_runoff,     iblk, um_runoff(:,:,iblk), a2D)
+         if (f_io_runof     (1:1) /= 'x') &
+             call accum_hist_field(n_io_runof,     iblk, io_runof(:,:,iblk), a2D)
+         if (f_io_licefw     (1:1) /= 'x') &
+             call accum_hist_field(n_io_licefw,     iblk, io_licefw(:,:,iblk), a2D)
+         if (f_um_runoff_nm     (1:1) /= 'x') &
+             call accum_hist_field_2D_nomask(n_um_runoff_nm,     iblk, um_runoff(:,:,iblk), a2D)
+         if (f_io_runof_nm     (1:1) /= 'x') &
+             call accum_hist_field_2D_nomask(n_io_runof_nm,     iblk, io_runof(:,:,iblk), a2D)
+         if (f_io_licefw_nm     (1:1) /= 'x') &
+             call accum_hist_field_2D_nomask(n_io_licefw_nm,     iblk, io_licefw(:,:,iblk), a2D)
          if (f_hi     (1:1) /= 'x') &
              call accum_hist_field(n_hi,     iblk, vice(:,:,iblk), a2D)
          if (f_hs     (1:1) /= 'x') &
@@ -2804,6 +2849,10 @@
                        a2D(i,j,n,iblk) = avail_hist_fields(n)%cona*a2D(i,j,n,iblk) &
                             * ravgct + avail_hist_fields(n)%conb
                     endif
+                 elseif(n_um_runoff_nm(ns)==n .or. n_io_licefw_nm(ns)==n .or. n_io_licefw_nm(ns)==n) then
+                    ! Don't apply land mask to these fields
+                    a2D(i,j,n,iblk) = avail_hist_fields(n)%cona*a2D(i,j,n,iblk) &
+                            * ravgct + avail_hist_fields(n)%conb
                  else
                     if (.not. tmask(i,j,iblk)) then ! mask out land points
                        a2D(i,j,n,iblk) = spval_dbl
