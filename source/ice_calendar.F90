@@ -541,7 +541,7 @@
       if (mod(year,400) == 0) isleap = .true.
       
       ! Ensure the calendar is set correctly
-      if (isleap) then
+      if (isleap .and. use_leap_years) then
          daycal = daycal366
          daymo = daymo366
          dayyr=real(daycal(13), kind=dbl_kind)
