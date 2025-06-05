@@ -723,19 +723,25 @@
   allocate (maicen(nx_block,ny_block,ncat,max_blocks)); maicen(:,:,:,:) = 0
   allocate (msnown(nx_block,ny_block,ncat,max_blocks)); msnown(:,:,:,:) = 0
   allocate (mthikn(nx_block,ny_block,ncat,max_blocks)); mthikn(:,:,:,:) = 0
-!BX:
   allocate (maicen_saved(nx_block,ny_block,ncat,max_blocks)); maicen_saved(:,:,:,:) = 0
-!
-  allocate (icebergfw(nx_block,ny_block,12,max_blocks)); icebergfw(:,:,:,:) = 0
-  !global domain runoff for runoff "deduction"
-  allocate (grunoff(nx_global,ny_global)); grunoff(:,:) = 0
-  allocate (gtarea(nx_global,ny_global)); gtarea(:,:) = 0
+  
   allocate (ticeberg_s(12)); ticeberg_s(:) = 0
   allocate (ticeberg_n(12)); ticeberg_n(:) = 0
-  allocate (gicebergfw(nx_global,ny_global,12)); gicebergfw(:,:,:) = 0
+
+  if (my_task == master_task) then
+    !global domain runoff for iceberg runoff calcs
+    allocate (gicebergfw(nx_global,ny_global,12)); gicebergfw(:,:,:) = 0
+    allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0
+    allocate (grunoff(nx_global,ny_global)); grunoff(:,:) = 0
+    allocate (gtarea(nx_global,ny_global)); gtarea(:,:) = 0
+  else
+    allocate (gicebergfw(1,1,12)); gicebergfw(:,:,:) = 0
+    allocate (gwork(1,1)); gwork(:,:) = 0
+    allocate (grunoff(1,1)); grunoff(:,:) = 0
+    allocate (gtarea(1,1)); gtarea(:,:) = 0
+  endif
 
   allocate (vwork(nx_block,ny_block,max_blocks)); vwork(:,:,:) = 0
-  allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0
   allocate (sicemass(nx_block,ny_block,max_blocks)); sicemass(:,:,:) = 0.
   allocate (vwork2d(l_ilo:l_ihi, l_jlo:l_jhi)); vwork2d(:,:) = 0. !l_ihi-l_ilo+1, l_jhi-l_jlo+1
 

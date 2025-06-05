@@ -427,35 +427,27 @@ else
   write(il_out,'(a,a)') '(get_lice_discharge) reading in iceberg data, myvar= ',trim(myvar)
   do im = 1, 12
     write(il_out,*) '(get_lice_discharge) reading in data, month= ',im
-    call ice_read_nc(ncid_i2o, im, trim(myvar), vwork, dbug)
-
-    icebergfw(:,:,im,:) = vwork(:,:,:)
-
-    call gather_global(gwork, vwork, master_task, distrb_info)
-
-    call broadcast_array(gwork, master_task)
-
+    call ice_read_global_nc(ncid_i2o, im, trim(myvar), gwork, dbug)
     gicebergfw(:,:,im) = gwork(:,:)
 
-    ticeberg_s(im) = 0.0
-    do j = 1, iceberg_je_s  !1, ny_global/2 (iceberg_je_s smaller than ny_global/2 thus saves time)
-      do i = 1, nx_global
-        ticeberg_s(im) = ticeberg_s(im) + gtarea(i,j) * gwork(i,j)
+    if ( my_task == master_task ) then 
+      ticeberg_s(im) = 0.0
+      do j = 1, iceberg_je_s  !1, ny_global/2 (iceberg_je_s smaller than ny_global/2 thus saves time)
+        do i = 1, nx_global
+          ticeberg_s(im) = ticeberg_s(im) + gtarea(i,j) * gwork(i,j)
+        enddo
       enddo
-    enddo
-    ticeberg_n(im) = 0.0
-    do j = iceberg_js_n, ny_global  !ny_global/2 + 1, ny_global !(iceberg_js_n bigger than ny_global/2 +1)
-      do i = 1, nx_global
-        ticeberg_n(im) = ticeberg_n(im) + gtarea(i,j) * gwork(i,j)
+      ticeberg_n(im) = 0.0
+      do j = iceberg_js_n, ny_global  !ny_global/2 + 1, ny_global !(iceberg_js_n bigger than ny_global/2 +1)
+        do i = 1, nx_global
+          ticeberg_n(im) = ticeberg_n(im) + gtarea(i,j) * gwork(i,j)
+        enddo
       enddo
-    enddo
 
-    write(il_out, *) '(get_lice_discharge) check: im, ticeberg_s, ticeberg_n = ',im, ticeberg_s(im), ticeberg_n(im)
+      write(il_out, *) '(get_lice_discharge) check: im, ticeberg_s, ticeberg_n = ',im, ticeberg_s(im), ticeberg_n(im)
+    endif
 
   enddo
-
-  !call check_iceberg_reading('chk_iceberg_readin.nc')
-  !!!above call results in segmentation fault !?!!!
 
 endif
 if (my_task == master_task) then
@@ -1081,7 +1073,7 @@ io_licefw(:,:,:) = vwork(:,:,:)         !i2o field No 18.
 !for (rough) consistency of energy exchange no matter what iceberg_rate_s/n are used.
 !Warning: the follow approach would lose all the runoff LH, if runoff_lh=.false., in no-iceberg case 
 
-IF ( runoff_lh ) THEN
+IF ( runoff_lh .and. my_task == master_task) THEN
 
 do i = 1, nx_global
   do j = 1, runoff_je_s
@@ -1793,83 +1785,6 @@ if (my_task == 0) call ncheck(nf_close(ncid))
 return
 
 end subroutine check_iceberg_fields
-!=================================================
-subroutine check_iceberg_reading(ncfilenm)
-
-!this is used to check land ice fields read in
-
-implicit none
-
-character*(*), intent(in) :: ncfilenm
-integer(kind=int_kind) :: ncid,currstep, ilout, ll
-data currstep/0/
-save currstep
-
-currstep=currstep+1
-
-if (my_task == 0 .and. .not. file_exist(ncfilenm) ) then
-  call create_ncfile(ncfilenm,ncid,il_im,il_jm,ll=1,ilout=il_out)
-endif
-
-if (my_task == 0) then
-  write(il_out,*) 'opening ncfile at nstep ', ncfilenm,  currstep
-  call ncheck( nf_open(ncfilenm, nf_write,ncid) ) 
-  call write_nc_1Dtime(real(currstep),currstep,'time',ncid)
-end if
-
-vwork(:,:,:) = icebergfw(:,:,1,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm01', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,2,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm02', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,3,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm03', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,4,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm04', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,5,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm05', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,6,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm06', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,7,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm07', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,8,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm08', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,9,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm09', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,10,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm10', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,11,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm11', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-vwork(:,:,:) = icebergfw(:,:,12,:)
-call gather_global(gwork, vwork, master_task, distrb_info)
-if (my_task == 0) call write_nc2D(ncid, 'icebergfm12', gwork, 1, il_im,il_jm,currstep,ilout=il_out)
-
-if (my_task == 0) call ncheck(nf_close(ncid))
-
-return
-
-end subroutine check_iceberg_reading
 
 !=================================================
 subroutine check_landice_fields_1(ncfilenm)

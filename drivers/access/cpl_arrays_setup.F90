@@ -163,8 +163,6 @@ real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
 real(kind=dbl_kind),dimension(:,:,:), allocatable :: & 
     sicemass   !ice mass
 
-real(kind=dbl_kind),dimension(:,:,:,:), allocatable :: &
-    icebergfw   !land ice discharge into ocean as monthly iceberg melt waterflux ==>io_licefw
 real(kind=dbl_kind),dimension(:,:,:), allocatable :: &
     gicebergfw     !monthly iceberg flux on global domain
 real(kind=dbl_kind),dimension(:,:), allocatable :: &
