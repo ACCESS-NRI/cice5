@@ -1073,31 +1073,32 @@ io_licefw(:,:,:) = vwork(:,:,:)         !i2o field No 18.
 !for (rough) consistency of energy exchange no matter what iceberg_rate_s/n are used.
 !Warning: the follow approach would lose all the runoff LH, if runoff_lh=.false., in no-iceberg case 
 
-IF ( runoff_lh .and. my_task == master_task) THEN
+if (my_task == master_task) then
+  if ( runoff_lh ) then
 
-do i = 1, nx_global
-  do j = 1, runoff_je_s
-    gwork(i,j) = gwork(i,j) + grunoff(i,j)
-  enddo
-enddo
-do i = runoff_is_n, runoff_ie_n
-  do j = runoff_js_n, runoff_je_n
-    gwork(i,j) = gwork(i,j) + grunoff(i,j)
-  enddo
-enddo
-ELSE
-!If runoff with latent heat flux crashes the model in no-iceberg case, due probably to too big LH(?)
-!all the LH carried by runoff is applied to iceberg areas.
-do i = 1, nx_global
-  do j = 1, iceberg_je_s
-    gwork(i,j) = gwork(i,j)/max(iceberg_rate_s, 0.0001) !get the whole runoff LH onto iceberg
-  enddo
-  do j = iceberg_js_n, ny_global
-    gwork(i,j) = gwork(i,j)/max(iceberg_rate_n, 0.0001)
-  enddo
-enddo
-
-ENDIF
+    do i = 1, nx_global
+      do j = 1, runoff_je_s
+        gwork(i,j) = gwork(i,j) + grunoff(i,j)
+      enddo
+    enddo
+    do i = runoff_is_n, runoff_ie_n
+      do j = runoff_js_n, runoff_je_n
+        gwork(i,j) = gwork(i,j) + grunoff(i,j)
+      enddo
+    enddo
+  else
+  !If runoff with latent heat flux crashes the model in no-iceberg case, due probably to too big LH(?)
+  !all the LH carried by runoff is applied to iceberg areas.
+    do i = 1, nx_global
+      do j = 1, iceberg_je_s
+        gwork(i,j) = gwork(i,j)/max(iceberg_rate_s, 0.0001) !get the whole runoff LH onto iceberg
+      enddo
+      do j = iceberg_js_n, ny_global
+        gwork(i,j) = gwork(i,j)/max(iceberg_rate_n, 0.0001)
+      enddo
+    enddo
+  endif
+endif
 
 call scatter_global(vwork, gwork, master_task, distrb_info, &
                     field_loc_center, field_type_scalar)
