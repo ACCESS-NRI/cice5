@@ -144,7 +144,7 @@
         a_rapid_mode,   Rac_rapid_mode,  aspect_rapid_mode,             &
 !ars599: 24092014 (CODE: petteri)
 #ifdef AusCOM
-	     chio, ice_ref_salinity, ksno,                                   &
+        chio, ice_ref_salinity, ksno,                                   &
 #endif
         saltmax, dSdt_slow_mode, phi_c_slow_mode, phi_i_mushy
 
