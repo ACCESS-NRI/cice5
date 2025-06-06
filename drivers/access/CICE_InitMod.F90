@@ -316,7 +316,7 @@
 
       filename = trim(inputdir)//'/lice_discharge_iceberg.nc'
       if ( file_exist(filename) ) then
-          call get_lice_discharge(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') 
+          call get_lice_discharge(filename) 
       else
           if (my_task == master_task) then
             write(6,*)'* CICE stopped -- iceberg datafile missing.*' 

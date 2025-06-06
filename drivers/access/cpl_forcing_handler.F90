@@ -428,9 +428,10 @@ else
   do im = 1, 12
     write(il_out,*) '(get_lice_discharge) reading in data, month= ',im
     call ice_read_global_nc(ncid_i2o, im, trim(myvar), gwork, dbug)
-    gicebergfw(:,:,im) = gwork(:,:)
 
     if ( my_task == master_task ) then 
+      gicebergfw(:,:,im) = gwork(:,:)
+
       ticeberg_s(im) = 0.0
       do j = 1, iceberg_je_s  !1, ny_global/2 (iceberg_je_s smaller than ny_global/2 thus saves time)
         do i = 1, nx_global
