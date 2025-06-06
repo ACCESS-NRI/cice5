@@ -727,16 +727,16 @@
   
   allocate (ticeberg_s(12)); ticeberg_s(:) = 0
   allocate (ticeberg_n(12)); ticeberg_n(:) = 0
+  allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0
+
 
   if (my_task == master_task) then
     !global domain runoff for iceberg runoff calcs
     allocate (gicebergfw(nx_global,ny_global,12)); gicebergfw(:,:,:) = 0
-    allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0
     allocate (grunoff(nx_global,ny_global)); grunoff(:,:) = 0
     allocate (gtarea(nx_global,ny_global)); gtarea(:,:) = 0
   else
     allocate (gicebergfw(1,1,12)); gicebergfw(:,:,:) = 0
-    allocate (gwork(1,1)); gwork(:,:) = 0
     allocate (grunoff(1,1)); grunoff(:,:) = 0
     allocate (gtarea(1,1)); gtarea(:,:) = 0
   endif
