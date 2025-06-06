@@ -575,55 +575,54 @@ logical :: lleap
 inc_day = int ((ttime + 0.5)/86400. )
 khfin = (ttime - inc_day*86400)/3600
 
+  !
+  ! 1. Length of the months
+  !
+  DO jm = 1, 12
+    klmo(jm) = 31
+    if ( (jm-4)*(jm-6)*(jm-9)*(jm-11) == 0) klmo(jm) = 30
+    IF (jm .eq. 2) THEN
+      !
+      !* Leap years
+      !
+      lleap = .FALSE.
+      IF (use_leap_years) THEN
+        IF (MOD(iniyear,  4) .eq. 0) lleap = .TRUE.
+        IF (MOD(iniyear,100) .eq. 0) lleap = .FALSE.
+        IF (MOD(iniyear,400) .eq. 0) lleap = .TRUE.
+      ENDIF
+      klmo(jm) = 28 
+      if (lleap) klmo(jm) = 29
+    ENDIF
+  ENDDO  !jm=1,12
 
-!
-! 1. Length of the months
-!
-DO jm = 1, 12
-  klmo(jm) = 31
-  if ( (jm-4)*(jm-6)*(jm-9)*(jm-11) == 0) klmo(jm) = 30
-  IF (jm .eq. 2) THEN
+  kdfin = iniday
+  kmfin = inimon
+  kyfin = iniyear
+
+  !
+  ! 2. Loop on the days
+  !  
+
+  DO 210 jd = 1, inc_day
+    kdfin = kdfin + 1
+    IF (kdfin .le. klmo(kmfin)) GOTO 210
+    kdfin = 1
+    kmfin = kmfin + 1
+    IF (kmfin .le. 12) GOTO 210
+    kmfin = 1
+    kyfin = kyfin + 1
     !
     !* Leap years
     !
     lleap = .FALSE.
     IF (use_leap_years) THEN
-      IF (MOD(iniyear,  4) .eq. 0) lleap = .TRUE.
-      IF (MOD(iniyear,100) .eq. 0) lleap = .FALSE.
-      IF (MOD(iniyear,400) .eq. 0) lleap = .TRUE.
+      IF (MOD(kyfin,  4) .eq. 0) lleap = .TRUE.
+      IF (MOD(kyfin,100) .eq. 0) lleap = .FALSE.
+      IF (MOD(kyfin,400) .eq. 0) lleap = .TRUE.
     ENDIF
-    klmo(jm) = 28 
-    if (lleap) klmo(jm) = 29
-  ENDIF
-ENDDO  !jm=1,12
-    
-kdfin = iniday
-kmfin = inimon
-kyfin = iniyear
-
-!
-! 2. Loop on the days
-!
-
-DO 210 jd = 1, inc_day
-  kdfin = kdfin + 1
-  IF (kdfin .le. klmo(kmfin)) GOTO 210
-  kdfin = 1
-  kmfin = kmfin + 1
-  IF (kmfin .le. 12) GOTO 210
-  kmfin = 1
-  kyfin = kyfin + 1
-  !
-  !* Leap years
-  !
-  lleap = .FALSE.
-  IF (use_leap_years) THEN
-    IF (MOD(kyfin,  4) .eq. 0) lleap = .TRUE.
-    IF (MOD(kyfin,100) .eq. 0) lleap = .FALSE.
-    IF (MOD(kyfin,400) .eq. 0) lleap = .TRUE.
-  ENDIF
-  klmo(2) = 28
-  if (lleap) klmo(2) = 29
+    klmo(2) = 28
+    if (lleap) klmo(2) = 29
 210 CONTINUE
 
 
@@ -638,14 +637,14 @@ integer, intent(in) :: year
 real (kind=dbl_kind) :: days_year
 logical :: lleap
 
-lleap = .FALSE.
-days_year = 365.
-IF (use_leap_years) THEN
-  IF (MOD(year,  4) .eq. 0) lleap = .TRUE.
-  IF (MOD(year,100) .eq. 0) lleap = .FALSE.
-  IF (MOD(year,400) .eq. 0) lleap = .TRUE.
-ENDIF
-if (lleap) days_year = 366.
+  lleap = .FALSE.
+  days_year = 365.
+  IF (use_leap_years) THEN
+    IF (MOD(year,  4) .eq. 0) lleap = .TRUE.
+    IF (MOD(year,100) .eq. 0) lleap = .FALSE.
+    IF (MOD(year,400) .eq. 0) lleap = .TRUE.
+  ENDIF
+  if (lleap) days_year = 366.
 
 return
 end function days_year
