@@ -627,7 +627,7 @@ IF (days_per_year == 365 .or. days_per_year == 366) THEN
     if (lleap) klmo(2) = 29
 210 CONTINUE
 
-ELSEIF(days_per_year == 360)
+ELSEIF(days_per_year == 360) THEN
 
   !
   ! 1. Calculate month lengths for current year
@@ -677,7 +677,7 @@ IF (days_per_year == 365 .or. days_per_year == 366) THEN
   ENDIF
   if (lleap) days_year = 366.
 
-ELSEIF (days_per_year == 360)
+ELSEIF (days_per_year == 360) THEN
     days_year = 360.
 ENDIF
 return
