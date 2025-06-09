@@ -67,7 +67,6 @@ integer(kind=int_kind) :: dt_cpl_io = 21600    !ice<==>ocn coupling interval (se
 !integer(kind=int_kind) :: runtime0    !accumulated run time by the end of last run (s)   
 real(kind=dbl_kind) :: runtime0 = 0.0  !  can be too large as int to read in correctly!
 integer(kind=int_kind) :: runtime = 86400      !the time length for this run segment (s)
-integer(kind=int_kind) :: caltype = -999       ! Deprecated
 
 !20100305: Harry Henden suggests turning off ocean current into UM might reduce the 
 !          tropical cooling bias:
