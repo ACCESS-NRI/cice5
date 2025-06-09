@@ -575,6 +575,8 @@ logical :: lleap
 inc_day = int ((ttime + 0.5)/86400. )
 khfin = (ttime - inc_day*86400)/3600
 
+IF (days_per_year == 365 .or. days_per_year == 366) THEN
+
   !
   ! 1. Length of the months
   !
@@ -625,6 +627,34 @@ khfin = (ttime - inc_day*86400)/3600
     if (lleap) klmo(2) = 29
 210 CONTINUE
 
+ELSEIF(days_per_year == 360)
+
+  !
+  ! 1. Calculate month lengths for current year
+  !
+  DO jm = 1, 12
+    klmo(jm) = 30
+  ENDDO
+  kdfin = iniday
+  kmfin = inimon
+  kyfin = iniyear
+
+  !
+  ! 2. Loop on the days
+  !
+
+  DO 410 jd = 1, inc_day
+    kdfin = kdfin + 1
+    IF (kdfin .le. klmo(kmfin)) GOTO 410
+    kdfin = 1
+    kmfin = kmfin + 1
+    IF (kmfin .le. 12) GOTO 410
+    kmfin = 1
+    kyfin = kyfin + 1
+410 CONTINUE
+
+ENDIF
+
 
 end subroutine get_idate
 
@@ -637,6 +667,7 @@ integer, intent(in) :: year
 real (kind=dbl_kind) :: days_year
 logical :: lleap
 
+IF (days_per_year == 365 .or. days_per_year == 366) THEN
   lleap = .FALSE.
   days_year = 365.
   IF (use_leap_years) THEN
@@ -646,6 +677,9 @@ logical :: lleap
   ENDIF
   if (lleap) days_year = 366.
 
+ELSEIF (days_per_year == 360)
+    days_year = 360.
+ENDIF
 return
 end function days_year
 #endif
