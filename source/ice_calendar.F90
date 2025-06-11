@@ -20,7 +20,7 @@
       use ice_domain_size, only: max_nstrm
       use ice_exit, only: abort_ice
 #ifdef AusCOM
-      use cpl_parameters, only : inidate, iniday, inimon, iniyear, init_date
+      use cpl_parameters, only : inidate, iniday, inimon, iniyear
       use cpl_parameters, only : il_out
       use cpl_parameters, only : runtime0 !accumulated runtime by the end of last run
 #endif
@@ -112,6 +112,11 @@
          dumpfreq               ! restart frequency, 'y','m','d'
 
       character (len=char_len),public :: calendar_type
+
+#ifdef ACCESS
+      integer(kind=int_kind), public :: &
+         init_date = 00010101 !beginning date of this EXP (yyyymmdd)
+#endif
 
 !=======================================================================
 
