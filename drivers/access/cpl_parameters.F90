@@ -59,7 +59,6 @@ logical :: &                         !pop_icediag is as that for ocn model, if t
    chk_i2o_fields = .false. , &
    chk_o2i_fields = .false.
 integer(kind=int_kind) :: jobnum = 1           !1 for initial, >1 restart
-integer(kind=int_kind) :: inidate = 01010101   !beginning date of this run (yyyymmdd)
 integer(kind=int_kind) :: dt_cice = 3600       !time step of this model      (seconds) 
 integer(kind=int_kind) :: dt_cpl_ai = 21600    !atm<==>ice coupling interval (seconds) 
 integer(kind=int_kind) :: dt_cpl_io = -99      !ice<==>ocn coupling interval (seconds).
@@ -103,7 +102,6 @@ real(kind=dbl_kind) :: &
 namelist/coupling/       &
          caltype,        &
          jobnum,         &
-         inidate,        &
          runtime,        &
          dt_cice,        &
          dt_cpl_ai,      &
@@ -145,7 +143,6 @@ namelist/coupling/       &
          chk_i2o_fields, &
          chk_o2i_fields
 
-integer(kind=int_kind) :: iniday, inimon, iniyear   !from inidate
 real(kind=dbl_kind) :: coef_ai    !dt_ice/dt_cpl_ai, for i2a fields tavg
 
 real(kind=dbl_kind) :: frazil_factor = 0.5
@@ -181,10 +178,6 @@ num_cpl_ai = runtime/dt_cpl_ai
 num_ice_ai = dt_cpl_ai/dt_cice
 
 coef_ai = float(dt_cice)/float(dt_cpl_ai)
-
-iniday  = mod(inidate, 100)
-inimon  = mod( (inidate - iniday)/100, 100)
-iniyear = inidate / 10000
 
 return
 end subroutine get_cpl_timecontrol_simple
@@ -254,10 +247,6 @@ num_cpl_ai = runtime/dt_cpl_ai
 num_ice_ai = dt_cpl_ai/dt_cice
 
 coef_ai = float(dt_cice)/float(dt_cpl_ai)
-
-iniday  = mod(inidate, 100)
-inimon  = mod( (inidate - iniday)/100, 100)
-iniyear = inidate / 10000
 
 !!idate = inidate
 

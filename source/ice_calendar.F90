@@ -20,7 +20,6 @@
       use ice_domain_size, only: max_nstrm
       use ice_exit, only: abort_ice
 #ifdef AusCOM
-      use cpl_parameters, only : inidate, iniday, inimon, iniyear
       use cpl_parameters, only : il_out
 #endif
 
@@ -29,6 +28,10 @@
       save
 
       public :: init_calendar, calendar, time2sec, sec2time
+
+#ifdef AusCOM
+      public :: set_inidate
+#endif
 
       integer (kind=int_kind), public :: &
          days_per_year        , & ! number of days in one year
@@ -114,7 +117,9 @@
 
 #ifdef AusCOM
       integer(kind=int_kind), public :: &
-         init_date = 00010101 !beginning date of this EXP (yyyymmdd)
+         init_date = 00010101, & ! experiment initialisation date (yyyymmdd)
+         inidate = 01010101      ! beginning date of this run (yyyymmdd)
+         
       real(kind=dbl_kind), public :: runtime0 = 0.0  ! accumulated runtime since init_date
                                                      ! at end of last run
 #endif
@@ -258,7 +263,7 @@
       sec = mod(ttime,secday)           ! elapsed seconds into date at
                                         ! end of dt
 #ifdef AusCOM
-      call get_idate(ttime, newh, newd, newm, newy)
+      call get_idate(ttime, newh, newd, newm, newy, inidate)
       !
       !note ttime is seconds accumulated from the beginning of this run only.
       !the following stuff is required here or there in other routines ... 
@@ -563,13 +568,15 @@
 
 #ifdef AusCOM
 !=======================================================================
-subroutine get_idate(ttime, khfin, kdfin, kmfin, kyfin)
+subroutine get_idate(ttime, khfin, kdfin, kmfin, kyfin, &
+                     refdate)
 
 use cpl_parameters
 
 implicit none
 
 real (kind=dbl_kind), intent(in) :: ttime
+integer(kind=int_kind), intent(in) :: refdate ! (yyyymmdd) Base date to calculate new date against
 integer, intent(out) :: khfin, kdfin, kmfin, kyfin 
 
 integer :: klmo(12)	!length of the months
@@ -582,6 +589,11 @@ inc_day = int ((ttime + 0.5)/86400. )
 khfin = (ttime - inc_day*86400)/3600
 
 IF (days_per_year == 365 .or. days_per_year == 366) THEN
+
+kdfin = mod(refdate, 100)
+kmfin = mod( (refdate - kdfin)/100, 100)
+kyfin = refdate / 10000
+
 
   !
   ! 1. Length of the months
@@ -603,10 +615,13 @@ IF (days_per_year == 365 .or. days_per_year == 366) THEN
       if (lleap) klmo(jm) = 29
     ENDIF
   ENDDO  !jm=1,12
+<<<<<<< HEAD
 
   kdfin = iniday
   kmfin = inimon
   kyfin = iniyear
+=======
+>>>>>>> ac64828 (Calculate inidate rather than reading from namelist)
 
   !
   ! 2. Loop on the days
@@ -641,9 +656,6 @@ ELSEIF(days_per_year == 360) THEN
   DO jm = 1, 12
     klmo(jm) = 30
   ENDDO
-  kdfin = iniday
-  kmfin = inimon
-  kyfin = iniyear
 
   !
   ! 2. Loop on the days
@@ -688,6 +700,31 @@ ELSEIF (days_per_year == 360) THEN
 ENDIF
 return
 end function days_year
+
+!=======================================================================
+subroutine set_inidate(ttime)
+    ! Calculate the start date for this experiment from the init_date and
+    ! previous elapsed time.
+    use ice_communicate, only: my_task, master_task
+    use ice_exit, only: abort_ice
+
+    implicit none
+
+    real (kind=dbl_kind), intent(in) :: ttime
+    integer(kind=int_kind) :: inihour, iniday, inimon, iniyear 
+
+    call get_idate(ttime, inihour, iniday, inimon, iniyear, &
+                     init_date)
+    if (inihour /= 0) then
+        if(my_task == master_task) then
+            call abort_ice("Restart time must be at start of day")
+        endif
+    endif
+
+    inidate = iniyear * 10000 + inimon * 100 * iniday
+    
+end subroutine set_inidate
+
 #endif
 !=======================================================================
 

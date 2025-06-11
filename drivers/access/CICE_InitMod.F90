@@ -69,7 +69,7 @@
       use ice_calendar, only: dt, dt_dyn, time, istep, istep1, write_ic, &
           init_calendar, calendar, idate, month
 #ifdef AusCOM
-      use ice_calendar, only: runtime0
+      use ice_calendar, only: runtime0, inidate, set_inidate
 #endif
 !ars599: 27032014
       use ice_communicate, only: MPI_COMM_ICE
@@ -116,7 +116,6 @@
       call get_cpl_timecontrol
       if (my_task == master_task) then
          write(il_out,*)' CICE (cice_init) 1    jobnum = ',jobnum
-         write(il_out,*)' CICE (cice_init) 1   inidate = ',inidate
          write(il_out,*)' CICE (cice_init) 1 init_date = ',init_date
          write(il_out,*)' CICE (cice_init) 1   runtime = ',runtime
          write(il_out,*)' CICE (cice_init) 1     idate = ',my_task, idate
@@ -195,6 +194,9 @@
       else                      !BX: 20160720
         runtime0 = time       ! Record initial time read from init_restart
       endif 
+
+      call set_inidate(time) ! Set the run start date inidate
+
 #endif
 
       call init_diags           ! initialize diagnostic output points
@@ -219,6 +221,7 @@
       if (my_task == master_task) then
          write(il_out,*) 'CICE (cice_init) 3     time = ', my_task, time
          write(il_out,*) 'CICE (cice_init) 3 runtime0 = ', my_task, runtime0
+         write(il_out,*) 'CICE (cice_init) 3  inidate = ', my_task, inidate
          write(il_out,*) 'CICE (cice_init) 3    idate = ', my_task, idate
       end if
 #endif
