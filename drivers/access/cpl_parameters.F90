@@ -66,8 +66,6 @@ integer(kind=int_kind) :: dt_cpl_io = -99      !ice<==>ocn coupling interval (se
                                                !Hardwired to equal dt_cice and should not
                                                !be set in namelist.
 integer(kind=int_kind) :: caltype = -99        !deprecated
-!integer(kind=int_kind) :: runtime0    !accumulated run time by the end of last run (s)   
-real(kind=dbl_kind) :: runtime0 = 0.0  !  can be too large as int to read in correctly!
 integer(kind=int_kind) :: runtime = 86400      !the time length for this run segment (s)
 
 !20100305: Harry Henden suggests turning off ocean current into UM might reduce the 
@@ -106,7 +104,6 @@ namelist/coupling/       &
          caltype,        &
          jobnum,         &
          inidate,        &
-         runtime0,       &   
          runtime,        &
          dt_cice,        &
          dt_cpl_ai,      &

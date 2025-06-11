@@ -49,7 +49,7 @@
       use ice_forcing, only: get_forcing_atmo, get_forcing_ocn
 #ifdef ACCESS
       use ice_calendar, only: month, mday, istep, istep1, time, dt, stop_now, calendar, &
-          write_restart, dump_last
+          write_restart, dump_last, runtime0
       use ice_restart_driver, only: dumpfile     !temporary debug
 #endif
       use ice_flux, only: init_flux_atm, init_flux_ocn

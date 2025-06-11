@@ -22,7 +22,6 @@
 #ifdef AusCOM
       use cpl_parameters, only : inidate, iniday, inimon, iniyear
       use cpl_parameters, only : il_out
-      use cpl_parameters, only : runtime0 !accumulated runtime by the end of last run
 #endif
 
       implicit none
@@ -113,9 +112,11 @@
 
       character (len=char_len),public :: calendar_type
 
-#ifdef ACCESS
+#ifdef AusCOM
       integer(kind=int_kind), public :: &
          init_date = 00010101 !beginning date of this EXP (yyyymmdd)
+      real(kind=dbl_kind), public :: runtime0 = 0.0  ! accumulated runtime since init_date
+                                                     ! at end of last run
 #endif
 
 !=======================================================================

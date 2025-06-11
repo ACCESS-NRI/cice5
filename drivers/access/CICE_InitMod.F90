@@ -68,6 +68,9 @@
       use ice_algae, only: get_forcing_bgc
       use ice_calendar, only: dt, dt_dyn, time, istep, istep1, write_ic, &
           init_calendar, calendar, idate, month
+#ifdef AusCOM
+      use ice_calendar, only: runtime0
+#endif
 !ars599: 27032014
       use ice_communicate, only: MPI_COMM_ICE
       use ice_communicate, only: init_communicate
@@ -115,7 +118,6 @@
          write(il_out,*)' CICE (cice_init) 1    jobnum = ',jobnum
          write(il_out,*)' CICE (cice_init) 1   inidate = ',inidate
          write(il_out,*)' CICE (cice_init) 1 init_date = ',init_date
-         write(il_out,*)' CICE (cice_init) 1  runtime0 = ',runtime0
          write(il_out,*)' CICE (cice_init) 1   runtime = ',runtime
          write(il_out,*)' CICE (cice_init) 1     idate = ',my_task, idate
          !write(il_out,*)' CICE (cice_init) 1   runtype = ',runtype
@@ -189,8 +191,9 @@
       if (jobnum == 1 ) then
         time = 0.0            !NOTE, the first job must be set back to 0 and 
         idate = idate_save    !idate back to the 'initial' value, in any case
+        runtime0 = 0.0
       else                      !BX: 20160720
-        time = runtime0         !............
+        runtime0 = time       ! Record initial time read from init_restart
       endif 
 #endif
 
