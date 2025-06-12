@@ -579,24 +579,30 @@ real (kind=dbl_kind), intent(in) :: ttime
 integer(kind=int_kind), intent(in) :: refdate ! (yyyymmdd) Base date to calculate new date against
 integer, intent(out) :: khfin, kdfin, kmfin, kyfin 
 
+integer (kind=int_kind) :: refday, refmon, refyear
+
 integer :: klmo(12)	!length of the months
 integer :: inc_day	!increment of days since the beginning of this run
 integer :: jm, jd
 
 logical :: lleap
 
+refday = mod(refdate, 100)
+refmon = mod( (refdate - refday)/100, 100)
+refyear = refdate / 10000
+
+! Initialise date
 inc_day = int ((ttime + 0.5)/86400. )
 khfin = (ttime - inc_day*86400)/3600
+kdfin = refday
+kmfin = refmon
+kyfin = refyear
+
 
 IF (days_per_year == 365 .or. days_per_year == 366) THEN
 
-kdfin = mod(refdate, 100)
-kmfin = mod( (refdate - kdfin)/100, 100)
-kyfin = refdate / 10000
-
-
   !
-  ! 1. Length of the months
+  ! 1. Length of the months in the first year
   !
   DO jm = 1, 12
     klmo(jm) = 31
@@ -607,21 +613,14 @@ kyfin = refdate / 10000
       !
       lleap = .FALSE.
       IF (use_leap_years) THEN
-        IF (MOD(iniyear,  4) .eq. 0) lleap = .TRUE.
-        IF (MOD(iniyear,100) .eq. 0) lleap = .FALSE.
-        IF (MOD(iniyear,400) .eq. 0) lleap = .TRUE.
+        IF (MOD(refyear,  4) .eq. 0) lleap = .TRUE.
+        IF (MOD(refyear,100) .eq. 0) lleap = .FALSE.
+        IF (MOD(refyear,400) .eq. 0) lleap = .TRUE.
       ENDIF
       klmo(jm) = 28 
       if (lleap) klmo(jm) = 29
     ENDIF
   ENDDO  !jm=1,12
-<<<<<<< HEAD
-
-  kdfin = iniday
-  kmfin = inimon
-  kyfin = iniyear
-=======
->>>>>>> ac64828 (Calculate inidate rather than reading from namelist)
 
   !
   ! 2. Loop on the days

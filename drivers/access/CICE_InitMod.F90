@@ -69,7 +69,7 @@
       use ice_calendar, only: dt, dt_dyn, time, istep, istep1, write_ic, &
           init_calendar, calendar, idate, month
 #ifdef AusCOM
-      use ice_calendar, only: runtime0, inidate, set_inidate
+      use ice_calendar, only: runtime0, inidate, set_inidate, init_date
 #endif
 !ars599: 27032014
       use ice_communicate, only: MPI_COMM_ICE
