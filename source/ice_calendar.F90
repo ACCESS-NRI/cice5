@@ -706,6 +706,7 @@ subroutine set_inidate(ttime)
     ! previous elapsed time.
     use ice_communicate, only: my_task, master_task
     use ice_exit, only: abort_ice
+    use ice_fileunits, only: nu_diag
 
     implicit none
 
@@ -714,6 +715,7 @@ subroutine set_inidate(ttime)
 
     call get_idate(ttime, inihour, iniday, inimon, iniyear, &
                      init_date)
+    write(nu_diag,*) "inihour, iniday, inimon, iniyear = ", inihour, iniday, inimon, iniyear
     if (inihour /= 0) then
         if(my_task == master_task) then
             call abort_ice("Restart time must be at start of day")
