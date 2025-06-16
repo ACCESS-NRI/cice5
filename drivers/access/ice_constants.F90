@@ -85,9 +85,6 @@
          ! kseaice is used only for zero-layer thermo
          kseaice= 2.00_dbl_kind  ,&! thermal conductivity of sea ice (W/m/deg)
                                    ! (used in zero layer thermodynamics option)
-         ksno   = 0.2_dbl_kind  ,&! thermal conductivity of snow  (W/m/deg)
-         !!!ksno   = 0.31_dbl_kind  ,&! thermal conductivity of snow (W/m/deg) 
-         !!!ksno   = 0.50_dbl_kind  ,&!!! test new value as per spo
          zref   = 10._dbl_kind   ,&! reference height for stability (m)
 #ifndef AusCOM
          snowpatch = 0.02_dbl_kind, & ! parameter for fractional snow area (m)
@@ -100,15 +97,17 @@
          dragio    = 0.01_dbl_kind ,&!!! 20170922 test new value as per spo 
          Tocnfrz   = -1.8_dbl_kind    ,&! freezing temp of seawater (C),
                                         ! used as Tsfcn for open water
-         ice_ref_salinity = 5._dbl_kind ! reference salinity for ice–ocean exchanges (ppt)
+         ice_ref_salinity = 5._dbl_kind, & ! reference salinity for ice–ocean exchanges (ppt)
                                         ! n.b. CICE6 uses 4 ppt
+         ksno   = 0.3_dbl_kind          ! thermal conductivity of snow  (W/m/deg)
 #else
       ! get these in ice_init from namelist
       real (kind=dbl_kind), public :: &
          dragio   ,  & ! ice-ocn drag coefficient
          Tocnfrz ,   & ! freezing temp of seawater (C),
                        ! used as Tsfcn for open water
-         ice_ref_salinity ! reference salinity for ice–ocean exchanges (ppt)
+         ice_ref_salinity, & ! reference salinity for ice–ocean exchanges (ppt)
+         ksno          ! thermal conductivity of snow  (W/m/deg)
 #endif
 
       ! weights for albedos 
