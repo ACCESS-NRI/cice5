@@ -63,7 +63,9 @@ integer(kind=int_kind) :: inidate = 01010101   !beginning date of this run (yyyy
 integer(kind=int_kind) :: init_date = 00010101 !beginning date of this EXP (yyyymmdd)
 integer(kind=int_kind) :: dt_cice = 3600       !time step of this model      (seconds) 
 integer(kind=int_kind) :: dt_cpl_ai = 21600    !atm<==>ice coupling interval (seconds) 
-integer(kind=int_kind) :: dt_cpl_io = 21600    !ice<==>ocn coupling interval (seconds)
+integer(kind=int_kind) :: dt_cpl_io = -99      !ice<==>ocn coupling interval (seconds).
+                                               !Hardwired to equal dt_cice and should not
+                                               !be set in namelist.
 integer(kind=int_kind) :: caltype = -99        !deprecated
 !integer(kind=int_kind) :: runtime0    !accumulated run time by the end of last run (s)   
 real(kind=dbl_kind) :: runtime0 = 0.0  !  can be too large as int to read in correctly!
@@ -205,6 +207,13 @@ endif
 if (caltype /= -99) then
    if (my_task == master_task) then
       call abort_ice('ice: ERROR caltype deprecated. Remove from "input_ice.nml"')
+   endif
+endif
+
+if (dt_cpl_io /= -99) then
+   if (my_task == master_task) then
+      call abort_ice('ice: ERROR dt_cpl_io should not be set in namelist. '// &
+                     'Remove from "input_ice.nml"')
    endif
 endif
 
