@@ -650,10 +650,10 @@ integer :: i,j,k,cat
 ! Fields from UM (all on T cell center):
 
 !(1) windstress taux:
-strax = um_taux * aice      !*tmask ?   
+strax = um_taux * aice
 
 !(2) windstress tauy:
-stray = um_tauy * aice      !*tmask ?
+stray = um_tauy * aice
 
 !(3) surface downward latent heat flux (==> multi_category)
 do j = 1, ny_block
@@ -969,11 +969,11 @@ real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks) :: pice
 integer (kind=int_kind) :: i,j,k
 
 real (kind=dbl_kind) :: &
-        trunoff_s  = 0.0, &
-        trunoff_n  = 0.0, &
-        r_s = 1.0, &
-        r_n = 1.0, &
-        r_runoff=1.0        !=(1-min(r_max_iceberg. r_s(or r_n))
+        trunoff_s  = c0, &
+        trunoff_n  = c0, &
+        r_s = c1, &
+        r_n = c1, &
+        r_runoff= c1        !=(1-min(r_max_iceberg. r_s(or r_n))
 
 ! Fields obtained here are all at T cell center. before being sent to MOM4, vector 
 ! (Taux, Tauy) should be shifted on to U point as required
@@ -984,16 +984,16 @@ real (kind=dbl_kind) :: &
 !    have already been 'weighted' using aice (when calculated in "evp_finish". 
 !    But, this weight has been removed in strocnx/yT (see "evp_finish"), therfore 
 !    we need put it on again here. 
-io_strsu = um_taux * (1. - maice) - mstrocnxT * maice
-io_strsv = um_tauy * (1. - maice) - mstrocnyT * maice
+io_strsu = um_taux * (c1 - maice) - mstrocnxT * maice
+io_strsv = um_tauy * (c1 - maice) - mstrocnyT * maice
 
 !(3) freshwater flux to ocean: rainfall (+ ice melting water flux ?)
-io_rain = um_rain * (1. - maice)
+io_rain = um_rain * (c1 - maice)
 !202412: fixing watermass loss from ocean by adding a small, constant fwflux into rain--
 io_rain = io_rain + add_lprec
 
 !(4) freshwater flux to ocean: snowfall
-io_snow = um_snow * (1. - maice)
+io_snow = um_snow * (c1 - maice)
 
 !(5) salt flux to ocean
 io_stflx = mfsalt
@@ -1004,7 +1004,7 @@ io_htflx = mfhocn
 !(7) short wave radiation 
 !(CH: the (1-aice) weight should not be here 'cos all fluxes passed in from
 !     UM have already been aice-weighted when they are calculated there!!!) 
-!io_swflx = um_swflx * (1. - maice) + mfswthru
+!io_swflx = um_swflx * (c1 - maice) + mfswthru
 io_swflx = um_swflx + mfswthru
 
 !(8) latent heat flux (positive out of ocean as required by MOM4)
@@ -1018,23 +1018,28 @@ io_lwflx = um_lwflx
 
 !(11) runoff 
 !*** mask off "extra/useless" runoff on dry points ***
-io_runof = um_runoff * tmask
+where (tmask)
+  io_runof = um_runoff
+else where
+  um_runoff = c0
+end where
+
 call gather_global(grunoff, io_runof, master_task, distrb_info)
 
 if (my_task == master_task) then
 
-  trunoff_s = 0.0
+  trunoff_s = c0
   do j = 1, runoff_je_s
     do i = 1, nx_global
       trunoff_s = trunoff_s + gtarea(i,j) * grunoff(i,j)
-      grunoff(i,j) = grunoff(i,j) * (1.0 - iceberg_rate_s)  !do deduction
+      grunoff(i,j) = grunoff(i,j) * (c1 - iceberg_rate_s)  !do deduction
     enddo
   enddo
-  trunoff_n = 0.0
+  trunoff_n = c0
   do j = runoff_js_n, runoff_je_n
     do i = runoff_is_n, runoff_ie_n
       trunoff_n = trunoff_n + gtarea(i,j) * grunoff(i,j)
-      grunoff(i,j) = grunoff(i,j) * (1.0 - iceberg_rate_n)  !do deduction
+      grunoff(i,j) = grunoff(i,j) * (c1 - iceberg_rate_n)  !do deduction
     enddo
   enddo
   !Now global runoff has been "updated" (deduction done for iceberg).
@@ -1052,7 +1057,7 @@ io_runof(:,:,:) = vwork(:,:,:)
 !XXXXXX 
 IF (my_task == master_task) THEN
 
-  gwork(:,:) = 0.0
+  gwork(:,:) = c0
   do i = 1, nx_global
     do j = 1, iceberg_je_s
       gwork(i, j) = gicebergfw(i, j, month) * iceberg_rate_s * trunoff_s / ticeberg_s(month)
@@ -1092,10 +1097,10 @@ if (my_task == master_task) then
   !all the LH carried by runoff is applied to iceberg areas.
     do i = 1, nx_global
       do j = 1, iceberg_je_s
-        gwork(i,j) = gwork(i,j)/max(iceberg_rate_s, 0.0001) !get the whole runoff LH onto iceberg
+        gwork(i,j) = gwork(i,j)/max(iceberg_rate_s, 0.0001_dbl_kind) !get the whole runoff LH onto iceberg
       enddo
       do j = iceberg_js_n, ny_global
-        gwork(i,j) = gwork(i,j)/max(iceberg_rate_n, 0.0001)
+        gwork(i,j) = gwork(i,j)/max(iceberg_rate_n, 0.0001_dbl_kind)
       enddo
     enddo
   endif
@@ -1114,14 +1119,14 @@ if (ice_pressure_on) then
 endif
 if (air_pressure_on) then
    !as GFDL SIS, we use patm anormaly, i.e., taking off 1.e5 Pa !
-   io_press(:,:,:) = io_press(:,:,:) + um_press(:,:,:) - 1.0e5 
+   io_press(:,:,:) = io_press(:,:,:) + um_press(:,:,:) - 1.0e5_dbl_kind 
 endif
 !(13) ice concentration
 io_aice = maice
 !(14) ice melt fwflux 
-io_melt = max(0.0,mfresh(:,:,:)) 
+io_melt = max(c0,mfresh(:,:,:)) 
 !(15) ice form fwflux
-io_form = min(0.0,mfresh(:,:,:))
+io_form = min(c0,mfresh(:,:,:))
 
 !(16) CO2
 io_co2 = um_co2
