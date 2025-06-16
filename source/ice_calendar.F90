@@ -28,10 +28,9 @@
       save
 
       public :: init_calendar, calendar, time2sec, sec2time
-
 #ifdef AusCOM
-      public :: set_inidate
-#endif
+      public :: check_start_date
+#endif      
 
       integer (kind=int_kind), public :: &
          days_per_year        , & ! number of days in one year
@@ -118,7 +117,9 @@
 #ifdef AusCOM
       integer(kind=int_kind), public :: &
          init_date = 00010101, & ! experiment initialisation date (yyyymmdd)
-         inidate = 01010101      ! beginning date of this run (yyyymmdd)
+         iniyear = 1         , & ! starting year for this run
+         inimon = 1          , & ! starting month for this run
+         iniday = 1              ! starting day for this run
          
       real(kind=dbl_kind), public :: runtime0 = 0.0  ! accumulated runtime since init_date
                                                      ! at end of last run
@@ -263,7 +264,7 @@
       sec = mod(ttime,secday)           ! elapsed seconds into date at
                                         ! end of dt
 #ifdef AusCOM
-      call get_idate(ttime, newh, newd, newm, newy, inidate)
+      call get_idate(ttime, newh, newd, newm, newy)
       !
       !note ttime is seconds accumulated from the beginning of this run only.
       !the following stuff is required here or there in other routines ... 
@@ -568,18 +569,14 @@
 
 #ifdef AusCOM
 !=======================================================================
-subroutine get_idate(ttime, khfin, kdfin, kmfin, kyfin, &
-                     refdate)
+subroutine get_idate(ttime, khfin, kdfin, kmfin, kyfin)
 
 use cpl_parameters
 
 implicit none
 
 real (kind=dbl_kind), intent(in) :: ttime
-integer(kind=int_kind), intent(in) :: refdate ! (yyyymmdd) Base date to calculate new date against
 integer, intent(out) :: khfin, kdfin, kmfin, kyfin 
-
-integer (kind=int_kind) :: refday, refmon, refyear
 
 integer :: klmo(12)	!length of the months
 integer :: inc_day	!increment of days since the beginning of this run
@@ -587,16 +584,12 @@ integer :: jm, jd
 
 logical :: lleap
 
-refday = mod(refdate, 100)
-refmon = mod( (refdate - refday)/100, 100)
-refyear = refdate / 10000
-
 ! Initialise date
 inc_day = int ((ttime + 0.5)/86400. )
 khfin = (ttime - inc_day*86400)/3600
-kdfin = refday
-kmfin = refmon
-kyfin = refyear
+kdfin = iniday
+kmfin = inimon
+kyfin = iniyear
 
 
 IF (days_per_year == 365 .or. days_per_year == 366) THEN
@@ -613,9 +606,9 @@ IF (days_per_year == 365 .or. days_per_year == 366) THEN
       !
       lleap = .FALSE.
       IF (use_leap_years) THEN
-        IF (MOD(refyear,  4) .eq. 0) lleap = .TRUE.
-        IF (MOD(refyear,100) .eq. 0) lleap = .FALSE.
-        IF (MOD(refyear,400) .eq. 0) lleap = .TRUE.
+        IF (MOD(iniyear,  4) .eq. 0) lleap = .TRUE.
+        IF (MOD(iniyear,100) .eq. 0) lleap = .FALSE.
+        IF (MOD(iniyear,400) .eq. 0) lleap = .TRUE.
       ENDIF
       klmo(jm) = 28 
       if (lleap) klmo(jm) = 29
@@ -676,6 +669,32 @@ ENDIF
 end subroutine get_idate
 
 !=======================================================================
+
+subroutine check_start_date
+! Check that the start date and time variables from the restart file
+! are consistent.
+use ice_communicate, only: my_task, master_task
+implicit none
+
+real (kind=dbl_kind) :: sec_init_date, sec_start_date, sec_init_to_start
+
+! init_date is hardcoded to 00010101 for ACCESS
+call time2sec(1, 1, 1, sec_init_date)
+call time2sec(iniyear, inimon, iniday, sec_start_date)
+
+sec_init_to_start = sec_start_date - sec_init_date
+
+if (sec_init_to_start /= time) then
+    if (my_task == master_task) then
+         write(il_out,*) 'CICE: ERROR restart time:  ', time, ' and date: ', &
+            iniyear, inimon, iniday, ' are inconsistent'
+        call abort_ice('Restart file time and date variables are inconsistent')
+    endif
+endif
+
+end subroutine check_start_date
+
+!=======================================================================
 function days_year(year)
 
 implicit none
@@ -699,32 +718,6 @@ ELSEIF (days_per_year == 360) THEN
 ENDIF
 return
 end function days_year
-
-!=======================================================================
-subroutine set_inidate(ttime)
-    ! Calculate the start date for this experiment from the init_date and
-    ! previous elapsed time.
-    use ice_communicate, only: my_task, master_task
-    use ice_exit, only: abort_ice
-    use ice_fileunits, only: nu_diag
-
-    implicit none
-
-    real (kind=dbl_kind), intent(in) :: ttime
-    integer(kind=int_kind) :: inihour, iniday, inimon, iniyear 
-
-    call get_idate(ttime, inihour, iniday, inimon, iniyear, &
-                     init_date)
-    write(nu_diag,*) "inihour, iniday, inimon, iniyear = ", inihour, iniday, inimon, iniyear
-    if (inihour /= 0) then
-        if(my_task == master_task) then
-            call abort_ice("Restart time must be at start of day")
-        endif
-    endif
-
-    inidate = iniyear * 10000 + inimon * 100 * iniday
-    
-end subroutine set_inidate
 
 #endif
 !=======================================================================

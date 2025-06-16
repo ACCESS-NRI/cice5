@@ -35,6 +35,9 @@
 
       use ice_calendar, only: sec, month, mday, nyr, istep0, istep1, &
                               time, time_forc, year_init, npt
+#ifdef AusCOM
+      use ice_calendar, only: iniyear, inimon, iniday, check_start_date
+#endif
       use ice_communicate, only: my_task, master_task
       use ice_domain, only: nblocks
       use ice_fileunits, only: nu_diag, nu_rst_pointer
@@ -93,6 +96,17 @@
       call broadcast_scalar(istep0,master_task)
       call broadcast_scalar(time,master_task)
       call broadcast_scalar(time_forc,master_task)
+
+#ifdef AusCOM
+      call broadcast_scalar(nyr,master_task)
+      call broadcast_scalar(month,master_task)
+      call broadcast_scalar(mday,master_task)
+      iniyear = nyr
+      inimon = month
+      iniday = mday
+
+      call check_start_date
+#endif
       
       istep1 = istep0
 
