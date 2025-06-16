@@ -64,6 +64,7 @@ integer(kind=int_kind) :: init_date = 00010101 !beginning date of this EXP (yyyy
 integer(kind=int_kind) :: dt_cice = 3600       !time step of this model      (seconds) 
 integer(kind=int_kind) :: dt_cpl_ai = 21600    !atm<==>ice coupling interval (seconds) 
 integer(kind=int_kind) :: dt_cpl_io = 21600    !ice<==>ocn coupling interval (seconds)
+integer(kind=int_kind) :: caltype = -99        !no longer used
 !integer(kind=int_kind) :: runtime0    !accumulated run time by the end of last run (s)   
 real(kind=dbl_kind) :: runtime0 = 0.0  !  can be too large as int to read in correctly!
 integer(kind=int_kind) :: runtime = 86400      !the time length for this run segment (s)
@@ -79,6 +80,7 @@ integer(kind=int_kind) :: iceberg = 0
 real(kind=dbl_kind) :: iceberg_factor = 1.0
 !             
 namelist/coupling/       &
+         caltype,        &
          jobnum,         &
          inidate,        &
          init_date,      &
@@ -197,6 +199,12 @@ call release_fileunit(nu_nml)
 if (nml_error /= 0) then
    if (my_task == master_task) then
       call abort_ice('ice: error reading coupling namelist in "input_ice.nml"')
+   endif
+endif
+
+if (caltype /= -99) then
+   if (my_task == master_task) then
+      call abort_ice('ice: ERROR caltype not used. Remover from namelist')
    endif
 endif
 
