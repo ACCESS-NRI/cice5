@@ -9,7 +9,7 @@ There is [PDF documentation](https://github.com/ACCESS-NRI/cice5/blob/master/doc
 ## Useful links
 * **Wiki**: https://github.com/CICE-Consortium/CICE-svn-trunk/wiki
 
-   Information about the CICE model prior to version 6 including how to obtain the code
+   Information about the CICE model prior to version 6 including how to obtain the code.
 
 * **Version Index**: https://github.com/CICE-Consortium/CICE-svn-trunk/wiki/CICE-Versions-Index-(older)
 
