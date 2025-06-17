@@ -427,7 +427,16 @@ else
   write(il_out,'(a,a)') '(get_lice_discharge) reading in iceberg data, myvar= ',trim(myvar)
   do im = 1, 12
     write(il_out,*) '(get_lice_discharge) reading in data, month= ',im
-    call ice_read_global_nc(ncid_i2o, im, trim(myvar), gwork, dbug)
+    call ice_read_nc(ncid_i2o, im, trim(myvar), vwork, dbug)
+
+    ! Restrict iceberg fluxes to ocean points
+    where (tmask)
+      vwork = vwork
+    else where
+      vwork = c0
+    end where
+
+    call gather_global(gwork, vwork, master_task, distrb_info)
 
     if ( my_task == master_task ) then 
       gicebergfw(:,:,im) = gwork(:,:)
