@@ -1084,7 +1084,7 @@
   currstep=currstep+1
 
   if (my_task == 0) then  
-    then write(il_out,*) '(into_ocn) sending coupling fields at stime= ', isteps
+    if (debug) write(il_out,*) '(into_ocn) sending coupling fields at stime= ', isteps
     if (chk_i2o_fields) then
       if ( .not. file_exist('fields_i2o_in_ice.nc') ) then
         call create_ncfile('fields_i2o_in_ice.nc',ncid,il_im,il_jm,ll=1,ilout=il_out)
