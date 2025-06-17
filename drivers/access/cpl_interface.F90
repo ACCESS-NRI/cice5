@@ -62,6 +62,9 @@
   real(kind=dbl_kind), dimension(:), allocatable :: rla_bufsend
   real(kind=dbl_kind), dimension(:,:), allocatable :: vwork2d
     !local domain work array, 4 coupling data passing 
+
+  logical, parameter :: debug = .false.
+
   contains
 
 !======================================================================
@@ -277,9 +280,9 @@
       ihi = this_block%ihi
       jlo = this_block%jlo
       jhi = this_block%jhi
-      write(il_out,*) '   this block: iblock, jblock=', this_block%iblock, this_block%jblock
-!      write(il_out,*) '   block:', iblk, "ilo, jlo, ihi, jhi=", ilo, jlo, ihi, jhi
-      write(il_out,*) '   block:', iblk, "gilo, gjlo, gihi, gjhi=", this_block%i_glob(ilo), this_block%j_glob(jlo), this_block%i_glob(ihi), this_block%j_glob(jhi)
+      ! write(il_out,*) '   this block: iblock, jblock=', this_block%iblock, this_block%jblock
+      ! write(il_out,*) '   block:', iblk, "ilo, jlo, ihi, jhi=", ilo, jlo, ihi, jhi
+      ! write(il_out,*) '   block:', iblk, "gilo, gjlo, gihi, gjhi=", this_block%i_glob(ilo), this_block%j_glob(jlo), this_block%i_glob(ihi), this_block%j_glob(jhi)
       if (this_block%i_glob(ilo) < l_ilo) then
         l_ilo = this_block%i_glob(ilo)
         gh_ilo = this_block%i_glob(ilo-nghost)
@@ -305,10 +308,10 @@
        
     endif
   end do
-  write(il_out,*) '  local partion, ilo, ihi, jlo, jhi=', l_ilo, l_ihi, l_jlo, l_jhi
-  write(il_out,*) '  partition x,y sizes:', l_ihi-l_ilo+1, l_jhi-l_jlo+1
+  ! write(il_out,*) '  local partion, ilo, ihi, jlo, jhi=', l_ilo, l_ihi, l_jlo, l_jhi
+  ! write(il_out,*) '  partition x,y sizes:', l_ihi-l_ilo+1, l_jhi-l_jlo+1
 !print ghost info
-  write(il_out,*) '  ghost global:',gh_ilo, gh_ihi, gh_jlo, gh_jhi 
+  ! write(il_out,*) '  ghost global:',gh_ilo, gh_ihi, gh_jlo, gh_jhi 
 
 !calculate partition using nprocsX and nprocsX
   l_ilo=mod(my_task,nprocsX)*nx_global/nprocsX+1
@@ -316,8 +319,8 @@
   l_jlo=int(my_task/nprocsX) * ny_global/nprocsY+1
   l_jhi=l_jlo+ny_global/nprocsY - 1
  
-  write(il_out,*) '  2local partion, ilo, ihi, jlo, jhi=', l_ilo, l_ihi, l_jlo, l_jhi
-  write(il_out,*) '  2partition x,y sizes:', l_ihi-l_ilo+1, l_jhi-l_jlo+1
+  ! write(il_out,*) '  2local partion, ilo, ihi, jlo, jhi=', l_ilo, l_ihi, l_jlo, l_jhi
+  ! write(il_out,*) '  2partition x,y sizes:', l_ihi-l_ilo+1, l_jhi-l_jlo+1
  
   call mpi_gather(l_ilo, 1, mpi_integer, vilo, 1, mpi_integer, 0, MPI_COMM_ICE, ierror)
   call broadcast_array(vilo, 0)  
@@ -350,10 +353,10 @@
       !disps(n) = ((vilo(n)-1)*ny_global + (vjlo(n)-1)) 
     end do
     
-    write(il_out,*) ' vilo ', vilo
-    write(il_out,*) ' vjlo ', vjlo
-    write(il_out,*) ' counts ', counts
-    write(il_out,*) ' disps ', disps
+    ! write(il_out,*) ' vilo ', vilo
+    ! write(il_out,*) ' vjlo ', vjlo
+    ! write(il_out,*) ' counts ', counts
+    ! write(il_out,*) ' disps ', disps
  
 !  if ( ll_comparal ) then 
 !    il_im = l_ihi-l_ilo+1 !nx_global
@@ -382,7 +385,7 @@
     call decomp_def (il_part_id, il_length, il_imjm, &
          my_task, il_nbcplproc, ll_comparal, il_out)
 
-    write(il_out,*)'(init_cpl) called decomp_def, my_task, ierror = ',my_task, ierror
+    if (debug) write(il_out,*)'(init_cpl) called decomp_def, my_task, ierror = ',my_task, ierror
 
     !
     ! PSMILe coupling fields declaration
@@ -500,7 +503,7 @@
 
     if (my_task == 0 .or. ll_comparal) then
 
-      write(il_out,*) 'init_cpl: Number of fields sent to ocn: ',nsend_i2o - nsend_i2a
+      if (debug) write(il_out,*) 'init_cpl: Number of fields sent to ocn: ',nsend_i2o - nsend_i2a
 
       if (nsend_i2o /= jpfldout) then
         write(il_out,*)
@@ -509,7 +512,7 @@
         call abort_ice('CICE: Number of outgoing coupling fields incorrect!') 
       endif
 
-      write(il_out,*) 'init_cpl: Total number of fields sent from ice: ',jpfldout
+      if (debug) write(il_out,*) 'init_cpl: Total number of fields sent from ice: ',jpfldout
 
       !jpfldout == nsend_i2o!
       !---------------------!
@@ -572,7 +575,7 @@
     cl_read(nrecv_a2i) = 'wnd_ai'
 
     if (my_task==0 .or. ll_comparal) then
-      write(il_out,*) 'init_cpl: Number of fields rcvd from atm: ',nrecv_a2i
+      if (debug) write(il_out,*) 'init_cpl: Number of fields rcvd from atm: ',nrecv_a2i
     endif
 
     !
@@ -601,7 +604,7 @@
 
     if (my_task==0 .or. ll_comparal) then
 
-      write(il_out,*) 'init_cpl: Number of fields rcvd from ocn: ',nrecv_o2i-nrecv_a2i
+      if (debug) write(il_out,*) 'init_cpl: Number of fields rcvd from ocn: ',nrecv_o2i-nrecv_a2i
 
       if (nrecv_o2i /= jpfldin) then
         write(il_out,*)
@@ -612,7 +615,7 @@
       !jpfldin == nrecv_o2i!
       !--------------------!
     
-      write(il_out,*) 'init_cpl: Total number of fields rcvd by ice: ',jpfldin
+      if (debug) write(il_out,*) 'init_cpl: Total number of fields rcvd by ice: ',jpfldin
 
       do jf=1, jpfldin
         call prism_def_var_proto (il_var_id_in(jf), cl_read(jf), il_part_id, &
@@ -782,14 +785,13 @@
     write(il_out,*) '(from_atm) Total number of fields to be rcvd: ', nrecv_a2i
   endif
   
-  write(il_out,*) "prism_get from_atm at sec: ", isteps
+  if (debug) write(il_out,*) "prism_get from_atm at sec: ", isteps
   do jf = 1, nrecv_a2i
 
     if (my_task==0 .or. ll_comparal ) then
 
       !jf-th field in
-      write(il_out,*)
-      write(il_out,*) '*** receiving coupling field No. ', jf, cl_read(jf)
+      if (debug) write(il_out,*) '*** receiving coupling field No. ', jf, cl_read(jf)
       !call flush(il_out)
 
       if (ll_comparal) then 
@@ -802,8 +804,7 @@
         write(il_out,*) 'Err in _get_ sst at time with error: ', isteps, ierror
         call prism_abort_proto(il_comp_id, 'cice from_atm','stop 1') 
       else 
-        write(il_out,*)
-        write(il_out,*)'(from_atm) rcvd at time with err: ',cl_read(jf),isteps,ierror
+        if (debug) write(il_out,*)'(from_atm) rcvd at time with err: ',cl_read(jf),isteps,ierror
      
         if (ll_comparal .and. chk_a2i_fields) then
            call mpi_gatherv(vwork2d(l_ilo:l_ihi, l_jlo:l_jhi),1,sendsubarray,gwork, &
@@ -869,8 +870,7 @@
     end select 
 
     if (my_task == 0 .or. ll_comparal) then
-      write(il_out,*) 
-      write(il_out,*)'(from_atm) done: ', jf, trim(cl_read(jf))
+      if (debug) write(il_out,*)'(from_atm) done: ', jf, trim(cl_read(jf))
     endif
 
   enddo
@@ -965,14 +965,13 @@
     endif
   endif
 
-  write(il_out,*) "prism_get from_ocn at sec: ", isteps
+  if (debug) write(il_out,*) "prism_get from_ocn at sec: ", isteps
   do jf = nrecv_a2i + 1, jpfldin 
   
     if (my_task==0 .or. ll_comparal) then
 
       !jf-th field in
-      write(il_out,*)
-      write(il_out,*) '*** receiving coupling fields No. ', jf, cl_read(jf)
+      if (debug) write(il_out,*) '*** receiving coupling fields No. ', jf, cl_read(jf)
       if(ll_comparal) then
         call prism_get_proto (il_var_id_in(jf), isteps, vwork2d(l_ilo:l_ihi, l_jlo:l_jhi), ierror)
       else
@@ -983,8 +982,7 @@
         write(il_out,*) 'Err in _get_ sst at time with error: ', isteps, ierror
         call prism_abort_proto(il_comp_id, 'cice from_ocn','stop 1')
       else
-        write(il_out,*)
-        write(il_out,*)'(from_ocn) rcvd at time with err: ',cl_read(jf),isteps,ierror
+        if (debug) write(il_out,*)'(from_ocn) rcvd at time with err: ',cl_read(jf),isteps,ierror
           if(ll_comparal .and. chk_o2i_fields) then
             call mpi_gatherv(vwork2d(l_ilo:l_ihi, l_jlo:l_jhi),1,sendsubarray,gwork,  &
                        counts,disps,resizedrecvsubarray, 0,MPI_COMM_ICE,ierror)
@@ -1079,14 +1077,14 @@
   type (block) :: this_block           ! block information for current block
 
   integer(kind=int_kind) :: ncid,currstep,ll,ilout
+
   data currstep/0/
   save currstep
 
   currstep=currstep+1
 
   if (my_task == 0) then  
-    write(il_out,*)
-    write(il_out,*) '(into_ocn) sending coupling fields at stime= ', isteps
+    then write(il_out,*) '(into_ocn) sending coupling fields at stime= ', isteps
     if (chk_i2o_fields) then
       if ( .not. file_exist('fields_i2o_in_ice.nc') ) then
         call create_ncfile('fields_i2o_in_ice.nc',ncid,il_im,il_jm,ll=1,ilout=il_out)
@@ -1097,7 +1095,7 @@
     endif
   endif
 
-  write(il_out,*) "prism_put into_ocn at sec: ", isteps
+  if (debug) write(il_out,*) "prism_put into_ocn at sec: ", isteps
   do jf = nsend_i2a + 1, jpfldout
 
 !CH: make sure the 'LIMITS' are to be released!
@@ -1149,8 +1147,8 @@
     endif
     if (my_task == 0 .or. ll_comparal) then   
 
-      write(il_out,*)
-      write(il_out,*) '*** sending coupling field No. ', jf, cl_writ(jf)
+      if (debug) write(il_out,*) '*** sending coupling field No. ', jf, cl_writ(jf)
+
       if(ll_comparal) then
         call prism_put_proto(il_var_id_out(jf), isteps, vwork2d(l_ilo:l_ihi, l_jlo:l_jhi), ierror)
       else
@@ -1161,8 +1159,7 @@
         write(il_out,*) '(into_ocn) Err in _put_ ', cl_writ(jf), isteps, ierror
         call prism_abort_proto(il_comp_id, 'cice into_ocn','STOP 1') 
       else
-        write(il_out,*)
-        write(il_out,*)'(into_ocn) sent: ', cl_writ(jf), isteps, ierror
+        if (debug) write(il_out,*)'(into_ocn) sent: ', cl_writ(jf), isteps, ierror
         if(chk_i2o_fields .and. ll_comparal) then
           call mpi_gatherv(vwork2d(l_ilo:l_ihi, l_jlo:l_jhi),1,sendsubarray,gwork, &
                      counts,disps,resizedrecvsubarray, 0,MPI_COMM_ICE,ierror)
@@ -1215,13 +1212,12 @@
 !end if
 
   if (my_task == 0) then
-    write(il_out,*)
-    write(il_out,*) '(into_atm) sending coupling fields at stime= ', isteps
+    if (debug) write(il_out,*) '(into_atm) sending coupling fields at stime= ', isteps
     if (chk_i2a_fields) then
       if ( .not. file_exist('fields_i2a_in_ice.nc') ) then
         call create_ncfile('fields_i2a_in_ice.nc',ncid,il_im,il_jm,ll=1,ilout=il_out)
       else
-        write(il_out,*) 'opening file fields_i2a_in_ice.nc at nstep = ', isteps
+        if (debug) write(il_out,*) 'opening file fields_i2a_in_ice.nc at nstep = ', isteps
         call ncheck( nf_open('fields_i2a_in_ice.nc',nf_write,ncid) )
       end if
       call write_nc_1Dtime(real(isteps),currstep,'time',ncid)
@@ -1257,7 +1253,7 @@
   call u2tgrid_vector(ia_uvel)
   call u2tgrid_vector(ia_vvel) 
 
-  write(il_out,*) "prism_put into_atm at sec: ", isteps
+  if (debug) write(il_out,*) "prism_put into_atm at sec: ", isteps
   do jf = 1, nsend_i2a
 
     select case (trim(cl_writ(jf)))
@@ -1308,13 +1304,11 @@
     end if
     if (my_task == 0 .or. ll_comparal) then
   
-      write(il_out,*)
-      write(il_out,*) '*** sending coupling field No. ', jf, cl_writ(jf)
+      if (debug)  write(il_out,*) '*** sending coupling field No. ', jf, cl_writ(jf)
 
       !call prism_put_inquire_proto(il_var_id_out(jf),isteps,ierror)
   
-      write(il_out,*)
-      write(il_out,*) '(into_atm) what to do with this var==> Err= ',ierror
+      if (debug) write(il_out,*) '(into_atm) what to do with this var==> Err= ',ierror
       if(ll_comparal) then 
         call prism_put_proto(il_var_id_out(jf), isteps, vwork2d(l_ilo:l_ihi, l_jlo:l_jhi), ierror)
       else
@@ -1325,8 +1319,7 @@
         write(il_out,*) '(into_atm) Err in _put_ ', cl_writ(jf), isteps, ierror
         call prism_abort_proto(il_comp_id, 'cice into_atm','STOP 1')
       else
-        write(il_out,*)
-        write(il_out,*)'(into_atm) sent: ', cl_writ(jf), isteps, ierror
+        if (debug) write(il_out,*)'(into_atm) sent: ', cl_writ(jf), isteps, ierror
         if(chk_i2a_fields .and. ll_comparal) then
           call mpi_gatherv(vwork2d(l_ilo:l_ihi, l_jlo:l_jhi),1,sendsubarray,gwork, &
                      counts,disps,resizedrecvsubarray, 0,MPI_COMM_ICE,ierror)
