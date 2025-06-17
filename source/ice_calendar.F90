@@ -676,10 +676,14 @@ subroutine check_start_date
 use ice_communicate, only: my_task, master_task
 implicit none
 
+integer(kind=int_kind) :: init_year, init_mon, init_day
 real (kind=dbl_kind) :: sec_init_date, sec_start_date, sec_init_to_start
 
-! init_date is hardcoded to 00010101 for ACCESS
-call time2sec(1, 1, 1, sec_init_date)
+init_day = mod(init_date, 100)
+init_mon = mod( (init_date - init_day)/100, 100)
+init_year = init_date / 10000
+
+call time2sec(init_year, init_mon, init_day, sec_init_date)
 call time2sec(iniyear, inimon, iniday, sec_start_date)
 
 sec_init_to_start = sec_start_date - sec_init_date
