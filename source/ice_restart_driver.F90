@@ -362,8 +362,7 @@
       call read_restart_field(nu_restart,0,stress12_1,'ruf8', &
            'stress12_1',1,diag,field_loc_center,field_type_scalar) ! stress12_1
       call read_restart_field(nu_restart,0,stress12_3,'ruf8', &
-           'stress12_3',1,diag,field_loc_center,field_type_scalar) ! stress12_1
-
+           'stress12_3',1,diag,field_loc_center,field_type_scalar) ! stress12_3
       call read_restart_field(nu_restart,0,stress12_2,'ruf8', &
            'stress12_2',1,diag,field_loc_center,field_type_scalar) ! stress12_2
       call read_restart_field(nu_restart,0,stress12_4,'ruf8', &
@@ -597,9 +596,9 @@
             write(nu_diag,*) 'Restart read at istep=',istep0,time,time_forc
          endif
 #ifndef AusCOM
-      call calendar(time)
+         call calendar(time)
 #else
-      call calendar(time-runtime0)
+         call calendar(time-runtime0)
 #endif
          call broadcast_scalar(istep0,master_task)
          istep1 = istep0

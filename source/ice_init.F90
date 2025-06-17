@@ -389,7 +389,7 @@
       call get_fileunit(nu_nml)
 
       if (my_task == master_task) then
-         open (nu_nml, file=nml_filename, status='old',iostat=nml_error)
+         open (nu_nml, file=trim(nml_filename), status='old',iostat=nml_error)
          if (nml_error /= 0) then
             nml_error = -1
          else
@@ -429,7 +429,7 @@
          call abort_ice('ice: error reading namelist')
       endif
       call release_fileunit(nu_nml)
-
+  
       !-----------------------------------------------------------------
       ! set up diagnostics output and resolve conflicts
       !-----------------------------------------------------------------
@@ -631,6 +631,16 @@
             write (nu_diag,*) 'WARNING: Setting cap_fluxes = F'
          endif
          cap_fluxes = .false.
+      endif
+
+!20250214: add ktherm == 0 case:
+      if (ktherm == 0 .and. trim(tfrz_option) /= 'linear_salt') then
+         if (my_task == master_task) then
+         write (nu_diag,*) &
+         'WARNING: ktherm = 0 and tfrz_option = ',trim(tfrz_option)
+         write (nu_diag,*) &
+         'WARNING: For consistency, set tfrz_option = linear_salt'
+         endif
       endif
 
       if (ktherm == 1 .and. trim(tfrz_option) /= 'linear_salt') then

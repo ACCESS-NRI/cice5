@@ -15,8 +15,8 @@ integer (kind=int_kind) :: xdim, ydim
 !integer(kind=int_kind), parameter :: nrecv = 50   ! maxium no of flds rcvd allowed
 integer(kind=int_kind) :: nsend_i2a, nsend_i2o
 integer(kind=int_kind) :: nrecv_a2i, nrecv_o2i 
-integer(kind=int_kind), parameter :: jpfldout = 65 ! actual number of fields sent
-integer(kind=int_kind), parameter :: jpfldin  = 47 ! actual number of fields rcvd 
+integer(kind=int_kind), parameter :: jpfldout = 39 ! actual number of fields sent
+integer(kind=int_kind), parameter :: jpfldin  = 35 ! actual number of fields rcvd 
 
 character(len=8), dimension(jpfldout) :: cl_writ ! Symb names fields sent
 character(len=8), dimension(jpfldin)  :: cl_read ! Symb names fields rcvd
@@ -77,10 +77,32 @@ real(kind=dbl_kind) :: ocn_ssuv_factor = 1.0  ! 0.0 -- turn off the ocn_current 
 real(kind=dbl_kind) :: iostress_factor = 1.0  ! 0.0 -- turn off stresses into MOM4.
 !
 !20171227: Adding options for land ice discharge as iceberg melt (0,1,2,3,4)
-integer(kind=int_kind) :: iceberg = 0 
-!20180528: Adding "enhancement" factor for the iceberg waterflux
-real(kind=dbl_kind) :: iceberg_factor = 1.0
-!             
+integer(kind=int_kind) :: iceberg = 2 
+!Allow scaling: factor for the iceberg waterflux (won't change water mass budget)
+real(kind=dbl_kind) :: &
+         iceberg_rate_s = 0.5, &      !rate of "iceberg" taken from the runoff off Antarctica
+         iceberg_rate_n = 0.5, &      !........................................... Greenland        
+         iceberg_lh = 1.0             !iceberg latent heat (=0 if CABLE already calculated melting)
+             
+logical :: runoff_lh = .true.         !allow runoff to carry LH when discharged into ocean
+                                      !which would lead to ocean surface cooling,
+                                      !when .false., only carry LH to areas where 
+                                      !runoff spread by the lice (iceberg) mask
+integer(kind=int_kind) :: &
+         iceberg_je_s = 70, &   !(iceberg_js_s=1, always)
+         runoff_je_s  = 45, &   !(runoff_js_s =1, always)
+         iceberg_js_n = 201, &  !(iceberg_je_n=300, always)
+         runoff_is_n  = 222, &  !------
+         runoff_ie_n  = 270, &  !These 4 indices define the
+         runoff_js_n  = 230, &  !Greenland runoff domain
+         runoff_je_n  = 300     !-----
+!202412: add option for "fixing" ocean water mass imbalance: ESM1.5 sees ~ 0.18543417E+08 kg/s
+!        (annual mean) water loss from ocean in a 100-year test run (liceA0G0), meaning a net
+!        loss rate of 0.18543417E+08/0.36133599E+15(ocean-surface-area) = 0.513190E-07 kg/m2/s.
+!        which will be compensated for by adding this much of waterflux to global lprec field--
+real(kind=dbl_kind) :: &
+         add_lprec = 0.513190E-07      !kg/m2/s. ==> set to 0.0 if no fixin!
+             
 namelist/coupling/       &
          caltype,        &
          jobnum,         &
@@ -109,7 +131,18 @@ namelist/coupling/       &
          extreme_test,   &
          imsk_evap,      &
          iceberg,        &
-         iceberg_factor, &
+         iceberg_rate_s, &
+         iceberg_rate_n, &
+         iceberg_lh,   &
+         iceberg_je_s, &
+         runoff_je_s,  &
+         iceberg_js_n, &
+         runoff_is_n,  &
+         runoff_ie_n,  &
+         runoff_js_n,  &
+         runoff_je_n,  &
+         runoff_lh,    &
+         add_lprec,    &
          ocn_ssuv_factor,&
          iostress_factor,&
          chk_a2i_fields, &

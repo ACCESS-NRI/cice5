@@ -62,6 +62,9 @@
   real(kind=dbl_kind), dimension(:), allocatable :: rla_bufsend
   real(kind=dbl_kind), dimension(:,:), allocatable :: vwork2d
     !local domain work array, 4 coupling data passing 
+
+  logical, parameter :: debug = .false.
+
   contains
 
 !======================================================================
@@ -277,9 +280,9 @@
       ihi = this_block%ihi
       jlo = this_block%jlo
       jhi = this_block%jhi
-      write(il_out,*) '   this block: iblock, jblock=', this_block%iblock, this_block%jblock
-!      write(il_out,*) '   block:', iblk, "ilo, jlo, ihi, jhi=", ilo, jlo, ihi, jhi
-      write(il_out,*) '   block:', iblk, "gilo, gjlo, gihi, gjhi=", this_block%i_glob(ilo), this_block%j_glob(jlo), this_block%i_glob(ihi), this_block%j_glob(jhi)
+      ! write(il_out,*) '   this block: iblock, jblock=', this_block%iblock, this_block%jblock
+      ! write(il_out,*) '   block:', iblk, "ilo, jlo, ihi, jhi=", ilo, jlo, ihi, jhi
+      ! write(il_out,*) '   block:', iblk, "gilo, gjlo, gihi, gjhi=", this_block%i_glob(ilo), this_block%j_glob(jlo), this_block%i_glob(ihi), this_block%j_glob(jhi)
       if (this_block%i_glob(ilo) < l_ilo) then
         l_ilo = this_block%i_glob(ilo)
         gh_ilo = this_block%i_glob(ilo-nghost)
@@ -305,10 +308,10 @@
        
     endif
   end do
-  write(il_out,*) '  local partion, ilo, ihi, jlo, jhi=', l_ilo, l_ihi, l_jlo, l_jhi
-  write(il_out,*) '  partition x,y sizes:', l_ihi-l_ilo+1, l_jhi-l_jlo+1
+  ! write(il_out,*) '  local partion, ilo, ihi, jlo, jhi=', l_ilo, l_ihi, l_jlo, l_jhi
+  ! write(il_out,*) '  partition x,y sizes:', l_ihi-l_ilo+1, l_jhi-l_jlo+1
 !print ghost info
-  write(il_out,*) '  ghost global:',gh_ilo, gh_ihi, gh_jlo, gh_jhi 
+  ! write(il_out,*) '  ghost global:',gh_ilo, gh_ihi, gh_jlo, gh_jhi 
 
 !calculate partition using nprocsX and nprocsX
   l_ilo=mod(my_task,nprocsX)*nx_global/nprocsX+1
@@ -316,8 +319,8 @@
   l_jlo=int(my_task/nprocsX) * ny_global/nprocsY+1
   l_jhi=l_jlo+ny_global/nprocsY - 1
  
-  write(il_out,*) '  2local partion, ilo, ihi, jlo, jhi=', l_ilo, l_ihi, l_jlo, l_jhi
-  write(il_out,*) '  2partition x,y sizes:', l_ihi-l_ilo+1, l_jhi-l_jlo+1
+  ! write(il_out,*) '  2local partion, ilo, ihi, jlo, jhi=', l_ilo, l_ihi, l_jlo, l_jhi
+  ! write(il_out,*) '  2partition x,y sizes:', l_ihi-l_ilo+1, l_jhi-l_jlo+1
  
   call mpi_gather(l_ilo, 1, mpi_integer, vilo, 1, mpi_integer, 0, MPI_COMM_ICE, ierror)
   call broadcast_array(vilo, 0)  
@@ -350,10 +353,10 @@
       !disps(n) = ((vilo(n)-1)*ny_global + (vjlo(n)-1)) 
     end do
     
-    write(il_out,*) ' vilo ', vilo
-    write(il_out,*) ' vjlo ', vjlo
-    write(il_out,*) ' counts ', counts
-    write(il_out,*) ' disps ', disps
+    ! write(il_out,*) ' vilo ', vilo
+    ! write(il_out,*) ' vjlo ', vjlo
+    ! write(il_out,*) ' counts ', counts
+    ! write(il_out,*) ' disps ', disps
  
 !  if ( ll_comparal ) then 
 !    il_im = l_ihi-l_ilo+1 !nx_global
@@ -382,7 +385,7 @@
     call decomp_def (il_part_id, il_length, il_imjm, &
          my_task, il_nbcplproc, ll_comparal, il_out)
 
-    write(il_out,*)'(init_cpl) called decomp_def, my_task, ierror = ',my_task, ierror
+    if (debug) write(il_out,*)'(init_cpl) called decomp_def, my_task, ierror = ',my_task, ierror
 
     !
     ! PSMILe coupling fields declaration
@@ -449,30 +452,7 @@
     cl_writ(nsend_i2a)='co2_i2'
     nsend_i2a = nsend_i2a + 1
     cl_writ(nsend_i2a)='co2fx_i2'
-    ! new fields sending to UM GA7
-    nsend_i2a = nsend_i2a + 1
-    cl_writ(nsend_i2a)='sstfz_ia'
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'foifr',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'itopt',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'itopk',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'pndfn',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a5,i2.2)')'pndtn',jf
-    enddo
- 
+
     if (my_task == 0) then
       write(il_out,*) 'init_cpl: Number of fields sent to atm: ',nsend_i2a
     endif
@@ -523,7 +503,7 @@
 
     if (my_task == 0 .or. ll_comparal) then
 
-      write(il_out,*) 'init_cpl: Number of fields sent to ocn: ',nsend_i2o - nsend_i2a
+      if (debug) write(il_out,*) 'init_cpl: Number of fields sent to ocn: ',nsend_i2o - nsend_i2a
 
       if (nsend_i2o /= jpfldout) then
         write(il_out,*)
@@ -532,7 +512,7 @@
         call abort_ice('CICE: Number of outgoing coupling fields incorrect!') 
       endif
 
-      write(il_out,*) 'init_cpl: Total number of fields sent from ice: ',jpfldout
+      if (debug) write(il_out,*) 'init_cpl: Total number of fields sent from ice: ',jpfldout
 
       !jpfldout == nsend_i2o!
       !---------------------!
@@ -593,22 +573,9 @@
     cl_read(nrecv_a2i) = 'co2_ai'
     nrecv_a2i = nrecv_a2i + 1
     cl_read(nrecv_a2i) = 'wnd_ai'
-    ! new fields recving from UM GA7 
-    nrecv_a2i = nrecv_a2i + 1
-    cl_read(nrecv_a2i) = 'icenth_i'
-    nrecv_a2i = nrecv_a2i + 1
-    cl_read(nrecv_a2i) = 'icesth_i'
-    do jf = 1, ncat
-      nrecv_a2i = nrecv_a2i + 1
-      write(cl_read(nrecv_a2i), '(a6,i2.2)')'tsfice',jf
-    enddo
-    do jf = 1, ncat
-      nrecv_a2i = nrecv_a2i + 1
-      write(cl_read(nrecv_a2i), '(a6,i2.2)')'iceevp',jf
-    enddo
 
     if (my_task==0 .or. ll_comparal) then
-      write(il_out,*) 'init_cpl: Number of fields rcvd from atm: ',nrecv_a2i
+      if (debug) write(il_out,*) 'init_cpl: Number of fields rcvd from atm: ',nrecv_a2i
     endif
 
     !
@@ -637,7 +604,7 @@
 
     if (my_task==0 .or. ll_comparal) then
 
-      write(il_out,*) 'init_cpl: Number of fields rcvd from ocn: ',nrecv_o2i-nrecv_a2i
+      if (debug) write(il_out,*) 'init_cpl: Number of fields rcvd from ocn: ',nrecv_o2i-nrecv_a2i
 
       if (nrecv_o2i /= jpfldin) then
         write(il_out,*)
@@ -648,7 +615,7 @@
       !jpfldin == nrecv_o2i!
       !--------------------!
     
-      write(il_out,*) 'init_cpl: Total number of fields rcvd by ice: ',jpfldin
+      if (debug) write(il_out,*) 'init_cpl: Total number of fields rcvd by ice: ',jpfldin
 
       do jf=1, jpfldin
         call prism_def_var_proto (il_var_id_in(jf), cl_read(jf), il_part_id, &
@@ -687,18 +654,6 @@
   allocate (um_bmlt(nx_block,ny_block,ncat,max_blocks)); um_bmlt(:,:,:,:) = 0
   allocate (um_co2(nx_block,ny_block,max_blocks)); um_co2(:,:,:) = 0
   allocate (um_wnd(nx_block,ny_block,max_blocks)); um_wnd(:,:,:) = 0
-  allocate (um_icenth(nx_block,ny_block,max_blocks)); um_icenth(:,:,:) = 0
-  allocate (um_icesth(nx_block,ny_block,max_blocks)); um_icesth(:,:,:) = 0
-  allocate (um_tsfice(nx_block,ny_block,ncat,max_blocks)); um_tsfice(:,:,:,:) = 0
-  allocate (um_iceevp(nx_block,ny_block,ncat,max_blocks)); um_iceevp(:,:,:,:) = 0
-  !20171024: 6 more arrays added (for land ice discharge into ocean)
-  allocate (lice_nth(nx_block,ny_block,max_blocks)); lice_nth(:,:,:) = 0
-  allocate (lice_sth(nx_block,ny_block,max_blocks)); lice_sth(:,:,:) = 0
-  allocate (msk_nth(nx_block,ny_block,max_blocks));  msk_nth(:,:,:) = 0
-  allocate (msk_sth(nx_block,ny_block,max_blocks));  msk_sth(:,:,:) = 0
-  allocate (amsk_nth(nx_block,ny_block,max_blocks)); amsk_nth(:,:,:) = 0
-  allocate (amsk_sth(nx_block,ny_block,max_blocks)); amsk_sth(:,:,:) = 0
-
   !
   allocate ( core_runoff(nx_block,ny_block,max_blocks));  core_runoff(:,:,:) = 0.
   !
@@ -725,12 +680,6 @@
   allocate (ia_thikn(nx_block,ny_block,ncat,max_blocks)); ia_thikn(:,:,:,:) = 0
   allocate (ia_co2(nx_block,ny_block,max_blocks)); ia_co2(:,:,:) = 0
   allocate (ia_co2fx(nx_block,ny_block,max_blocks)); ia_co2fx(:,:,:) = 0
-  allocate (ia_sstfz(nx_block,ny_block,max_blocks)); ia_sstfz(:,:,:) = 0
-  allocate (ia_foifr(nx_block,ny_block,ncat,max_blocks)); ia_foifr(:,:,:,:) = 0
-  allocate (ia_itopt(nx_block,ny_block,ncat,max_blocks)); ia_itopt(:,:,:,:) = 0
-  allocate (ia_itopk(nx_block,ny_block,ncat,max_blocks)); ia_itopk(:,:,:,:) = 0
-  allocate (ia_pndfn(nx_block,ny_block,ncat,max_blocks)); ia_pndfn(:,:,:,:) = 0
-  allocate (ia_pndtn(nx_block,ny_block,ncat,max_blocks)); ia_pndtn(:,:,:,:) = 0
   !
   ! to ocn:
   allocate (io_strsu(nx_block,ny_block,max_blocks)); io_strsu(:,:,:) = 0
@@ -773,23 +722,29 @@
   allocate (mssv(nx_block,ny_block,max_blocks));  mssv(:,:,:) = 0
   allocate (mco2(nx_block,ny_block,max_blocks));  mco2(:,:,:) = 0
   allocate (mco2fx(nx_block,ny_block,max_blocks));  mco2fx(:,:,:) = 0
-  allocate (msstfz(nx_block,ny_block,max_blocks));  msstfz(:,:,:) = 0
   ! IA cpl int time-average (4D)
   allocate (maicen(nx_block,ny_block,ncat,max_blocks)); maicen(:,:,:,:) = 0
   allocate (msnown(nx_block,ny_block,ncat,max_blocks)); msnown(:,:,:,:) = 0
   allocate (mthikn(nx_block,ny_block,ncat,max_blocks)); mthikn(:,:,:,:) = 0
-  allocate (mfoifr(nx_block,ny_block,ncat,max_blocks)); mfoifr(:,:,:,:) = 0
-  allocate (mitopt(nx_block,ny_block,ncat,max_blocks)); mitopt(:,:,:,:) = 0
-  allocate (mitopk(nx_block,ny_block,ncat,max_blocks)); mitopk(:,:,:,:) = 0
-  allocate (mpndfn(nx_block,ny_block,ncat,max_blocks)); mpndfn(:,:,:,:) = 0
-  allocate (mpndtn(nx_block,ny_block,ncat,max_blocks)); mpndtn(:,:,:,:) = 0
-!BX:
   allocate (maicen_saved(nx_block,ny_block,ncat,max_blocks)); maicen_saved(:,:,:,:) = 0
-!
-  allocate (icebergfw(nx_block,ny_block,12,max_blocks)); icebergfw(:,:,:,:) = 0
+  
+  allocate (ticeberg_s(12)); ticeberg_s(:) = 0
+  allocate (ticeberg_n(12)); ticeberg_n(:) = 0
+  allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0
+
+
+  if (my_task == master_task) then
+    !global domain runoff for iceberg runoff calcs
+    allocate (gicebergfw(nx_global,ny_global,12)); gicebergfw(:,:,:) = 0
+    allocate (grunoff(nx_global,ny_global)); grunoff(:,:) = 0
+    allocate (gtarea(nx_global,ny_global)); gtarea(:,:) = 0
+  else
+    allocate (gicebergfw(1,1,12)); gicebergfw(:,:,:) = 0
+    allocate (grunoff(1,1)); grunoff(:,:) = 0
+    allocate (gtarea(1,1)); gtarea(:,:) = 0
+  endif
 
   allocate (vwork(nx_block,ny_block,max_blocks)); vwork(:,:,:) = 0
-  allocate (gwork(nx_global,ny_global)); gwork(:,:) = 0
   allocate (sicemass(nx_block,ny_block,max_blocks)); sicemass(:,:,:) = 0.
   allocate (vwork2d(l_ilo:l_ihi, l_jlo:l_jhi)); vwork2d(:,:) = 0. !l_ihi-l_ilo+1, l_jhi-l_jlo+1
 
@@ -830,14 +785,13 @@
     write(il_out,*) '(from_atm) Total number of fields to be rcvd: ', nrecv_a2i
   endif
   
-  write(il_out,*) "prism_get from_atm at sec: ", isteps
+  if (debug) write(il_out,*) "prism_get from_atm at sec: ", isteps
   do jf = 1, nrecv_a2i
 
     if (my_task==0 .or. ll_comparal ) then
 
       !jf-th field in
-      write(il_out,*)
-      write(il_out,*) '*** receiving coupling field No. ', jf, cl_read(jf)
+      if (debug) write(il_out,*) '*** receiving coupling field No. ', jf, cl_read(jf)
       !call flush(il_out)
 
       if (ll_comparal) then 
@@ -850,8 +804,7 @@
         write(il_out,*) 'Err in _get_ sst at time with error: ', isteps, ierror
         call prism_abort_proto(il_comp_id, 'cice from_atm','stop 1') 
       else 
-        write(il_out,*)
-        write(il_out,*)'(from_atm) rcvd at time with err: ',cl_read(jf),isteps,ierror
+        if (debug) write(il_out,*)'(from_atm) rcvd at time with err: ',cl_read(jf),isteps,ierror
      
         if (ll_comparal .and. chk_a2i_fields) then
            call mpi_gatherv(vwork2d(l_ilo:l_ihi, l_jlo:l_jhi),1,sendsubarray,gwork, &
@@ -889,9 +842,6 @@
         um_runoff(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) =vwork2d(:,:)
     case ('wme_i');
         um_wme(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
-!    case ('rain_i');  um_rain(:,:,:) = vwork(:,:,:)
-!    case ('snow_i');  um_snow(:,:,:) = vwork(:,:,:)
-!---20100825 -- just be cauious: -------------------------
     case ('rain_i');
         um_rain(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) =max(0.0,vwork2d(:,:))
     case ('snow_i');
@@ -917,23 +867,10 @@
     case ('press_i');um_press(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
     case ('co2_ai');um_co2(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
     case ('wnd_ai');um_wnd(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
-    case ('icenth_i');um_icenth(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
-    case ('icesth_i');um_icesth(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1) = vwork2d(:,:)
-    case ('tsfice01');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1,1) = vwork2d(:,:)
-    case ('tsfice02');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,2,1) = vwork2d(:,:)
-    case ('tsfice03');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,3,1) = vwork2d(:,:)
-    case ('tsfice04');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,4,1) = vwork2d(:,:)
-    case ('tsfice05');um_tsfice(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,5,1) = vwork2d(:,:)
-    case ('iceevp01');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,1,1) = vwork2d(:,:)
-    case ('iceevp02');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,2,1) = vwork2d(:,:)
-    case ('iceevp03');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,3,1) = vwork2d(:,:)
-    case ('iceevp04');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,4,1) = vwork2d(:,:)
-    case ('iceevp05');um_iceevp(1+nghost:nx_block-nghost,1+nghost:ny_block-nghost,5,1) = vwork2d(:,:)
     end select 
 
     if (my_task == 0 .or. ll_comparal) then
-      write(il_out,*) 
-      write(il_out,*)'(from_atm) done: ', jf, trim(cl_read(jf))
+      if (debug) write(il_out,*)'(from_atm) done: ', jf, trim(cl_read(jf))
     endif
 
   enddo
@@ -956,10 +893,6 @@
     call ice_HaloUpdate(um_press, halo_info,field_loc_center,field_type_vector)
     call ice_HaloUpdate(um_co2, halo_info, field_loc_center, field_type_vector)
     call ice_HaloUpdate(um_wnd, halo_info, field_loc_center, field_type_vector)
-    call ice_HaloUpdate(um_icenth,halo_info, field_loc_center,field_type_vector)
-    call ice_HaloUpdate(um_icesth,halo_info, field_loc_center,field_type_vector)
-    call ice_HaloUpdate(um_tsfice,halo_info, field_loc_center,field_type_vector)
-    call ice_HaloUpdate(um_iceevp,halo_info, field_loc_center,field_type_vector)
 
   IF (rotate_winds) THEN   !rotate_winds=.t. means oasis does not do the vector rotation.
 
@@ -1032,14 +965,13 @@
     endif
   endif
 
-  write(il_out,*) "prism_get from_ocn at sec: ", isteps
+  if (debug) write(il_out,*) "prism_get from_ocn at sec: ", isteps
   do jf = nrecv_a2i + 1, jpfldin 
   
     if (my_task==0 .or. ll_comparal) then
 
       !jf-th field in
-      write(il_out,*)
-      write(il_out,*) '*** receiving coupling fields No. ', jf, cl_read(jf)
+      if (debug) write(il_out,*) '*** receiving coupling fields No. ', jf, cl_read(jf)
       if(ll_comparal) then
         call prism_get_proto (il_var_id_in(jf), isteps, vwork2d(l_ilo:l_ihi, l_jlo:l_jhi), ierror)
       else
@@ -1050,8 +982,7 @@
         write(il_out,*) 'Err in _get_ sst at time with error: ', isteps, ierror
         call prism_abort_proto(il_comp_id, 'cice from_ocn','stop 1')
       else
-        write(il_out,*)
-        write(il_out,*)'(from_ocn) rcvd at time with err: ',cl_read(jf),isteps,ierror
+        if (debug) write(il_out,*)'(from_ocn) rcvd at time with err: ',cl_read(jf),isteps,ierror
           if(ll_comparal .and. chk_o2i_fields) then
             call mpi_gatherv(vwork2d(l_ilo:l_ihi, l_jlo:l_jhi),1,sendsubarray,gwork,  &
                        counts,disps,resizedrecvsubarray, 0,MPI_COMM_ICE,ierror)
@@ -1146,14 +1077,14 @@
   type (block) :: this_block           ! block information for current block
 
   integer(kind=int_kind) :: ncid,currstep,ll,ilout
+
   data currstep/0/
   save currstep
 
   currstep=currstep+1
 
   if (my_task == 0) then  
-    write(il_out,*)
-    write(il_out,*) '(into_ocn) sending coupling fields at stime= ', isteps
+    if (debug) write(il_out,*) '(into_ocn) sending coupling fields at stime= ', isteps
     if (chk_i2o_fields) then
       if ( .not. file_exist('fields_i2o_in_ice.nc') ) then
         call create_ncfile('fields_i2o_in_ice.nc',ncid,il_im,il_jm,ll=1,ilout=il_out)
@@ -1164,7 +1095,7 @@
     endif
   endif
 
-  write(il_out,*) "prism_put into_ocn at sec: ", isteps
+  if (debug) write(il_out,*) "prism_put into_ocn at sec: ", isteps
   do jf = nsend_i2a + 1, jpfldout
 
 !CH: make sure the 'LIMITS' are to be released!
@@ -1216,8 +1147,8 @@
     endif
     if (my_task == 0 .or. ll_comparal) then   
 
-      write(il_out,*)
-      write(il_out,*) '*** sending coupling field No. ', jf, cl_writ(jf)
+      if (debug) write(il_out,*) '*** sending coupling field No. ', jf, cl_writ(jf)
+
       if(ll_comparal) then
         call prism_put_proto(il_var_id_out(jf), isteps, vwork2d(l_ilo:l_ihi, l_jlo:l_jhi), ierror)
       else
@@ -1228,8 +1159,7 @@
         write(il_out,*) '(into_ocn) Err in _put_ ', cl_writ(jf), isteps, ierror
         call prism_abort_proto(il_comp_id, 'cice into_ocn','STOP 1') 
       else
-        write(il_out,*)
-        write(il_out,*)'(into_ocn) sent: ', cl_writ(jf), isteps, ierror
+        if (debug) write(il_out,*)'(into_ocn) sent: ', cl_writ(jf), isteps, ierror
         if(chk_i2o_fields .and. ll_comparal) then
           call mpi_gatherv(vwork2d(l_ilo:l_ihi, l_jlo:l_jhi),1,sendsubarray,gwork, &
                      counts,disps,resizedrecvsubarray, 0,MPI_COMM_ICE,ierror)
@@ -1282,13 +1212,12 @@
 !end if
 
   if (my_task == 0) then
-    write(il_out,*)
-    write(il_out,*) '(into_atm) sending coupling fields at stime= ', isteps
+    if (debug) write(il_out,*) '(into_atm) sending coupling fields at stime= ', isteps
     if (chk_i2a_fields) then
       if ( .not. file_exist('fields_i2a_in_ice.nc') ) then
         call create_ncfile('fields_i2a_in_ice.nc',ncid,il_im,il_jm,ll=1,ilout=il_out)
       else
-        write(il_out,*) 'opening file fields_i2a_in_ice.nc at nstep = ', isteps
+        if (debug) write(il_out,*) 'opening file fields_i2a_in_ice.nc at nstep = ', isteps
         call ncheck( nf_open('fields_i2a_in_ice.nc',nf_write,ncid) )
       end if
       call write_nc_1Dtime(real(isteps),currstep,'time',ncid)
@@ -1324,10 +1253,7 @@
   call u2tgrid_vector(ia_uvel)
   call u2tgrid_vector(ia_vvel) 
 
-  !hxy599 debug 
-  !call read_restart_i2a("i2a.nc", 0)
-
-  write(il_out,*) "prism_put into_atm at sec: ", isteps
+  if (debug) write(il_out,*) "prism_put into_atm at sec: ", isteps
   do jf = 1, nsend_i2a
 
     select case (trim(cl_writ(jf)))
@@ -1350,34 +1276,8 @@
     !20100305: test effect of ssuv on the tropical cooling biases (as per Harry Henden)
     case('uvel_ia');  vwork = ia_uvel * ocn_ssuv_factor     !note ice u/v are also 
     case('vvel_ia');  vwork = ia_vvel * ocn_ssuv_factor     !     included here.
-    case('sstfz_ia'); vwork = ia_sstfz
     case('co2_i2');  vwork = ia_co2
     case('co2fx_i2');  vwork = ia_co2fx
-    case('foifr01'); vwork(:,:,:) = ia_foifr(:,:,1,:)
-    case('foifr02'); vwork(:,:,:) = ia_foifr(:,:,2,:)
-    case('foifr03'); vwork(:,:,:) = ia_foifr(:,:,3,:)
-    case('foifr04'); vwork(:,:,:) = ia_foifr(:,:,4,:)
-    case('foifr05'); vwork(:,:,:) = ia_foifr(:,:,5,:)
-    case('itopt01'); vwork(:,:,:) = ia_itopt(:,:,1,:)
-    case('itopt02'); vwork(:,:,:) = ia_itopt(:,:,2,:)
-    case('itopt03'); vwork(:,:,:) = ia_itopt(:,:,3,:)
-    case('itopt04'); vwork(:,:,:) = ia_itopt(:,:,4,:)
-    case('itopt05'); vwork(:,:,:) = ia_itopt(:,:,5,:)
-    case('itopk01'); vwork(:,:,:) = ia_itopk(:,:,1,:)
-    case('itopk02'); vwork(:,:,:) = ia_itopk(:,:,2,:)
-    case('itopk03'); vwork(:,:,:) = ia_itopk(:,:,3,:)
-    case('itopk04'); vwork(:,:,:) = ia_itopk(:,:,4,:)
-    case('itopk05'); vwork(:,:,:) = ia_itopk(:,:,5,:)
-    case('pndfn01'); vwork(:,:,:) = ia_pndfn(:,:,1,:)
-    case('pndfn02'); vwork(:,:,:) = ia_pndfn(:,:,2,:)
-    case('pndfn03'); vwork(:,:,:) = ia_pndfn(:,:,3,:)
-    case('pndfn04'); vwork(:,:,:) = ia_pndfn(:,:,4,:)
-    case('pndfn05'); vwork(:,:,:) = ia_pndfn(:,:,5,:)
-    case('pndtn01'); vwork(:,:,:) = ia_pndtn(:,:,1,:)
-    case('pndtn02'); vwork(:,:,:) = ia_pndtn(:,:,2,:)
-    case('pndtn03'); vwork(:,:,:) = ia_pndtn(:,:,3,:)
-    case('pndtn04'); vwork(:,:,:) = ia_pndtn(:,:,4,:)
-    case('pndtn05'); vwork(:,:,:) = ia_pndtn(:,:,5,:)
     end select
     
     if (.not. ll_comparal) then
@@ -1404,13 +1304,11 @@
     end if
     if (my_task == 0 .or. ll_comparal) then
   
-      write(il_out,*)
-      write(il_out,*) '*** sending coupling field No. ', jf, cl_writ(jf)
+      if (debug)  write(il_out,*) '*** sending coupling field No. ', jf, cl_writ(jf)
 
       !call prism_put_inquire_proto(il_var_id_out(jf),isteps,ierror)
   
-      write(il_out,*)
-      write(il_out,*) '(into_atm) what to do with this var==> Err= ',ierror
+      if (debug) write(il_out,*) '(into_atm) what to do with this var==> Err= ',ierror
       if(ll_comparal) then 
         call prism_put_proto(il_var_id_out(jf), isteps, vwork2d(l_ilo:l_ihi, l_jlo:l_jhi), ierror)
       else
@@ -1421,8 +1319,7 @@
         write(il_out,*) '(into_atm) Err in _put_ ', cl_writ(jf), isteps, ierror
         call prism_abort_proto(il_comp_id, 'cice into_atm','STOP 1')
       else
-        write(il_out,*)
-        write(il_out,*)'(into_atm) sent: ', cl_writ(jf), isteps, ierror
+        if (debug) write(il_out,*)'(into_atm) sent: ', cl_writ(jf), isteps, ierror
         if(chk_i2a_fields .and. ll_comparal) then
           call mpi_gatherv(vwork2d(l_ilo:l_ihi, l_jlo:l_jhi),1,sendsubarray,gwork, &
                      counts,disps,resizedrecvsubarray, 0,MPI_COMM_ICE,ierror)
@@ -1771,32 +1668,6 @@ do jf = 1, nsend_i2a
     !20100305: test effect of ssuv on the tropical cooling biases (as per Harry Henden)
     case('uvel_ia');  vwork = ia_uvel !* ocn_ssuv_factor     !note ice u/v are also
     case('vvel_ia');  vwork = ia_vvel !* ocn_ssuv_factor     !     included here.
-    case('sstfz_ia'); vwork = ia_sstfz
-    case('foifr01'); vwork(:,:,:) = ia_foifr(:,:,1,:)
-    case('foifr02'); vwork(:,:,:) = ia_foifr(:,:,2,:)
-    case('foifr03'); vwork(:,:,:) = ia_foifr(:,:,3,:)
-    case('foifr04'); vwork(:,:,:) = ia_foifr(:,:,4,:)
-    case('foifr05'); vwork(:,:,:) = ia_foifr(:,:,5,:)
-    case('itopt01'); vwork(:,:,:) = ia_itopt(:,:,1,:)
-    case('itopt02'); vwork(:,:,:) = ia_itopt(:,:,2,:)
-    case('itopt03'); vwork(:,:,:) = ia_itopt(:,:,3,:)
-    case('itopt04'); vwork(:,:,:) = ia_itopt(:,:,4,:)
-    case('itopt05'); vwork(:,:,:) = ia_itopt(:,:,5,:)
-    case('itopk01'); vwork(:,:,:) = ia_itopk(:,:,1,:)
-    case('itopk02'); vwork(:,:,:) = ia_itopk(:,:,2,:)
-    case('itopk03'); vwork(:,:,:) = ia_itopk(:,:,3,:)
-    case('itopk04'); vwork(:,:,:) = ia_itopk(:,:,4,:)
-    case('itopk05'); vwork(:,:,:) = ia_itopk(:,:,5,:)
-    case('pndfn01'); vwork(:,:,:) = ia_pndfn(:,:,1,:)
-    case('pndfn02'); vwork(:,:,:) = ia_pndfn(:,:,2,:)
-    case('pndfn03'); vwork(:,:,:) = ia_pndfn(:,:,3,:)
-    case('pndfn04'); vwork(:,:,:) = ia_pndfn(:,:,4,:)
-    case('pndfn05'); vwork(:,:,:) = ia_pndfn(:,:,5,:)
-    case('pndtn01'); vwork(:,:,:) = ia_pndtn(:,:,1,:)
-    case('pndtn02'); vwork(:,:,:) = ia_pndtn(:,:,2,:)
-    case('pndtn03'); vwork(:,:,:) = ia_pndtn(:,:,3,:)
-    case('pndtn04'); vwork(:,:,:) = ia_pndtn(:,:,4,:)
-    case('pndtn05'); vwork(:,:,:) = ia_pndtn(:,:,5,:)
     end select
 
 !    if (.not. ll_comparal) then

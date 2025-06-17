@@ -141,8 +141,7 @@
         endif
 
         ! create file
-        iflag = ior(NF90_NETCDF4, NF90_CLASSIC_MODEL);
-        iflag = ior(iflag, NF90_CLOBBER);
+        iflag = ior(NF90_NETCDF4, NF90_CLOBBER)
         status = nf90_create(ncfile(ns), iflag, ncid)
         if (status /= nf90_noerr) call abort_ice( &
            'ice: Error creating history ncfile '//ncfile(ns))

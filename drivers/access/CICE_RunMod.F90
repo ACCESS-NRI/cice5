@@ -93,15 +93,16 @@
 
         !receive a2i fields 
         rtimestamp_ai = time_sec
-        call ice_timer_start(timer_from_atm)  ! atm/ice coupling
+        !call ice_timer_start(timer_from_atm)  ! atm/ice coupling
         write(il_out,*)' calling from_atm at icpl_ai, time_sec = ', icpl_ai, time_sec
         !===========================
         call from_atm(rtimestamp_ai)
         !===========================
-        call ice_timer_stop(timer_from_atm)  ! atm/ice coupling
+        !call ice_timer_stop(timer_from_atm)  ! atm/ice coupling
 
         !"TTI" approach ice fluxes converted to GBM units 
-        call atm_icefluxes_back2GBM
+        !call atm_icefluxes_back2GBM  (CM2 requires)
+
 
         do itap = 1, num_ice_ai   ! cice time loop 
                                 ! Note I <==> O coupling happens at each time step
@@ -117,12 +118,12 @@
 
           write(il_out,'(a,3i10)') &
                 ' calling into_ocn at icpl_ai, itap, time_sec = ', icpl_ai, itap, time_sec
-          call ice_timer_start(timer_into_ocn)  ! atm/ocn coupling
+          !call ice_timer_start(timer_into_ocn)  ! atm/ocn coupling
           !===========================
           !call check_iceberg_fields('chk_iceberg_i2o.nc')
           call into_ocn(stimestamp_io)
           !===========================
-          call ice_timer_stop(timer_into_ocn)  ! atm/ocn coupling
+          !call ice_timer_stop(timer_into_ocn)  ! atm/ocn coupling
 
           !set boundary condition (forcing) 
           call get_sbc_ice
@@ -154,7 +155,7 @@
 
           tmp_time = time_sec + dt
           if ( mod(tmp_time, dt_cpl_ai) == 0  ) then  !this happens at itap = num_ice_ai 
-            call ice_timer_start(timer_into_atm)  
+            !call ice_timer_start(timer_into_atm)  
             !i2a fields ready to be sent for next IA cpl int in atm.
             call get_i2a_fields
 
@@ -169,7 +170,7 @@
             !set time averaged ice and ocn variables back to 0
             call initialize_mocn_fields_4_i2a
             call initialize_mice_fields_4_i2a  
-            call ice_timer_stop(timer_into_atm)  ! atm/ocn coupling
+            !call ice_timer_stop(timer_into_atm)  ! atm/ocn coupling
           endif 
 
           istep  = istep  + 1    ! update time step counters
@@ -189,24 +190,17 @@
             !get o2i fields for next time step ice update 
             write(il_out,'(a,3i10)') &
                 ' calling from_ocn at icpl_ai, itap, time_sec = ',icpl_ai, itap, time_sec
-            call ice_timer_start(timer_from_ocn)
+            !call ice_timer_start(timer_from_ocn)
             !===========================
             call from_ocn(rtimestamp_io)
             !===========================
-            call ice_timer_stop(timer_from_ocn)
+            !call ice_timer_stop(timer_from_ocn)
             !accumulate/average ocn fields needed for IA coupling        
             call time_average_ocn_fields_4_i2a  
           end if
 
         end do      !itap
 
-        !reset land ice amount lice_nth and lice_sth for "previous" a2i step:
-
-        !debug: check landice fields----
-        !call check_landice_fields_1('chk_lice_fields_ai.nc')
-
-        lice_nth = um_icenth
-        lice_sth = um_icesth
         newstep_ai = .true.
 
       END DO      !icpl_ai

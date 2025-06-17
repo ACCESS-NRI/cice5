@@ -102,6 +102,7 @@
 
 #ifdef AusCOM
       integer(kind=int_kind) :: idate_save
+      character (char_len_long) :: filename
 #endif
 
       call init_communicate     ! initial setup for message passing
@@ -263,29 +264,32 @@
       ! for continue runs, need restart o2i forcing fields and time-averaged ice 
       ! variables ('mice')saved at the end of last run from ice models; 
       ! for initial run, pre-processed o2i (and maybe mice) fields are required.
-      call get_restart_o2i(trim(restartdir)//'/o2i.nc')
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      !if no lag for ice to atm coupling, then cice has to read restart file i2a.nc and 
-      !put the data to atm. the call is not needed if there is lag for ice2atm coupling
-      !must call after get_restart_o2i(), by which the ocn_sst ect are read in and re-used by put_restart_i2a()  
-!      call put_restart_i2a('i2a.nc', 0)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      if ( file_exist(trim(restartdir)//'/mice.nc') ) then
-        !for continue runs, mice data MUST be available.
-        call get_restart_mice(trim(restartdir)//'/mice.nc')
-      else
-        if (my_task == master_task) then
-          write(6,*)'* WARNING: No initial mice.nc data available here! *'
-          write(6,*)'* WARNING: ALL mice variables will be set to ZERO! *'
-          write(6,*)'* WARNING: This is allowed for the init run ONLY ! *' 
+      if ( trim(runtype) == 'continue' ) then
+        write(il_out,*)' calling get_restart_o2i at time_sec = ',0
+        filename = trim(restartdir)//'/o2i.nc'
+        if ( file_exist(filename) ) then
+        call get_restart_o2i(filename)
+        else
+        call abort_ice('file NOT found: '//filename //&
+                        " This is allowed for runtype='initial' ONLY")
+        endif
+        !if no lag for ice to atm coupling, then cice has to read restart file i2a.nc and 
+        !put the data to atm. the call is not needed if there is lag for ice2atm coupling
+        !must call after get_restart_o2i(), by which the ocn_sst ect are read in and re-used by put_restart_i2a()  
+  !      call put_restart_i2a('i2a.nc', 0)
+        filename = trim(restartdir)//'/mice.nc'
+        if ( file_exist(filename) ) then
+          !for continue runs, mice data MUST be available.
+          call get_restart_mice(filename)
+        else
+          call abort_ice("file NOT found: "//filename//&
+                         " This is allowed for runtype='initial' ONLY")
         endif
       endif
-if (use_core_runoff) then
-      call get_core_runoff(trim(inputdir)//'/core_runoff_regrid.nc',&
-      'runoff',1)
-endif
+      if (use_core_runoff) then
+            call get_core_runoff(trim(inputdir)//'/core_runoff_regrid.nc',&
+            'runoff',1)
+      endif
 
       if (my_task == master_task) then
         write(il_out,*)' calling ave_ocn_fields_4_i2a time_sec = ',0 !time_sec
@@ -299,20 +303,26 @@ endif
 #ifdef ACCESS
       !!! options for land ice discharged as iceberg melting around AA and Gnld
       !   0: "even" distribution as for u-ar676;
-      !   1: use AC2 data but GC3.1 iceberg climatological pattern, each month takes the 
-      !          total discharge as that diagnosed in u-ar676 (yrs2-101);
-      !   2: use GC3 iceberg climatological pattern, each month enhanced by ac2/gc3 annual ratio 
-      !          of land ice discharge to make sure the annual total discharge is same as case 1;
+      !================== for ESM1.5/1.6, "0" option is NOT used ===============!
+      !   1: use AC2 data but GC3.1 iceberg climatological pattern, each month takes
+      !          the total discharge as that diagnosed in u-ar676 (yrs2-101);
+      !   2: use GC3 iceberg climatological pattern, each month enhanced by ac2/gc3 
+      !          annual ratio of land ice discharge to make sure the annual total 
+      !          discharge is same as case 1;
       !   3: as case 1 but use annual mean    
       !   4: as case 2 but use annual mean
-      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have idential annual 
+      !!! Note 3 and 4 are similar but NOT the same; 1-4 cases should have identical annual 
       !!! discharge of land ice (as iceberg) into ocean. 
 
-      if ( file_exist(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') ) then
-          call get_lice_discharge_masks_or_iceberg(trim(inputdir)//'/lice_discharge_masks_iceberg.nc') 
+      filename = trim(inputdir)//'/lice_discharge_iceberg.nc'
+      if ( file_exist(filename) ) then
+          call get_lice_discharge(filename) 
       else
-          write(6,*)'* CICE stopped -- land ice discharge masks and iceberg datafile missing.*' 
-          call abort_ice ('ice: land ice discharge masks and iceberg datafile missing!')
+          if (my_task == master_task) then
+            write(6,*)'* CICE stopped -- iceberg datafile missing.*' 
+          endif
+          call abort_ice ('ice: land ice discharge iceberg datafile missing: '//&
+                          filename //' *')
       endif
 #endif
 
