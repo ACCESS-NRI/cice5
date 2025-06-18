@@ -174,6 +174,10 @@
          status = nf90_put_att(ncid,nf90_global,'month',month)
          status = nf90_put_att(ncid,nf90_global,'mday',mday)
          status = nf90_put_att(ncid,nf90_global,'sec',sec)
+#ifdef ACCESS
+        iyear = nyr + year_init - 1 ! Current model year for use in next run
+        status = nf90_put_att(ncid,nf90_global,'year',iyear)
+#endif
 
          nx = nx_global
          ny = ny_global
