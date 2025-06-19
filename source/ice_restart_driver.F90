@@ -23,6 +23,9 @@
           restart, restart_ext, restart_dir, restart_file, pointer_file, &
           runid, runtype, use_restart_time, restart_format, lcdf64, lenstr
       use ice_restart
+#ifdef AusCOM
+      use cpl_parameters, only: runtime0
+#endif
 
       implicit none
       private
@@ -592,6 +595,11 @@
             read (nu_restart) istep0,time,time_forc
             write(nu_diag,*) 'Restart read at istep=',istep0,time,time_forc
          endif
+#ifndef AusCOM
+         call calendar(time)
+#else
+         call calendar(time-runtime0)
+#endif
          call broadcast_scalar(istep0,master_task)
          istep1 = istep0
          call broadcast_scalar(time,master_task)

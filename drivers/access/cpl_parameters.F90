@@ -67,8 +67,8 @@ integer(kind=int_kind) :: dt_cpl_io = -99      !ice<==>ocn coupling interval (se
                                                !Hardwired to equal dt_cice and should not
                                                !be set in namelist.
 integer(kind=int_kind) :: caltype = -99        !deprecated
-real(kind=dbl_kind), public :: runtime0 = 0.0  ! accumulated runtime from init_date to
-                                               ! run start date
+real(kind=dbl_kind) :: runtime0 = 0.0          !accumulated runtime from init_date to
+                                               !run start date
 integer(kind=int_kind) :: runtime = 86400      !the time length for this run segment (s)
 
 !20100305: Harry Henden suggests turning off ocean current into UM might reduce the 
@@ -147,8 +147,7 @@ namelist/coupling/       &
          chk_i2o_fields, &
          chk_o2i_fields
 
-integer(kind=int_kind) :: iniday, inimon, iniyear !from inidate
-
+integer(kind=int_kind) :: iniday, inimon, iniyear !read from restart
 real(kind=dbl_kind) :: coef_ai    !dt_ice/dt_cpl_ai, for i2a fields tavg
 
 real(kind=dbl_kind) :: frazil_factor = 0.5

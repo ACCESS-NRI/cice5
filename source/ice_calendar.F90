@@ -22,7 +22,7 @@
 #ifdef AusCOM
       use cpl_parameters, only : iniday, inimon, iniyear, init_date
       use cpl_parameters, only : il_out
-      use cpl_parameters, only : runtime0
+      use cpl_parameters, only : runtime0 !accumulated runtime by the end of last run
 #endif
 
       implicit none
@@ -586,7 +586,7 @@ kyfin = iniyear
 IF (days_per_year == 365 .or. days_per_year == 366) THEN
 
   !
-  ! 1. Length of the months in the first year
+  ! 1. Length of the months in initial year
   !
   DO jm = 1, 12
     klmo(jm) = 31
