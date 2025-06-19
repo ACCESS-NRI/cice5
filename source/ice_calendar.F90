@@ -661,6 +661,34 @@ end subroutine get_idate
 
 !=======================================================================
 
+function days_year(year)
+
+implicit none
+
+integer, intent(in) :: year
+real (kind=dbl_kind) :: days_year
+logical :: lleap
+
+IF (days_per_year == 365 .or. days_per_year == 366) THEN
+  lleap = .FALSE.
+  days_year = 365.
+  IF (use_leap_years) THEN
+    IF (MOD(year,  4) .eq. 0) lleap = .TRUE.
+    IF (MOD(year,100) .eq. 0) lleap = .FALSE.
+    IF (MOD(year,400) .eq. 0) lleap = .TRUE.
+  ENDIF
+  if (lleap) days_year = 366.
+
+ELSEIF (days_per_year == 360) THEN
+    days_year = 360.
+ENDIF
+return
+end function days_year
+#endif
+
+!=======================================================================
+
+#ifdef ACCESS
 subroutine check_start_date
 ! Check that the start date and time variables from the restart file
 ! are consistent.
@@ -688,31 +716,6 @@ if (sec_init_to_start /= time) then
 endif
 
 end subroutine check_start_date
-
-!=======================================================================
-function days_year(year)
-
-implicit none
-
-integer, intent(in) :: year
-real (kind=dbl_kind) :: days_year
-logical :: lleap
-
-IF (days_per_year == 365 .or. days_per_year == 366) THEN
-  lleap = .FALSE.
-  days_year = 365.
-  IF (use_leap_years) THEN
-    IF (MOD(year,  4) .eq. 0) lleap = .TRUE.
-    IF (MOD(year,100) .eq. 0) lleap = .FALSE.
-    IF (MOD(year,400) .eq. 0) lleap = .TRUE.
-  ENDIF
-  if (lleap) days_year = 366.
-
-ELSEIF (days_per_year == 360) THEN
-    days_year = 360.
-ENDIF
-return
-end function days_year
 #endif
 !=======================================================================
 

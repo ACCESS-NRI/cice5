@@ -35,7 +35,7 @@
 
       use ice_calendar, only: sec, month, mday, nyr, istep0, istep1, &
                               time, time_forc, year_init, npt
-#ifdef AusCOM
+#ifdef ACCESS
       use cpl_parameters, only: iniyear, inimon, iniday
       use ice_calendar, only: check_start_date
 #endif
@@ -100,7 +100,7 @@
       call broadcast_scalar(time,master_task)
       call broadcast_scalar(time_forc,master_task)
 
-#ifdef AusCOM
+#ifdef ACCESS
       ! Set run start date
       call broadcast_scalar(year,master_task)
       call broadcast_scalar(month,master_task)
