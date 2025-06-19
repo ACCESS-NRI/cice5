@@ -142,13 +142,12 @@
       character (len=3) :: nchar
 
       ! construct path/file
+      iyear = nyr + year_init - 1
       if (present(filename_spec)) then
          filename = trim(filename_spec)
       else
-         iyear = nyr + year_init - 1
          imonth = month
          iday = mday
-      
          write(filename,'(a,a,a,i4.4,a,i2.2,a,i2.2,a,i5.5)') &
               restart_dir(1:lenstr(restart_dir)), &
               restart_file(1:lenstr(restart_file)),'.', &
@@ -170,14 +169,11 @@
          status = nf90_put_att(ncid,nf90_global,'istep1',istep1)
          status = nf90_put_att(ncid,nf90_global,'time',time)
          status = nf90_put_att(ncid,nf90_global,'time_forc',time_forc)
-         status = nf90_put_att(ncid,nf90_global,'nyr',nyr)
+         status = nf90_put_att(ncid,nf90_global,'nyr',nyr) ! number of years run in experiment
+         status = nf90_put_att(ncid,nf90_global,'year',iyear) ! calendar year
          status = nf90_put_att(ncid,nf90_global,'month',month)
          status = nf90_put_att(ncid,nf90_global,'mday',mday)
          status = nf90_put_att(ncid,nf90_global,'sec',sec)
-#ifdef ACCESS
-        iyear = nyr + year_init - 1 ! Current model year for use in next run
-        status = nf90_put_att(ncid,nf90_global,'year',iyear)
-#endif
 
          nx = nx_global
          ny = ny_global
