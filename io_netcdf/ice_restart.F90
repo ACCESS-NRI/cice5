@@ -50,6 +50,7 @@
          filename, filename0
 
       integer (kind=int_kind) :: status
+      integer (kind=int_kind) :: year
 
       if (present(ice_ic)) then 
          filename = trim(ice_ic)
@@ -76,6 +77,7 @@
          status = nf90_get_att(ncid, nf90_global, 'time', time)
          status = nf90_get_att(ncid, nf90_global, 'time_forc', time_forc)
          status = nf90_get_att(ncid, nf90_global, 'nyr', nyr)
+         status = nf90_get_att(ncid, nf90_global, 'year', year)
          if (status == nf90_noerr) then
             status = nf90_get_att(ncid, nf90_global, 'month', month)
             status = nf90_get_att(ncid, nf90_global, 'mday', mday)
@@ -98,10 +100,10 @@
       call broadcast_scalar(time_forc,master_task)
 
 #ifdef AusCOM
-      call broadcast_scalar(nyr,master_task)
+      call broadcast_scalar(year,master_task)
       call broadcast_scalar(month,master_task)
       call broadcast_scalar(mday,master_task)
-      iniyear = nyr
+      iniyear = year
       inimon = month
       iniday = mday
 
