@@ -59,12 +59,16 @@ logical :: &                         !pop_icediag is as that for ocn model, if t
    chk_i2o_fields = .false. , &
    chk_o2i_fields = .false.
 integer(kind=int_kind) :: jobnum = 1           !1 for initial, >1 restart
+integer(kind=int_kind) :: inidate = 01010101   !beginning date of this run (yyyymmdd)
+integer(kind=int_kind) :: init_date = 00010101 !beginning date of this EXP (yyyymmdd)
 integer(kind=int_kind) :: dt_cice = 3600       !time step of this model      (seconds) 
 integer(kind=int_kind) :: dt_cpl_ai = 21600    !atm<==>ice coupling interval (seconds) 
 integer(kind=int_kind) :: dt_cpl_io = -99      !ice<==>ocn coupling interval (seconds).
                                                !Hardwired to equal dt_cice and should not
                                                !be set in namelist.
 integer(kind=int_kind) :: caltype = -99        !deprecated
+real(kind=dbl_kind), public :: runtime0 = 0.0  ! accumulated runtime from init_date to
+                                               ! run start date
 integer(kind=int_kind) :: runtime = 86400      !the time length for this run segment (s)
 
 !20100305: Harry Henden suggests turning off ocean current into UM might reduce the 
@@ -142,6 +146,8 @@ namelist/coupling/       &
          chk_i2a_fields, &
          chk_i2o_fields, &
          chk_o2i_fields
+
+integer(kind=int_kind) :: iniday, inimon, iniyear !from inidate
 
 real(kind=dbl_kind) :: coef_ai    !dt_ice/dt_cpl_ai, for i2a fields tavg
 

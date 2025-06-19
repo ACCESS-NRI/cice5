@@ -68,9 +68,6 @@
       use ice_algae, only: get_forcing_bgc
       use ice_calendar, only: dt, dt_dyn, time, istep, istep1, write_ic, &
           init_calendar, calendar, idate, month
-#ifdef AusCOM
-      use ice_calendar, only: runtime0, init_date, iniyear, inimon, iniday
-#endif
 !ars599: 27032014
       use ice_communicate, only: MPI_COMM_ICE
       use ice_communicate, only: init_communicate
@@ -194,7 +191,6 @@
       else                      !BX: 20160720
         runtime0 = time       ! Record initial time read from init_restart
       endif
-
 #endif
 
       call init_diags           ! initialize diagnostic output points

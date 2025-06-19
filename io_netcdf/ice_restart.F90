@@ -36,7 +36,8 @@
       use ice_calendar, only: sec, month, mday, nyr, istep0, istep1, &
                               time, time_forc, year_init, npt
 #ifdef AusCOM
-      use ice_calendar, only: iniyear, inimon, iniday, check_start_date
+      use cpl_parameters, only: iniyear, inimon, iniday
+      use ice_calendar, only: check_start_date
 #endif
       use ice_communicate, only: my_task, master_task
       use ice_domain, only: nblocks
@@ -100,6 +101,7 @@
       call broadcast_scalar(time_forc,master_task)
 
 #ifdef AusCOM
+      ! Set run start date
       call broadcast_scalar(year,master_task)
       call broadcast_scalar(month,master_task)
       call broadcast_scalar(mday,master_task)
@@ -107,6 +109,7 @@
       inimon = month
       iniday = mday
 
+      ! Check starting date and time are consistent
       call check_start_date
 #endif
       

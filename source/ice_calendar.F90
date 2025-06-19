@@ -20,7 +20,9 @@
       use ice_domain_size, only: max_nstrm
       use ice_exit, only: abort_ice
 #ifdef AusCOM
+      use cpl_parameters, only : iniday, inimon, iniyear, init_date
       use cpl_parameters, only : il_out
+      use cpl_parameters, only : runtime0
 #endif
 
       implicit none
@@ -113,17 +115,6 @@
          dumpfreq               ! restart frequency, 'y','m','d'
 
       character (len=char_len),public :: calendar_type
-
-#ifdef AusCOM
-      integer(kind=int_kind), public :: &
-         init_date = 00010101, & ! experiment initialisation date (yyyymmdd)
-         iniyear = 1         , & ! starting year for this run
-         inimon = 1          , & ! starting month for this run
-         iniday = 1              ! starting day for this run
-         
-      real(kind=dbl_kind), public :: runtime0 = 0.0  ! accumulated runtime since init_date
-                                                     ! at end of last run
-#endif
 
 !=======================================================================
 
@@ -722,7 +713,6 @@ ELSEIF (days_per_year == 360) THEN
 ENDIF
 return
 end function days_year
-
 #endif
 !=======================================================================
 
