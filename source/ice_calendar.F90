@@ -21,7 +21,7 @@
       use ice_exit, only: abort_ice
 #ifdef AusCOM
       use cpl_parameters, only : inidate, iniday, inimon, iniyear, init_date
-      use cpl_parameters, only : il_out, caltype
+      use cpl_parameters, only : il_out
       use cpl_parameters, only : runtime0 !accumulated runtime by the end of last run
 #endif
 
@@ -152,7 +152,7 @@
       end if
       
 #ifdef AusCOM
-      if ((days_year(year_init) == 366) .and. (caltype == 1)) days_per_year = 366
+      if (days_year(year_init) == 366) days_per_year = 366
 #endif
 
       write(*,*)'CICE (calendar) days_per_year = ', days_per_year
@@ -541,7 +541,7 @@
       if (mod(year,400) == 0) isleap = .true.
       
       ! Ensure the calendar is set correctly
-      if (isleap) then
+      if (isleap .and. use_leap_years) then
          daycal = daycal366
          daymo = daymo366
          dayyr=real(daycal(13), kind=dbl_kind)
@@ -575,7 +575,7 @@ logical :: lleap
 inc_day = int ((ttime + 0.5)/86400. )
 khfin = (ttime - inc_day*86400)/3600
 
-IF (caltype .eq. 0 .or. caltype .eq. 1) THEN
+IF (days_per_year == 365 .or. days_per_year == 366) THEN
 
   !
   ! 1. Length of the months
@@ -588,7 +588,7 @@ IF (caltype .eq. 0 .or. caltype .eq. 1) THEN
       !* Leap years
       !
       lleap = .FALSE.
-      IF (caltype .eq. 1) THEN
+      IF (use_leap_years) THEN
         IF (MOD(iniyear,  4) .eq. 0) lleap = .TRUE.
         IF (MOD(iniyear,100) .eq. 0) lleap = .FALSE.
         IF (MOD(iniyear,400) .eq. 0) lleap = .TRUE.
@@ -597,7 +597,7 @@ IF (caltype .eq. 0 .or. caltype .eq. 1) THEN
       if (lleap) klmo(jm) = 29
     ENDIF
   ENDDO  !jm=1,12
-     
+
   kdfin = iniday
   kmfin = inimon
   kyfin = iniyear
@@ -618,7 +618,7 @@ IF (caltype .eq. 0 .or. caltype .eq. 1) THEN
     !* Leap years
     !
     lleap = .FALSE.
-    IF (caltype .eq. 1) THEN
+    IF (use_leap_years) THEN
       IF (MOD(kyfin,  4) .eq. 0) lleap = .TRUE.
       IF (MOD(kyfin,100) .eq. 0) lleap = .FALSE.
       IF (MOD(kyfin,400) .eq. 0) lleap = .TRUE.
@@ -627,13 +627,13 @@ IF (caltype .eq. 0 .or. caltype .eq. 1) THEN
     if (lleap) klmo(2) = 29
 210 CONTINUE
 
-ELSE            !for years with constant length of months
+ELSEIF(days_per_year == 360) THEN
 
   !
   ! 1. Calculate month lengths for current year
   !
   DO jm = 1, 12
-    klmo(jm) = caltype
+    klmo(jm) = 30
   ENDDO
   kdfin = iniday
   kmfin = inimon
@@ -655,12 +655,11 @@ ELSE            !for years with constant length of months
 
 ENDIF
 
+
 end subroutine get_idate
 
 !=======================================================================
 function days_year(year)
-
-use cpl_parameters, only : caltype
 
 implicit none
 
@@ -668,19 +667,19 @@ integer, intent(in) :: year
 real (kind=dbl_kind) :: days_year
 logical :: lleap
 
-IF (caltype .eq. 0 .or. caltype .eq. 1) THEN
+IF (days_per_year == 365 .or. days_per_year == 366) THEN
   lleap = .FALSE.
   days_year = 365.
-  IF (caltype .eq. 1) THEN
+  IF (use_leap_years) THEN
     IF (MOD(year,  4) .eq. 0) lleap = .TRUE.
     IF (MOD(year,100) .eq. 0) lleap = .FALSE.
     IF (MOD(year,400) .eq. 0) lleap = .TRUE.
   ENDIF
   if (lleap) days_year = 366.
-ELSE
-  days_year = dayyr
-ENDIF
 
+ELSEIF (days_per_year == 360) THEN
+    days_year = 360.
+ENDIF
 return
 end function days_year
 #endif
