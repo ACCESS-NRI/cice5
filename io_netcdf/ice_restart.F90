@@ -169,7 +169,7 @@
          status = nf90_put_att(ncid,nf90_global,'istep1',istep1)
          status = nf90_put_att(ncid,nf90_global,'time',time)
          status = nf90_put_att(ncid,nf90_global,'time_forc',time_forc)
-         status = nf90_put_att(ncid,nf90_global,'nyr',nyr) ! number of years since date_init
+         status = nf90_put_att(ncid,nf90_global,'nyr',nyr) ! year count since year_init
          status = nf90_put_att(ncid,nf90_global,'year',iyear) ! calendar year
          status = nf90_put_att(ncid,nf90_global,'month',month)
          status = nf90_put_att(ncid,nf90_global,'mday',mday)
