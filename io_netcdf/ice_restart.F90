@@ -78,6 +78,13 @@
             status = nf90_get_att(ncid, nf90_global, 'mday', mday)
             status = nf90_get_att(ncid, nf90_global, 'sec', sec)
          endif
+
+         if ( sec .ne. 0 ) then
+            call abort_ice('ice: restart ncfile '//trim(filename)//' has '//&
+               'restart "sec" attribute not set to 0. This is not supported '//&
+               'as a start time.')
+         endif
+
          endif ! use namelist values if use_restart_time = F
 
          write(nu_diag,*) 'Restart read at istep=',istep0,time,time_forc
