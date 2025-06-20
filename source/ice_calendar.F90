@@ -30,7 +30,7 @@
       save
 
       public :: init_calendar, calendar, time2sec, sec2time
-#ifdef AusCOM
+#ifdef ACCESS
       public :: check_start_date
 #endif      
 
@@ -660,7 +660,6 @@ ENDIF
 end subroutine get_idate
 
 !=======================================================================
-
 function days_year(year)
 
 implicit none
