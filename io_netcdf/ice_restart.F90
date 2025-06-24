@@ -79,6 +79,8 @@
          status = nf90_get_att(ncid, nf90_global, 'time_forc', time_forc)
          status = nf90_get_att(ncid, nf90_global, 'nyr', nyr)
          status = nf90_get_att(ncid, nf90_global, 'year', year)
+         if (status /= nf90_noerr) call abort_ice( &
+           'ice: Error reading year attribute from ncfile '//trim(filename))
          if (status == nf90_noerr) then
             status = nf90_get_att(ncid, nf90_global, 'month', month)
             status = nf90_get_att(ncid, nf90_global, 'mday', mday)
