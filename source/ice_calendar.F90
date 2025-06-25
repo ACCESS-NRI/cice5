@@ -710,7 +710,7 @@ if (sec_init_to_start /= time) then
     if (my_task == master_task) then
          write(il_out,*) 'CICE: ERROR restart time:  ', time, ' and date: ', &
             iniyear, inimon, iniday, ' are inconsistent'
-        call abort_ice('Restart file time and date variables are inconsistent')
+        call abort_ice('CICE: ERROR Restart file time and date variables are inconsistent')
     endif
 endif
 
