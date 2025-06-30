@@ -368,7 +368,12 @@
          call restartfile()           ! given by pointer in ice_in
 !ars599: 11042014: markout call calendar
 !	according to dhb599 initmod at cice4.1_fm
-         call calendar(time)          ! update time parameters
+         ! TODO: 'time' argument in the calendar call below affects frz_onset output.
+         ! Hardcoding time=0.0 gives the same results as the older CM2 based calendar
+         ! initialisation.
+         ! See https://github.com/ACCESS-NRI/cice5/issues/49
+         ! and https://github.com/ACCESS-NRI/cice5/pull/48 for details.
+         call calendar(0.0)          ! update time parameters
          if (kdyn == 2) call read_restart_eap ! EAP
       else if (restart) then          ! ice_ic = core restart file
          call restartfile (ice_ic)    !  or 'default' or 'none'
