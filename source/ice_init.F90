@@ -713,10 +713,10 @@
       endif
 
 #ifdef ACCESS
-      if (.not. use_restart_time) then
+      if (trim(runtype) == 'continue' .and. .not. use_restart_time) then
         if (my_task == master_task) then
-            write (nu_diag,*) 'ERROR: ACCESS ESM requires use_restart_time=.true.'
-            call abort_ice('ice_init: use_restart_time must be .true.')
+            write (nu_diag,*) 'ERROR: ACCESS ESM continue runs require use_restart_time=.true.'
+            call abort_ice('ice_init: "use_restart_time" must be .true. when "runtype = continue"')
         endif
       endif
 #endif
