@@ -213,15 +213,17 @@ else
 endif
 
 do while (nml_error > 0)
-read(nu_nml, nml=coupling,iostat=nml_error)
-    ! check if error
-    if (nml_error /= 0) then
-        ! backspace and re-read erroneous line
-        backspace(nu_nml)
-        read(nu_nml,fmt='(A)') tmpstr
-        call abort_ice('CICE ERROR: get_cpl_timecontrol: ' // 'input_ice.nml' // ' reading ' // &
-            trim(tmpstr))
-    endif
+   read(nu_nml, nml=coupling,iostat=nml_error)
+   ! check if error
+   if (nml_error /= 0) then
+      if (my_task == master_task) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt='(A)') tmpstr
+         call abort_ice('CICE ERROR: get_cpl_timecontrol: ' // 'input_ice.nml' // &
+            ' reading ' // trim(tmpstr))
+       endif
+   endif
 end do
 if (nml_error == 0) close(nu_nml)
 
