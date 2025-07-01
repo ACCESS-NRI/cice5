@@ -561,6 +561,8 @@
 #ifdef AusCOM
 !=======================================================================
 subroutine get_idate(ttime, khfin, kdfin, kmfin, kyfin)
+! Calculate the date ttime seconds from the run start date given by iniyear
+! inimon and iniday.
 
 use cpl_parameters
 
