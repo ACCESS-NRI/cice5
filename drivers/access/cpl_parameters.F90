@@ -65,10 +65,9 @@ integer(kind=int_kind) :: iniday = 1, &        ! beginning date of this run. Rea
                           iniyear = 1
 integer(kind=int_kind) :: dt_cice = 3600       !time step of this model      (seconds) 
 integer(kind=int_kind) :: dt_cpl_ai = 21600    !atm<==>ice coupling interval (seconds) 
-integer(kind=int_kind) :: dt_cpl_io = -99      !ice<==>ocn coupling interval (seconds).
+integer(kind=int_kind) :: dt_cpl_io.           !ice<==>ocn coupling interval (seconds).
                                                !Hardwired to equal dt_cice and should not
                                                !be set in namelist.
-integer(kind=int_kind) :: caltype = -99        !deprecated
 real(kind=dbl_kind)    :: runtime0 = 0.0       !accumulated runtime from init_date to
                                                !run start date
 integer(kind=int_kind) :: runtime = 86400      !the time length for this run segment (s)
@@ -106,12 +105,10 @@ real(kind=dbl_kind) :: &
          add_lprec = 0.513190E-07      !kg/m2/s. ==> set to 0.0 if no fixin!
              
 namelist/coupling/       &
-         caltype,        &
          jobnum,         &
          runtime,        &
          dt_cice,        &
          dt_cpl_ai,      &
-         dt_cpl_io,      &
          inputdir,       &
          restartdir,     &
          pop_icediag,    &
@@ -189,8 +186,8 @@ return
 end subroutine get_cpl_timecontrol_simple
 
 !===============================================================================
-subroutine get_cpl_timecontrol
 
+subroutine get_cpl_timecontrol
 use ice_exit
 use ice_fileunits
 use ice_communicate, only: my_task, master_task
@@ -198,6 +195,7 @@ use ice_communicate, only: my_task, master_task
 implicit none
 
 integer (int_kind) :: nml_error       ! namelist read error flag
+character (len=256) :: tmpstr         ! For holding namelist read errors
 
 ! all processors read the namelist--
 
@@ -213,9 +211,17 @@ if (nml_error /= 0) then
 else
    nml_error =  1
 endif
+
 do while (nml_error > 0)
-   read(nu_nml, nml=coupling,iostat=nml_error)
-   if (nml_error > 0) read(nu_nml,*)  ! for Nagware compiler
+read(nu_nml, nml=coupling,iostat=nml_error)
+    ! check if error
+    if (nml_error /= 0) then
+        ! backspace and re-read erroneous line
+        backspace(nu_nml)
+        read(nu_nml,fmt='(A)') tmpstr
+        call abort_ice('CICE ERROR: get_cpl_timecontrol: ' // 'input_ice.nml' // ' reading ' // &
+            trim(tmpstr))
+    endif
 end do
 if (nml_error == 0) close(nu_nml)
 
@@ -228,19 +234,6 @@ call release_fileunit(nu_nml)
 if (nml_error /= 0) then
    if (my_task == master_task) then
       call abort_ice('ice: error reading coupling namelist in "input_ice.nml"')
-   endif
-endif
-
-if (caltype /= -99) then
-   if (my_task == master_task) then
-      call abort_ice('ice: ERROR caltype deprecated. Remove from "input_ice.nml"')
-   endif
-endif
-
-if (dt_cpl_io /= -99) then
-   if (my_task == master_task) then
-      call abort_ice('ice: ERROR dt_cpl_io should not be set in namelist. '// &
-                     'Remove from "input_ice.nml"')
    endif
 endif
 
