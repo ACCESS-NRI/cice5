@@ -1,13 +1,14 @@
+#ifdef _FPP
+! for intel runtime errors
+! see https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2025-2/list-of-runtime-error-messages.html
+include "for_iosdef.for"
+#endif
+
 !============================================================================
 !
 module cpl_parameters
 !
 !----------------------------------------------------------------------------
-#ifdef __INTEL_COMPILER
-! for intel runtime errors
-! see https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2025-2/list-of-runtime-error-messages.html
-include "for_iosdef.for"
-#endif
 
 use ice_kinds_mod
 
@@ -225,14 +226,14 @@ do while (nml_error > 0)
          ! backspace and re-read erroneous line
          backspace(nu_nml)
          read(nu_nml,fmt='(A)') tmpstr
-#ifdef __INTEL_COMPILER
+#ifdef _FPP
          if (nml_error = FOR$IOS_INVREFVAR) then
            write(6,*)'CICE: Invalid reference to variable '//trim(tmpstr)
            write(6,*)'CICE: is '//trim(tmpstr)' deprecated ?'
          endif
 #endif
          call abort_ice('CICE ERROR in input_ice.nml when' // &
-            ' reading ' // trim(tmpstr) // ' - ' errstr)
+            ' reading ' // trim(tmpstr) // ' - ' //errstr)
        endif
    endif
 end do
