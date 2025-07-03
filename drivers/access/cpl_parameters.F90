@@ -1,8 +1,3 @@
-#ifdef _FPP
-! for intel runtime errors
-! see https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2025-2/list-of-runtime-error-messages.html
-include "for_iosdef.for"
-#endif
 
 !============================================================================
 !
@@ -13,6 +8,12 @@ module cpl_parameters
 use ice_kinds_mod
 
 implicit none
+
+#ifdef __INTEL_COMPILER
+! for intel runtime errors
+! see https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2025-2/list-of-runtime-error-messages.html
+include "for_iosdef.for"
+#endif
 
 integer(kind=int_kind) :: il_im, il_jm, il_imjm    ! il_im=nx_global, il_jm=ny_global 
                                                    ! assigned in prism_init
@@ -71,7 +72,7 @@ integer(kind=int_kind) :: iniday = 1, &        ! beginning date of this run. Rea
                           iniyear = 1
 integer(kind=int_kind) :: dt_cice = 3600       !time step of this model      (seconds) 
 integer(kind=int_kind) :: dt_cpl_ai = 21600    !atm<==>ice coupling interval (seconds) 
-integer(kind=int_kind) :: dt_cpl_io.           !ice<==>ocn coupling interval (seconds).
+integer(kind=int_kind) :: dt_cpl_io = -99      !ice<==>ocn coupling interval (seconds).
                                                !Hardwired to equal dt_cice and should not
                                                !be set in namelist.
 real(kind=dbl_kind)    :: runtime0 = 0.0       !accumulated runtime from init_date to
@@ -226,10 +227,10 @@ do while (nml_error > 0)
          ! backspace and re-read erroneous line
          backspace(nu_nml)
          read(nu_nml,fmt='(A)') tmpstr
-#ifdef _FPP
-         if (nml_error = FOR$IOS_INVREFVAR) then
+#ifdef __INTEL_COMPILER
+         if (nml_error == FOR$IOS_INVREFVAR) then
            write(6,*)'CICE: Invalid reference to variable '//trim(tmpstr)
-           write(6,*)'CICE: is '//trim(tmpstr)' deprecated ?'
+           write(6,*)'CICE: is '//trim(tmpstr)//' deprecated ?'
          endif
 #endif
          call abort_ice('CICE ERROR in input_ice.nml when' // &
