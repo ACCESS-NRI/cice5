@@ -226,7 +226,7 @@ do while (nml_error > 0)
       if (my_task == master_task) then
          ! backspace and re-read erroneous line
          backspace(nu_nml)
-         read(nu_nml,fmt='(A)') tmpstr
+         read(nu_nml,fmt=*) tmpstr
 #ifdef __INTEL_COMPILER
          if (nml_error == FOR$IOS_INVREFVAR) then
            write(ice_stderr,*)'CICE: Invalid reference to variable '//trim(tmpstr)

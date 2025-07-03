@@ -690,33 +690,33 @@ end function days_year
 !=======================================================================
 
 #ifdef ACCESS
-subroutine check_start_date
-! Check that the start date and time variables from the restart file
-! are consistent.
-use ice_communicate, only: my_task, master_task
-implicit none
+      subroutine check_start_date
+      ! Check that the start date and time variables from the restart file
+      ! are consistent.
+      use ice_communicate, only: my_task, master_task
+      implicit none
 
-integer(kind=int_kind) :: init_year, init_mon, init_day
-real (kind=dbl_kind) :: sec_init_date, sec_start_date, sec_init_to_start
+      integer(kind=int_kind) :: init_year, init_mon, init_day
+      real (kind=dbl_kind) :: sec_init_date, sec_start_date, sec_init_to_start
 
-init_day = mod(init_date, 100)
-init_mon = mod( (init_date - init_day)/100, 100)
-init_year = init_date / 10000
+      init_day = mod(init_date, 100)
+      init_mon = mod( (init_date - init_day)/100, 100)
+      init_year = init_date / 10000
 
-call time2sec(init_year, init_mon, init_day, sec_init_date)
-call time2sec(iniyear, inimon, iniday, sec_start_date)
+      call time2sec(init_year, init_mon, init_day, sec_init_date)
+      call time2sec(iniyear, inimon, iniday, sec_start_date)
 
-sec_init_to_start = sec_start_date - sec_init_date
+      sec_init_to_start = sec_start_date - sec_init_date
 
-if (sec_init_to_start /= time) then
-    if (my_task == master_task) then
-         write(il_out,*) 'CICE: ERROR restart time:  ', time, ' and date: ', &
-            iniyear, inimon, iniday, ' are inconsistent'
-        call abort_ice('CICE: ERROR Restart file time and date variables are inconsistent')
-    endif
-endif
+      if (sec_init_to_start /= time) then
+         if (my_task == master_task) then
+               write(il_out,*) 'CICE: ERROR restart time:  ', time, ' and date: ', &
+                  iniyear, inimon, iniday, ' are inconsistent'
+            call abort_ice('CICE: ERROR Restart file time and date variables are inconsistent')
+         endif
+      endif
 
-end subroutine check_start_date
+      end subroutine check_start_date
 #endif
 !=======================================================================
 
