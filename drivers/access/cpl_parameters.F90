@@ -195,8 +195,8 @@ end subroutine get_cpl_timecontrol_simple
 !===============================================================================
 
 subroutine get_cpl_timecontrol
-use ice_exit
-use ice_fileunits
+use ice_exit, only: abort_ice
+use ice_fileunits, only: nu_nml, ice_stderr, ice_stdout, get_fileunit, release_fileunit
 use ice_communicate, only: my_task, master_task
 
 implicit none
@@ -210,7 +210,7 @@ call get_fileunit(nu_nml)
 open(unit=nu_nml,file="input_ice.nml",form="formatted",status="old",iostat=nml_error)
 !
 if (my_task == master_task) then
-   write(6,*)'CICE: input_ice.nml opened at unit = ', nu_nml
+   write(ice_stdout,*)'CICE: input_ice.nml opened at unit = ', nu_nml
 endif
 !
 if (nml_error /= 0) then
@@ -229,8 +229,8 @@ do while (nml_error > 0)
          read(nu_nml,fmt='(A)') tmpstr
 #ifdef __INTEL_COMPILER
          if (nml_error == FOR$IOS_INVREFVAR) then
-           write(6,*)'CICE: Invalid reference to variable '//trim(tmpstr)
-           write(6,*)'CICE: is '//trim(tmpstr)//' deprecated ?'
+           write(ice_stderr,*)'CICE: Invalid reference to variable '//trim(tmpstr)
+           write(ice_stderr,*)'CICE: is '//trim(tmpstr)//' deprecated ?'
          endif
 #endif
          call abort_ice('CICE ERROR in input_ice.nml when' // &
