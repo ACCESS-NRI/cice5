@@ -113,9 +113,7 @@
       call get_cpl_timecontrol
       if (my_task == master_task) then
          write(il_out,*)' CICE (cice_init) 1    jobnum = ',jobnum
-         write(il_out,*)' CICE (cice_init) 1   inidate = ',inidate
          write(il_out,*)' CICE (cice_init) 1 init_date = ',init_date
-         write(il_out,*)' CICE (cice_init) 1  runtime0 = ',runtime0
          write(il_out,*)' CICE (cice_init) 1   runtime = ',runtime
          write(il_out,*)' CICE (cice_init) 1     idate = ',my_task, idate
          !write(il_out,*)' CICE (cice_init) 1   runtype = ',runtype
@@ -189,9 +187,10 @@
       if (jobnum == 1 ) then
         time = 0.0            !NOTE, the first job must be set back to 0 and 
         idate = idate_save    !idate back to the 'initial' value, in any case
+        runtime0 = 0.0
       else                      !BX: 20160720
-        time = runtime0         !............
-      endif 
+        runtime0 = time       ! Record initial time read from init_restart
+      endif
 #endif
 
       call init_diags           ! initialize diagnostic output points
@@ -216,6 +215,9 @@
       if (my_task == master_task) then
          write(il_out,*) 'CICE (cice_init) 3     time = ', my_task, time
          write(il_out,*) 'CICE (cice_init) 3 runtime0 = ', my_task, runtime0
+         write(il_out,*) 'CICE (cice_init) 3  iniyear = ', my_task, iniyear
+         write(il_out,*) 'CICE (cice_init) 3   inimon = ', my_task, inimon
+         write(il_out,*) 'CICE (cice_init) 3   iniday = ', my_task, iniday
          write(il_out,*) 'CICE (cice_init) 3    idate = ', my_task, idate
       end if
 #endif
@@ -366,7 +368,12 @@
          call restartfile()           ! given by pointer in ice_in
 !ars599: 11042014: markout call calendar
 !	according to dhb599 initmod at cice4.1_fm
-         call calendar(time)          ! update time parameters
+         ! TODO: 'time' argument in the calendar call below affects frz_onset output.
+         ! Hardcoding time=0.0 gives the same results as the older CM2 based calendar
+         ! initialisation.
+         ! See https://github.com/ACCESS-NRI/cice5/issues/49
+         ! and https://github.com/ACCESS-NRI/cice5/pull/48 for details.
+         call calendar(0.0)          ! update time parameters
          if (kdyn == 2) call read_restart_eap ! EAP
       else if (restart) then          ! ice_ic = core restart file
          call restartfile (ice_ic)    !  or 'default' or 'none'

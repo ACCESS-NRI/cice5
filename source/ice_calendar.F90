@@ -20,7 +20,7 @@
       use ice_domain_size, only: max_nstrm
       use ice_exit, only: abort_ice
 #ifdef AusCOM
-      use cpl_parameters, only : inidate, iniday, inimon, iniyear, init_date
+      use cpl_parameters, only : iniday, inimon, iniyear, init_date
       use cpl_parameters, only : il_out
       use cpl_parameters, only : runtime0 !accumulated runtime by the end of last run
 #endif
@@ -30,6 +30,9 @@
       save
 
       public :: init_calendar, calendar, time2sec, sec2time
+#ifdef ACCESS
+      public :: check_start_date
+#endif      
 
       integer (kind=int_kind), public :: &
          days_per_year        , & ! number of days in one year
@@ -558,6 +561,8 @@
 #ifdef AusCOM
 !=======================================================================
 subroutine get_idate(ttime, khfin, kdfin, kmfin, kyfin)
+! Calculate the date ttime seconds from the run start date given by iniyear
+! inimon and iniday.
 
 use cpl_parameters
 
@@ -572,13 +577,18 @@ integer :: jm, jd
 
 logical :: lleap
 
+! Initialise date
 inc_day = int ((ttime + 0.5)/86400. )
 khfin = (ttime - inc_day*86400)/3600
+kdfin = iniday
+kmfin = inimon
+kyfin = iniyear
+
 
 IF (days_per_year == 365 .or. days_per_year == 366) THEN
 
   !
-  ! 1. Length of the months
+  ! 1. Length of the months in initial year
   !
   DO jm = 1, 12
     klmo(jm) = 31
@@ -597,10 +607,6 @@ IF (days_per_year == 365 .or. days_per_year == 366) THEN
       if (lleap) klmo(jm) = 29
     ENDIF
   ENDDO  !jm=1,12
-
-  kdfin = iniday
-  kmfin = inimon
-  kyfin = iniyear
 
   !
   ! 2. Loop on the days
@@ -635,9 +641,6 @@ ELSEIF(days_per_year == 360) THEN
   DO jm = 1, 12
     klmo(jm) = 30
   ENDDO
-  kdfin = iniday
-  kmfin = inimon
-  kyfin = iniyear
 
   !
   ! 2. Loop on the days
@@ -682,6 +685,38 @@ ELSEIF (days_per_year == 360) THEN
 ENDIF
 return
 end function days_year
+#endif
+
+!=======================================================================
+
+#ifdef ACCESS
+      subroutine check_start_date
+      ! Check that the start date and time variables from the restart file
+      ! are consistent.
+      use ice_communicate, only: my_task, master_task
+      implicit none
+
+      integer(kind=int_kind) :: init_year, init_mon, init_day
+      real (kind=dbl_kind) :: sec_init_date, sec_start_date, sec_init_to_start
+
+      init_day = mod(init_date, 100)
+      init_mon = mod( (init_date - init_day)/100, 100)
+      init_year = init_date / 10000
+
+      call time2sec(init_year, init_mon, init_day, sec_init_date)
+      call time2sec(iniyear, inimon, iniday, sec_start_date)
+
+      sec_init_to_start = sec_start_date - sec_init_date
+
+      if (sec_init_to_start /= time) then
+         if (my_task == master_task) then
+               write(il_out,*) 'CICE: ERROR restart time:  ', time, ' and date: ', &
+                  iniyear, inimon, iniday, ' are inconsistent'
+            call abort_ice('CICE: ERROR Restart file time and date variables are inconsistent')
+         endif
+      endif
+
+      end subroutine check_start_date
 #endif
 !=======================================================================
 

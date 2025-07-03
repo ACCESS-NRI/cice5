@@ -35,6 +35,10 @@
 
       use ice_calendar, only: sec, month, mday, nyr, istep0, istep1, &
                               time, time_forc, year_init, npt
+#ifdef ACCESS
+      use cpl_parameters, only: iniyear, inimon, iniday
+      use ice_calendar, only: check_start_date
+#endif
       use ice_communicate, only: my_task, master_task
       use ice_domain, only: nblocks
       use ice_fileunits, only: nu_diag, nu_rst_pointer
@@ -47,6 +51,7 @@
          filename, filename0
 
       integer (kind=int_kind) :: status
+      integer (kind=int_kind) :: year
 
       if (present(ice_ic)) then 
          filename = trim(ice_ic)
@@ -73,6 +78,9 @@
          status = nf90_get_att(ncid, nf90_global, 'time', time)
          status = nf90_get_att(ncid, nf90_global, 'time_forc', time_forc)
          status = nf90_get_att(ncid, nf90_global, 'nyr', nyr)
+         status = nf90_get_att(ncid, nf90_global, 'year', year)
+         if (status /= nf90_noerr) call abort_ice( &
+           'ice: Error reading year attribute from ncfile '//trim(filename))
          if (status == nf90_noerr) then
             status = nf90_get_att(ncid, nf90_global, 'month', month)
             status = nf90_get_att(ncid, nf90_global, 'mday', mday)
@@ -93,6 +101,19 @@
       call broadcast_scalar(istep0,master_task)
       call broadcast_scalar(time,master_task)
       call broadcast_scalar(time_forc,master_task)
+
+#ifdef ACCESS
+      ! Set run start date
+      call broadcast_scalar(year,master_task)
+      call broadcast_scalar(month,master_task)
+      call broadcast_scalar(mday,master_task)
+      iniyear = year
+      inimon = month
+      iniday = mday
+
+      ! Check starting date and time are consistent
+      call check_start_date
+#endif
       
       istep1 = istep0
 

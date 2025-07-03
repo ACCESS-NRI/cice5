@@ -1,3 +1,4 @@
+
 !============================================================================
 !
 module cpl_parameters
@@ -7,6 +8,12 @@ module cpl_parameters
 use ice_kinds_mod
 
 implicit none
+
+#ifdef __INTEL_COMPILER
+! for intel runtime errors
+! see https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2025-2/list-of-runtime-error-messages.html
+include "for_iosdef.for"
+#endif
 
 integer(kind=int_kind) :: il_im, il_jm, il_imjm    ! il_im=nx_global, il_jm=ny_global 
                                                    ! assigned in prism_init
@@ -59,16 +66,17 @@ logical :: &                         !pop_icediag is as that for ocn model, if t
    chk_i2o_fields = .false. , &
    chk_o2i_fields = .false.
 integer(kind=int_kind) :: jobnum = 1           !1 for initial, >1 restart
-integer(kind=int_kind) :: inidate = 01010101   !beginning date of this run (yyyymmdd)
 integer(kind=int_kind) :: init_date = 00010101 !beginning date of this EXP (yyyymmdd)
+integer(kind=int_kind) :: iniday = 1, &        ! beginning date of this run. Read from restart
+                          inimon = 1, &
+                          iniyear = 1
 integer(kind=int_kind) :: dt_cice = 3600       !time step of this model      (seconds) 
 integer(kind=int_kind) :: dt_cpl_ai = 21600    !atm<==>ice coupling interval (seconds) 
 integer(kind=int_kind) :: dt_cpl_io = -99      !ice<==>ocn coupling interval (seconds).
                                                !Hardwired to equal dt_cice and should not
                                                !be set in namelist.
-integer(kind=int_kind) :: caltype = -99        !deprecated
-!integer(kind=int_kind) :: runtime0    !accumulated run time by the end of last run (s)   
-real(kind=dbl_kind) :: runtime0 = 0.0  !  can be too large as int to read in correctly!
+real(kind=dbl_kind)    :: runtime0 = 0.0       !accumulated runtime from init_date to
+                                               !run start date
 integer(kind=int_kind) :: runtime = 86400      !the time length for this run segment (s)
 
 !20100305: Harry Henden suggests turning off ocean current into UM might reduce the 
@@ -104,15 +112,10 @@ real(kind=dbl_kind) :: &
          add_lprec = 0.513190E-07      !kg/m2/s. ==> set to 0.0 if no fixin!
              
 namelist/coupling/       &
-         caltype,        &
          jobnum,         &
-         inidate,        &
-         init_date,      &
-         runtime0,       &   
          runtime,        &
          dt_cice,        &
          dt_cpl_ai,      &
-         dt_cpl_io,      &
          inputdir,       &
          restartdir,     &
          pop_icediag,    &
@@ -150,7 +153,6 @@ namelist/coupling/       &
          chk_i2o_fields, &
          chk_o2i_fields
 
-integer(kind=int_kind) :: iniday, inimon, iniyear   !from inidate
 real(kind=dbl_kind) :: coef_ai    !dt_ice/dt_cpl_ai, for i2a fields tavg
 
 real(kind=dbl_kind) :: frazil_factor = 0.5
@@ -187,23 +189,20 @@ num_ice_ai = dt_cpl_ai/dt_cice
 
 coef_ai = float(dt_cice)/float(dt_cpl_ai)
 
-iniday  = mod(inidate, 100)
-inimon  = mod( (inidate - iniday)/100, 100)
-iniyear = inidate / 10000
-
 return
 end subroutine get_cpl_timecontrol_simple
 
 !===============================================================================
-subroutine get_cpl_timecontrol
 
-use ice_exit
-use ice_fileunits
+subroutine get_cpl_timecontrol
+use ice_exit, only: abort_ice
+use ice_fileunits, only: nu_nml, ice_stderr, ice_stdout, get_fileunit, release_fileunit
 use ice_communicate, only: my_task, master_task
 
 implicit none
 
 integer (int_kind) :: nml_error       ! namelist read error flag
+character (len=256) :: errstr, tmpstr         ! For holding namelist read errors
 
 ! all processors read the namelist--
 
@@ -211,7 +210,7 @@ call get_fileunit(nu_nml)
 open(unit=nu_nml,file="input_ice.nml",form="formatted",status="old",iostat=nml_error)
 !
 if (my_task == master_task) then
-   write(6,*)'CICE: input_ice.nml opened at unit = ', nu_nml
+   write(ice_stdout,*)'CICE: input_ice.nml opened at unit = ', nu_nml
 endif
 !
 if (nml_error /= 0) then
@@ -219,9 +218,25 @@ if (nml_error /= 0) then
 else
    nml_error =  1
 endif
+
 do while (nml_error > 0)
-   read(nu_nml, nml=coupling,iostat=nml_error)
-   if (nml_error > 0) read(nu_nml,*)  ! for Nagware compiler
+   read(nu_nml, nml=coupling,iostat=nml_error,iomsg=errstr)
+   ! check if error
+   if (nml_error /= 0) then
+      if (my_task == master_task) then
+         ! backspace and re-read erroneous line
+         backspace(nu_nml)
+         read(nu_nml,fmt=*) tmpstr
+#ifdef __INTEL_COMPILER
+         if (nml_error == FOR$IOS_INVREFVAR) then
+           write(ice_stderr,*)'CICE: Invalid reference to variable '//trim(tmpstr)
+           write(ice_stderr,*)'CICE: is '//trim(tmpstr)//' deprecated ?'
+         endif
+#endif
+         call abort_ice('CICE ERROR in input_ice.nml when' // &
+            ' reading ' // trim(tmpstr) // ' - ' //errstr)
+       endif
+   endif
 end do
 if (nml_error == 0) close(nu_nml)
 
@@ -237,19 +252,6 @@ if (nml_error /= 0) then
    endif
 endif
 
-if (caltype /= -99) then
-   if (my_task == master_task) then
-      call abort_ice('ice: ERROR caltype deprecated. Remove from "input_ice.nml"')
-   endif
-endif
-
-if (dt_cpl_io /= -99) then
-   if (my_task == master_task) then
-      call abort_ice('ice: ERROR dt_cpl_io should not be set in namelist. '// &
-                     'Remove from "input_ice.nml"')
-   endif
-endif
-
 !hardrwire dt_cpl_io == dt_cice
 dt_cpl_io = dt_cice
 
@@ -259,12 +261,6 @@ num_cpl_ai = runtime/dt_cpl_ai
 num_ice_ai = dt_cpl_ai/dt_cice
 
 coef_ai = float(dt_cice)/float(dt_cpl_ai)
-
-iniday  = mod(inidate, 100)
-inimon  = mod( (inidate - iniday)/100, 100)
-iniyear = inidate / 10000
-
-!!idate = inidate
 
 return
 end subroutine get_cpl_timecontrol
