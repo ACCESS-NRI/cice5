@@ -90,7 +90,12 @@
          snowpatch = 0.02_dbl_kind, & ! parameter for fractional snow area (m)
 #endif
          ! multilayers with the UM coupling
+#ifdef ACCESS
+	 aicenmin_ml = 2.0e-04_dbl_kind ! match min aicen to um7.3, 
+	! see https://github.com/ACCESS-NRI/UM7/blob/e6d003b90577e99584dcda04aed010dd722af360/umbase_hg3/src/control/coupling/oasis3_geto2a.F90#L532-L534
+#else
          aicenmin_ml = 0.00001_dbl_kind! AEW: min aice we want to allow when using
+#endif
 #ifndef AusCOM
       real (kind=dbl_kind), parameter, public :: &
          !!! dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
