@@ -2316,7 +2316,7 @@
          if (f_sidmassgrowthwat(1:1) /= 'x') then
            !Sea-Ice Mass Change Through Growth in Supercooled Open Water (Frazil) 
            !To-do: revisit to see if frazil still needs aice/aice_init weighting
-           !Data can be noisy. Weigthing not used in CICE6.
+           !Data can be noisy. Weighting not used in CICE6.
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
