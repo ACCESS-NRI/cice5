@@ -47,6 +47,7 @@
          filename, filename0
 
       integer (kind=int_kind) :: status
+      integer (kind=int_kind) :: year
 
       if (present(ice_ic)) then 
          filename = trim(ice_ic)
