@@ -402,6 +402,9 @@
       call broadcast_scalar (f_um_runoff_nm, master_task)
       call broadcast_scalar (f_io_runof_nm, master_task)
       call broadcast_scalar (f_io_licefw_nm, master_task)
+      call broadcast_scalar (f_um_rain, master_task)
+      call broadcast_scalar (f_um_snow, master_task)
+      call broadcast_scalar (f_um_evap, master_task)
 
       ! 2D variables
       do ns1 = 1, nstreams
@@ -437,6 +440,18 @@
             "iceberg flux no mask",                       &
             "none", c1, c0,         &
             ns1, f_io_licefw_nm)
+         call define_hist_field(n_um_rain ,"um_rain","kg/m2/s?",tstr2D, tcstr,        & 
+            "rain imported from um",                       &
+            "none", c1, c0,         &
+            ns1, f_um_rain)
+         call define_hist_field(n_um_snow ,"um_snow","kg/m2/s?",tstr2D, tcstr,        & 
+            "snow imported from um",                       &
+            "none", c1, c0,         &
+            ns1, f_um_snow)
+         call define_hist_field(n_um_evap ,"um_evap","kg/m2/s?",tstr2D, tcstr,        & 
+            "evap imported from um",                       &
+            "none", c1, c0,         &
+            ns1, f_um_evap)
 
 
          call define_hist_field(n_hi,"hi","m",tstr2D, tcstr,        & 
@@ -1557,7 +1572,8 @@
           spval_dbl, Tffresh, ice_ref_salinity, c1000
       use ice_domain, only: blocks_ice, nblocks
       use ice_grid, only: tmask, lmask_n, lmask_s, tarea, HTE, HTN
-      use cpl_arrays_setup, only: um_runoff, io_runof, io_licefw
+      use cpl_arrays_setup, only: um_runoff, io_runof, io_licefw, &
+            um_rain, um_snow, um_evap
 #ifdef AusCOM
       use ice_grid, only: umask
 !ars599: 27032014 
@@ -1731,6 +1747,13 @@
              call accum_hist_field_2D_nomask(n_io_runof_nm,     iblk, io_runof(:,:,iblk), a2D)
          if (f_io_licefw_nm     (1:1) /= 'x') &
              call accum_hist_field_2D_nomask(n_io_licefw_nm,     iblk, io_licefw(:,:,iblk), a2D)
+         if (f_um_rain     (1:1) /= 'x') &
+             call accum_hist_field(n_um_rain,     iblk, um_rain(:,:,iblk), a2D)
+         if (f_um_snow     (1:1) /= 'x') &
+             call accum_hist_field(n_um_snow,     iblk, um_snow(:,:,iblk), a2D)
+         if (f_um_evap     (1:1) /= 'x') &
+             call accum_hist_field(n_um_evap,     iblk, um_evap(:,:,iblk), a2D)
+
          if (f_hi     (1:1) /= 'x') &
              call accum_hist_field(n_hi,     iblk, vice(:,:,iblk), a2D)
          if (f_hs     (1:1) /= 'x') &
