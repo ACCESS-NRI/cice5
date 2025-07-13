@@ -957,6 +957,9 @@ end subroutine check
         call check(nf90_put_att(ncid,nf90_global,'source',title), &
                    'global attribute source')
 
+#if defined(AUSCOM) && !defined(ACCESS)
+        write(title,'(a,i3,a)') 'This Year Has ',int(dayyr),' days'
+#else
         if (use_leap_years) then
           write(title,'(a,i3,a)') 'This year has ',int(dayyr),' days'
         else

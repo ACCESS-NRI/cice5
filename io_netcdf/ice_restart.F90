@@ -35,6 +35,10 @@
 
       use ice_calendar, only: sec, month, mday, nyr, istep0, istep1, &
                               time, time_forc, year_init, npt
+#ifdef ACCESS
+      use cpl_parameters, only: iniyear, inimon, iniday
+      use ice_calendar, only: check_start_date
+#endif
       use ice_communicate, only: my_task, master_task
       use ice_domain, only: nblocks
       use ice_fileunits, only: nu_diag, nu_rst_pointer
@@ -68,7 +72,7 @@
          status = nf90_open(trim(filename), nf90_nowrite, ncid)
          if (status /= nf90_noerr) call abort_ice( &
             'ice: Error reading restart ncfile '//trim(filename))
-      
+
          if (use_restart_time) then
          status = nf90_get_att(ncid, nf90_global, 'istep1', istep0)
          call assert(status == NF90_NOERR, &
@@ -88,7 +92,7 @@
 
          status = nf90_get_att(ncid, nf90_global, 'year', year)
          call assert(status == NF90_NOERR, &
-                    ' reading year attribute from ncfile '//trim(filename))
+                    ' reading year attribute from ncfile '//trim(filename), status)
          if (status == nf90_noerr) then
             status = nf90_get_att(ncid, nf90_global, 'month', month)
             call assert(status == NF90_NOERR, &
@@ -130,7 +134,7 @@
       ! Check starting date and time are consistent
       call check_start_date
 #endif
-      
+
       istep1 = istep0
 
       ! if runid is bering then need to correct npt for istep0
