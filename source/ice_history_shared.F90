@@ -205,6 +205,7 @@
            f_um_rain = 'm', &
            f_um_snow = 'm', &
            f_um_evap = 'm', &
+           f_um_lhflx = 'm', &
            f_hi        = 'm', f_hs         = 'm', &
            f_snowfrac  = 'x', f_snowfracn  = 'x', &
            f_Tsfc      = 'm', f_aice       = 'm', &
@@ -342,6 +343,7 @@
            f_um_rain, &
            f_um_snow, &
            f_um_evap, &
+           f_um_lhflx, &
            f_hi,        f_hs       , &
            f_snowfrac,  f_snowfracn, &
            f_Tsfc,      f_aice     , &
@@ -491,6 +493,7 @@
            n_io_licefw_nm,                  &
            n_um_rain, n_um_snow,         &
            n_um_evap,                    &
+           n_um_lhflx,                    &
            n_hi         , n_hs         , &
            n_snowfrac,    n_snowfracn,   &
            n_Tsfc       , n_aice       , &

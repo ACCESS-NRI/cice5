@@ -405,6 +405,7 @@
       call broadcast_scalar (f_um_rain, master_task)
       call broadcast_scalar (f_um_snow, master_task)
       call broadcast_scalar (f_um_evap, master_task)
+      call broadcast_scalar (f_um_lhflx, master_task)
 
       ! 2D variables
       do ns1 = 1, nstreams
@@ -452,6 +453,10 @@
             "evap imported from um",                       &
             "none", c1, c0,         &
             ns1, f_um_evap)
+         call define_hist_field(n_um_lhflx ,"um_lhflx","W/m2?",tstr2D, tcstr,        & 
+            "lhflx (sublim) imported from um",                       &
+            "none", c1, c0,         &
+            ns1, f_um_lhflx)
 
 
          call define_hist_field(n_hi,"hi","m",tstr2D, tcstr,        & 
@@ -1573,7 +1578,7 @@
       use ice_domain, only: blocks_ice, nblocks
       use ice_grid, only: tmask, lmask_n, lmask_s, tarea, HTE, HTN
       use cpl_arrays_setup, only: um_runoff, io_runof, io_licefw, &
-            um_rain, um_snow, um_evap
+            um_rain, um_snow, um_evap, um_lhflx
 #ifdef AusCOM
       use ice_grid, only: umask
 !ars599: 27032014 
@@ -1753,6 +1758,8 @@
              call accum_hist_field(n_um_snow,     iblk, um_snow(:,:,iblk), a2D)
          if (f_um_evap     (1:1) /= 'x') &
              call accum_hist_field(n_um_evap,     iblk, um_evap(:,:,iblk), a2D)
+         if (f_um_lhflx     (1:1) /= 'x') &
+             call accum_hist_field(n_um_lhflx,     iblk, um_lhflx(:,:,iblk), a2D)
 
          if (f_hi     (1:1) /= 'x') &
              call accum_hist_field(n_hi,     iblk, vice(:,:,iblk), a2D)
