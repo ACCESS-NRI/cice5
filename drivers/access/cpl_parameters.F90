@@ -252,7 +252,7 @@ if (nml_error /= 0) then
    endif
 endif
 
-!hardrwire dt_cpl_io == dt_cice
+!hardwire dt_cpl_io == dt_cice
 dt_cpl_io = dt_cice
 
 ! * make sure runtime is mutliple of dt_cpl_ai, dt_cpl_ai is mutliple of dt_cpl_io, 

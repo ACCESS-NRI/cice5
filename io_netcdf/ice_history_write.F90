@@ -1006,6 +1006,11 @@ end subroutine check
 
         call check(nf90_inq_varid(ncid,'time',varid), &
                    'inq varid time')
+        if (history_parallel_io) then
+          ! unlimited dimensions need to have collective access set
+          call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
+                   'parallel access time')
+        endif
         call check(nf90_put_var(ncid,varid,ltime), &
                    'put var time')
 

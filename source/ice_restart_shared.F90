@@ -27,8 +27,6 @@
       character (len=char_len), public :: &
          restart_format    ! format of restart files 'nc'
 
-      logical (kind=log_kind), public :: lcdf64
-
 !=======================================================================
 
       contains
