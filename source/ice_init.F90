@@ -54,8 +54,10 @@
                               write_ic, dump_last
       use ice_restart_shared, only: &
           restart, restart_ext, restart_dir, restart_file, pointer_file, &
-          runid, runtype, use_restart_time, restart_format, lcdf64
+          runid, runtype, use_restart_time, restart_format
       use ice_history_shared, only: hist_avg, history_dir, history_file, &
+                             history_deflate_level, history_parallel_io, &
+                             history_chunksize_x, history_chunksize_y,   &
                              incond_dir, incond_file
       use ice_exit, only: abort_ice
       use ice_itd, only: kitd, kcatbound
@@ -127,12 +129,13 @@
         dt,             npt,            ndtd,                           &
         runtype,        runid,          bfbflag,                        &
         ice_ic,         restart,        restart_dir,     restart_file,  &
-        restart_ext,    use_restart_time, restart_format, lcdf64,       &
+        restart_ext,    use_restart_time, restart_format,               &
         pointer_file,   dumpfreq,       dumpfreq_n,      dump_last,     &
         diagfreq,       diag_type,      diag_file,                      &
         print_global,   print_points,   latpnt,          lonpnt,        &
         dbug,           histfreq,       histfreq_n,      hist_avg,      &
-        history_dir,    history_file,                                   &
+        history_dir,    history_file,   history_deflate_level,          &
+        history_parallel_io, history_chunksize_x, history_chunksize_y,  &
         write_ic,       incond_dir,     incond_file
 
       namelist /grid_nml/ &
@@ -222,6 +225,14 @@
       hist_avg = .true.      ! if true, write time-averages (not snapshots)
       history_dir  = './'    ! write to executable dir for default
       history_file = 'iceh'  ! history file name prefix
+      history_deflate_level = -1 ! Deflate/compression level to use when
+                                 ! writing netCDF4 history files, -1
+                                 ! means no deflation
+      history_parallel_io = .false. ! Use NetCDF parallel IO to write out history files
+      history_chunksize_x = -1 ! NetCDF chunksize in x/lon dimension. -1
+                               ! means use default selected by NetCDF library
+      history_chunksize_y = -1 ! NetCDF chunksize in y/lat dimension
+                               ! means use default selected by NetCDF library
       write_ic = .false.     ! write out initial condition
       incond_dir = history_dir ! write to history dir for default
       incond_file = 'iceh_ic'! file prefix
@@ -235,7 +246,6 @@
       use_restart_time = .true.     ! if true, use time info written in file
       pointer_file = 'ice.restart_file'
       restart_format = 'nc'  ! file format ('bin'=binary or 'nc'=netcdf or 'pio')
-      lcdf64       = .false. ! 64 bit offset for netCDF
       ice_ic       = 'default'      ! latitude and sst-dependent
       grid_format  = 'bin'          ! file format ('bin'=binary or 'nc'=netcdf)
       grid_type    = 'rectangular'  ! define rectangular grid internally
@@ -740,6 +750,10 @@
       call broadcast_scalar(hist_avg,           master_task)
       call broadcast_scalar(history_dir,        master_task)
       call broadcast_scalar(history_file,       master_task)
+      call broadcast_scalar(history_deflate_level, master_task)
+      call broadcast_scalar(history_parallel_io, master_task)
+      call broadcast_scalar(history_chunksize_x, master_task)
+      call broadcast_scalar(history_chunksize_y, master_task)
       call broadcast_scalar(write_ic,           master_task)
       call broadcast_scalar(incond_dir,         master_task)
       call broadcast_scalar(incond_file,        master_task)
@@ -752,7 +766,6 @@
       call broadcast_scalar(restart_ext,        master_task)
       call broadcast_scalar(use_restart_time,   master_task)
       call broadcast_scalar(restart_format,     master_task)
-      call broadcast_scalar(lcdf64,             master_task)
       call broadcast_scalar(pointer_file,       master_task)
       call broadcast_scalar(ice_ic,             master_task)
       call broadcast_scalar(grid_format,        master_task)
@@ -910,6 +923,8 @@
                                trim(history_dir)
          write(nu_diag,*)    ' history_file              = ', &
                                trim(history_file)
+         write(nu_diag,*)    ' history_deflate_level     = ', &
+                               history_deflate_level
          if (write_ic) then
             write (nu_diag,*) 'Initial condition will be written in ', &
                                trim(incond_dir)
@@ -924,8 +939,6 @@
          write(nu_diag,*)    ' restart_ext               = ', restart_ext
          write(nu_diag,*)    ' restart_format            = ', &
                                trim(restart_format)
-         write(nu_diag,*)    ' lcdf64                    = ', &
-                               lcdf64
          write(nu_diag,*)    ' restart_file              = ', &
                                trim(restart_file)
          write(nu_diag,*)    ' pointer_file              = ', &
