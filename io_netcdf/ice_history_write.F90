@@ -87,61 +87,30 @@ end subroutine check
 
       subroutine ice_write_hist (ns)
 
-            use ice_calendar, only: time, sec, idate, idate0, &
+      use ice_calendar, only: time, sec, idate, idate0, &
 #ifdef ACCESS
         month, daymo, &
 #endif
         dayyr, days_per_year, use_leap_years
       use ice_fileunits, only: nu_diag
-      use ice_restart_shared, only: runid
 
-      integer (kind=int_kind), intent(in) :: ns
+      integer (kind=int_kind), intent(in) :: ns !history stream number
 
       ! local variables
 
-      real (kind=dbl_kind),  dimension(:,:),   allocatable :: work_g1
-      real (kind=real_kind), dimension(:,:),   allocatable :: work_gr
-      real (kind=real_kind), dimension(:,:,:), allocatable :: work_gr3
-      real (kind=dbl_kind),  dimension(nx_block,ny_block,max_blocks) :: &
-         work1
-
-      integer (kind=int_kind) :: i,k,ic,n,nn, &
-         ncid,status,imtid,jmtid,kmtidi,kmtids,kmtidb, cmtid,timid,varid, &
-         nvertexid,ivertex
-      integer (kind=int_kind), dimension(3) :: dimid
-      integer (kind=int_kind), dimension(4) :: dimidz
-      integer (kind=int_kind), dimension(5) :: dimidcz
-      integer (kind=int_kind), dimension(3) :: dimid_nverts
-      integer (kind=int_kind), dimension(4) :: dimidex
-      real (kind=real_kind) :: ltime
-      character (char_len) :: title
-      character (char_len_long) :: ncfile(max_nstrm)
-
-      integer (kind=int_kind) :: shuffle, deflate, deflate_level
-
-      integer (kind=int_kind) :: ind,boundid
-
-      character (char_len) :: start_time,current_date,current_time
-      character (len=8) :: cdate
+      real (kind=real_kind) :: ltime                 !history timestamp in seconds
+      character (char_len_long) :: ncfile(max_nstrm) !filenames
+      logical :: file_exists
+      integer (kind=int_kind) :: & 
+        ncid,   &    ! netcdf id
+        varid,  &
+        i_time, &    ! time index
+        timid       ! time var id
 
       TYPE(req_attributes), dimension(nvar) :: var
       TYPE(coord_attributes), dimension(ncoord) :: coord_var
       TYPE(coord_attributes), dimension(nvar_verts) :: var_nverts
       TYPE(coord_attributes), dimension(nvarz) :: var_nz
-      CHARACTER (char_len), dimension(ncoord) :: coord_bounds
-
-      ! We leave shuffle at 0, this is only useful for integer data.
-      shuffle = 0
-
-      ! If history_deflate_level < 0 then don't do deflation,
-      ! otherwise it sets the deflate level
-      if (history_deflate_level < 0) then
-         deflate = 0
-         deflate_level = 0
-      else
-         deflate = 1
-         deflate_level = history_deflate_level
-      endif
 
       if (my_task == master_task .or. history_parallel_io) then
 #if defined(ACCESS)
@@ -170,97 +139,244 @@ end subroutine check
           ncfile(ns) = trim(history_dir)//ncfile(ns)
         endif
 
-        ! create file
-        if (history_parallel_io) then
-            call check(nf90_create(ncfile(ns), ior(NF90_NETCDF4, NF90_MPIIO), ncid, &
-                                   comm=MPI_COMM_ICE, info=MPI_INFO_NULL), &
-                        'create history ncfile '//ncfile(ns))
-            if (.not. equal_num_blocks_per_cpu) then
-                call abort_ice('ice: error history_parallel_io needs equal_num_blocks_per_cpu')
-            endif
+        inquire(file=trim(ncfile(ns)),exist=file_exists)
+        if (.not. file_exists) then 
+          write(nu_diag,*) 'creating'//trim(ncfile(ns))
+          call ice_hist_create(ns, ncfile(ns), ncid, var, coord_var, var_nverts, var_nz)
+          write(nu_diag,*) 'created'//trim(ncfile(ns))
         else
-            call check(nf90_create(ncfile(ns), ior(NF90_CLASSIC_MODEL, NF90_HDF5), ncid), &
-                        'create history ncfile '//ncfile(ns))
+          if (history_parallel_io) then
+            call check(nf90_open(trim(ncfile(ns)), NF90_WRITE, ncid, &
+                                   comm=MPI_COMM_ICE, info=MPI_INFO_NULL), &
+                        'parallel open existing history file '//ncfile(ns))
+          else
+            call check(nf90_open(trim(ncfile(ns)), NF90_WRITE, ncid), &
+                        "opening existing history file "//ncfile(ns))
+          endif
         endif
 
       !-----------------------------------------------------------------
-      ! define dimensions
+      ! write time variable
+      !-----------------------------------------------------------------
+        call check(nf90_inq_dimid(ncid, 'time', timid), &
+                    'inq dimid time')
+        call check(nf90_inquire_dimension(ncid, timid, len=i_time), &
+                    'inquire dim time')
+        call check(nf90_inq_varid(ncid,'time',varid), &
+                   'inq varid time')
+        if (history_parallel_io) then
+          ! unlimited dimensions need to have collective access set
+          call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
+                   'parallel access time')
+        endif
+        i_time = i_time + 1 ! index of the current history time
+        call check(nf90_put_var(ncid,varid,ltime,start=(/i_time/)), &
+                   'put var time')
+
+      !-----------------------------------------------------------------
+      ! write time_bounds info
       !-----------------------------------------------------------------
 
         if (hist_avg) then
-            call check(nf90_def_dim(ncid,'d2',2,boundid), 'def dim d2')
+            call check(nf90_inq_varid(ncid,'time_bounds',varid), &
+                       'inq varid time_bounds')
+            call check(nf90_put_var(ncid,varid,time_beg(ns),start=(/1,i_time/)), &
+                       'put var time_bounds beginning')
+            call check(nf90_put_var(ncid,varid,time_end(ns),start=(/2,i_time/)), &
+                       'put var time_bounds end')
         endif
+      endif                     ! master_task or history_parallel_io
 
-        call check(nf90_def_dim(ncid, 'ni', nx_global, imtid), &
-                    'def dim ni')
-        call check(nf90_def_dim(ncid, 'nj', ny_global, jmtid), &
-                    'def dim nj')
-        call check(nf90_def_dim(ncid, 'nc', ncat_hist, cmtid), &
-                    'def dim nc')
-        call check(nf90_def_dim(ncid, 'nkice', nzilyr, kmtidi), &
-                    'def dim nkice')
-        call check(nf90_def_dim(ncid, 'nksnow', nzslyr, kmtids), &
-                    'def dim nksnow')
-        call check(nf90_def_dim(ncid, 'nkbio', nzblyr, kmtidb), &
-                    'def dim nkbio')
-        call check(nf90_def_dim(ncid, 'time', NF90_UNLIMITED, timid), &
-                    'def dim time')
-        call check(nf90_def_dim(ncid, 'nvertices', nverts, nvertexid), &
-                    'def dim nverts')
+    call broadcast_scalar(i_time, master_task) !we need this on every processor for parallel writes
+    if (i_time == 1) then
+      ! these are time-invariant, only write once
+      !-----------------------------------------------------------------
+      ! write coordinate variables
+      !-----------------------------------------------------------------
+      if (history_parallel_io) then
+          call write_coordinate_variables_parallel(ncid, coord_var, var_nz)
+      else
+          call write_coordinate_variables(ncid, coord_var, var_nz)
+      endif
 
       !-----------------------------------------------------------------
-      ! define coordinate variables
+      ! write grid masks, area and rotation angle
       !-----------------------------------------------------------------
+      if (history_parallel_io) then
+          call write_grid_variables_parallel(ncid, var, var_nverts)
+      else
+          call write_grid_variables(ncid, var, var_nverts)
+      endif
 
-        call check(nf90_def_var(ncid,'time',nf90_float,timid,varid), &
-                      'def var time')
-        call check(nf90_put_att(ncid,varid,'long_name','model time'), &
-                    'put_att long_name')
+    endif
+    !-----------------------------------------------------------------
+    ! write 2d variable data
+    !-----------------------------------------------------------------
 
+    if (history_parallel_io) then
+        call write_2d_variables_parallel(ns, ncid, i_time)
+    else
+        call write_2d_variables(ns, ncid, i_time)
+    endif
+
+    if (history_parallel_io) then
+        call write_3d_and_4d_variables_parallel(ns, ncid, i_time)
+    else
+       call write_3d_and_4d_variables(ns, ncid, i_time)
+    endif
+
+    !-----------------------------------------------------------------
+    ! close output dataset
+    !-----------------------------------------------------------------
+
+    if (my_task == master_task .or. history_parallel_io) then
+        call check(nf90_close(ncid), 'closing netCDF history file')
+        write(nu_diag,*) 'Finished writing ',trim(ncfile(ns)),' at time'
+    endif
+
+end subroutine ice_write_hist
+
+subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
+
+      use ice_calendar, only: time, sec, idate, idate0, &
+#ifdef ACCESS
+        month, daymo, &
+#endif
+        dayyr, days_per_year, use_leap_years
+      use ice_fileunits, only: nu_diag
+      use ice_restart_shared, only: runid
+
+      integer (kind=int_kind), intent(in) :: ns
+      character (char_len_long), intent(in) :: ncfile
+      integer (kind=int_kind), intent(out) :: ncid
+      TYPE(req_attributes), dimension(nvar), intent(inout) :: var
+      TYPE(coord_attributes), dimension(ncoord), intent(inout) :: coord_var
+      TYPE(coord_attributes), dimension(nvar_verts), intent(inout) :: var_nverts
+      TYPE(coord_attributes), dimension(nvarz), intent(inout) :: var_nz
+
+      ! local variables
+
+      integer (kind=int_kind) :: i,k,ic,n,nn, &
+        status,imtid,jmtid,kmtidi,kmtids,kmtidb, cmtid,timid,varid, &
+        nvertexid,ivertex
+      integer (kind=int_kind), dimension(3) :: dimid, dimid_nverts
+      integer (kind=int_kind), dimension(4) :: dimidz, dimidex
+      integer (kind=int_kind), dimension(5) :: dimidcz
+
+      integer (kind=int_kind) :: shuffle, deflate, deflate_level ! comrpession settings
+
+      integer (kind=int_kind) :: ind,boundid
+
+      character (char_len) :: title, start_time,current_date,current_time
+      character (len=8) :: cdate
+
+
+      CHARACTER (char_len), dimension(ncoord) :: coord_bounds
+
+      ! We leave shuffle at 0, this is only useful for integer data.
+      shuffle = 0
+
+      ! If history_deflate_level < 0 then don't do deflation,
+      ! otherwise it sets the deflate level
+      if (history_deflate_level < 0) then
+        deflate = 0
+        deflate_level = 0
+      else
+        deflate = 1
+        deflate_level = history_deflate_level
+      endif
+
+      ! create file
+      if (history_parallel_io) then
+          call check(nf90_create(ncfile, ior(NF90_NETCDF4, NF90_MPIIO), ncid, &
+                                  comm=MPI_COMM_ICE, info=MPI_INFO_NULL), &
+                      'create history ncfile '//ncfile)
+          if (.not. equal_num_blocks_per_cpu) then
+              call abort_ice('ice: error history_parallel_io needs equal_num_blocks_per_cpu')
+          endif
+      else
+          call check(nf90_create(ncfile, ior(NF90_CLASSIC_MODEL, NF90_HDF5), ncid), &
+                      'create history ncfile '//ncfile)
+      endif
+
+    !-----------------------------------------------------------------
+    ! define dimensions
+    !-----------------------------------------------------------------
+
+      if (hist_avg) then
+          call check(nf90_def_dim(ncid,'d2',2,boundid), 'def dim d2')
+      endif
+
+      call check(nf90_def_dim(ncid, 'ni', nx_global, imtid), &
+                  'def dim ni')
+      call check(nf90_def_dim(ncid, 'nj', ny_global, jmtid), &
+                  'def dim nj')
+      call check(nf90_def_dim(ncid, 'nc', ncat_hist, cmtid), &
+                  'def dim nc')
+      call check(nf90_def_dim(ncid, 'nkice', nzilyr, kmtidi), &
+                  'def dim nkice')
+      call check(nf90_def_dim(ncid, 'nksnow', nzslyr, kmtids), &
+                  'def dim nksnow')
+      call check(nf90_def_dim(ncid, 'nkbio', nzblyr, kmtidb), &
+                  'def dim nkbio')
+      call check(nf90_def_dim(ncid, 'time', NF90_UNLIMITED, timid), &
+                  'def dim time')
+      call check(nf90_def_dim(ncid, 'nvertices', nverts, nvertexid), &
+                  'def dim nverts')
+
+    !-----------------------------------------------------------------
+    ! define coordinate variables
+    !-----------------------------------------------------------------
+
+      call check(nf90_def_var(ncid,'time',nf90_float,timid,varid), &
+                    'def var time')
+      call check(nf90_put_att(ncid,varid,'long_name','model time'), &
+                  'put_att long_name')
+
+      write(cdate,'(i8.8)') idate0
+      write(title,'(a,a,a,a,a,a,a,a)') 'days since ', &
+            cdate(1:4),'-',cdate(5:6),'-',cdate(7:8),' 00:00:00'
+      call check(nf90_put_att(ncid,varid,'units',title), &
+                  'put_att time units')
+
+      if (days_per_year == 360) then
+          call check(nf90_put_att(ncid,varid,'calendar','360_day'), &
+                        'att time calendar')
+      elseif (days_per_year == 365 .and. .not.use_leap_years ) then
+          call check(nf90_put_att(ncid,varid,'calendar','NoLeap'), &
+                        'att time calendar')
+      elseif (use_leap_years) then
+          call check(nf90_put_att(ncid,varid,'calendar','proleptic_gregorian'), &
+                        'att time calendar')
+      else
+          call abort_ice( 'ice Error: invalid calendar settings')
+      endif
+
+      if (hist_avg) then
+          call check(nf90_put_att(ncid,varid,'bounds','time_bounds'), &
+                      'att time bounds')
+      endif
+
+    !-----------------------------------------------------------------
+    ! Define attributes for time bounds if hist_avg is true
+    !-----------------------------------------------------------------
+
+      if (hist_avg) then
+        dimid(1) = boundid
+        dimid(2) = timid
+        call check(nf90_def_var(ncid, 'time_bounds', &
+                              nf90_float,dimid(1:2),varid), &
+                    'def var time_bounds')
+
+        call check(nf90_put_att(ncid,varid,'long_name', &
+                            'boundaries for time-averaging interval'), &
+                    'att time_bounds long_name')
         write(cdate,'(i8.8)') idate0
         write(title,'(a,a,a,a,a,a,a,a)') 'days since ', &
               cdate(1:4),'-',cdate(5:6),'-',cdate(7:8),' 00:00:00'
         call check(nf90_put_att(ncid,varid,'units',title), &
-                    'put_att time units')
-
-        if (days_per_year == 360) then
-            call check(nf90_put_att(ncid,varid,'calendar','360_day'), &
-                         'att time calendar')
-        elseif (days_per_year == 365 .and. .not.use_leap_years ) then
-            call check(nf90_put_att(ncid,varid,'calendar','NoLeap'), &
-                         'att time calendar')
-        elseif (use_leap_years) then
-            call check(nf90_put_att(ncid,varid,'calendar','proleptic_gregorian'), &
-                         'att time calendar')
-        else
-           call abort_ice( 'ice Error: invalid calendar settings')
-        endif
-
-        if (hist_avg) then
-            call check(nf90_put_att(ncid,varid,'bounds','time_bounds'), &
-                        'att time bounds')
-        endif
-
-      !-----------------------------------------------------------------
-      ! Define attributes for time bounds if hist_avg is true
-      !-----------------------------------------------------------------
-
-        if (hist_avg) then
-          dimid(1) = boundid
-          dimid(2) = timid
-          call check(nf90_def_var(ncid, 'time_bounds', &
-                                nf90_float,dimid(1:2),varid), &
-                      'def var time_bounds')
-
-          call check(nf90_put_att(ncid,varid,'long_name', &
-                              'boundaries for time-averaging interval'), &
-                      'att time_bounds long_name')
-          write(cdate,'(i8.8)') idate0
-          write(title,'(a,a,a,a,a,a,a,a)') 'days since ', &
-                cdate(1:4),'-',cdate(5:6),'-',cdate(7:8),' 00:00:00'
-          call check(nf90_put_att(ncid,varid,'units',title), &
-                                'att time_bounds units')
-        endif
+                              'att time_bounds units')
+      endif
 
       !-----------------------------------------------------------------
       ! define information for required time-invariant variables
@@ -969,13 +1085,9 @@ end subroutine check
         call check(nf90_put_att(ncid,nf90_global,'comment',title), &
                    'global attribute comment')
 
-        write(title,'(a,i8.8)') 'File written on model date ',idate
+        write(title,'(a,i8.8)') 'File started on model date ',idate
         call check(nf90_put_att(ncid,nf90_global,'comment2',title), &
                    'global attribute comment2')
-
-        write(title,'(a,i6)') 'seconds elapsed into model date: ',sec
-        call check(nf90_put_att(ncid,nf90_global,'comment3',title), &
-                   'global attribute comment3')
 
         title = 'CF-1.0'
         call check(nf90_put_att(ncid,nf90_global,'conventions',title), &
@@ -994,88 +1106,14 @@ end subroutine check
         call check(nf90_put_att(ncid,nf90_global,'io_flavor','io_netcdf'), &
                    'global attribute io_flavor')
 
-      !-----------------------------------------------------------------
-      ! end define mode
-      !-----------------------------------------------------------------
+        !-----------------------------------------------------------------
+        ! end define mode
+        !-----------------------------------------------------------------
 
         call check(nf90_enddef(ncid), 'enddef')
 
-      !-----------------------------------------------------------------
-      ! write time variable
-      !-----------------------------------------------------------------
+end subroutine ice_hist_create
 
-        call check(nf90_inq_varid(ncid,'time',varid), &
-                   'inq varid time')
-        if (history_parallel_io) then
-          ! unlimited dimensions need to have collective access set
-          call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
-                   'parallel access time')
-        endif
-        call check(nf90_put_var(ncid,varid,ltime), &
-                   'put var time')
-
-      !-----------------------------------------------------------------
-      ! write time_bounds info
-      !-----------------------------------------------------------------
-
-        if (hist_avg) then
-            call check(nf90_inq_varid(ncid,'time_bounds',varid), &
-                       'inq varid time_bounds')
-            call check(nf90_put_var(ncid,varid,time_beg(ns),start=(/1/)), &
-                       'put var time_bounds beginning')
-            call check(nf90_put_var(ncid,varid,time_end(ns),start=(/2/)), &
-                       'put var time_bounds end')
-        endif
-    endif                     ! master_task or history_parallel_io
-
-    !-----------------------------------------------------------------
-    ! write coordinate variables
-    !-----------------------------------------------------------------
-
-    if (history_parallel_io) then
-        call write_coordinate_variables_parallel(ncid, coord_var, var_nz)
-    else
-        call write_coordinate_variables(ncid, coord_var, var_nz)
-    endif
-
-    !-----------------------------------------------------------------
-    ! write grid masks, area and rotation angle
-    !-----------------------------------------------------------------
-
-    if (history_parallel_io) then
-        call write_grid_variables_parallel(ncid, var, var_nverts)
-    else
-        call write_grid_variables(ncid, var, var_nverts)
-    endif
-
-
-    !-----------------------------------------------------------------
-    ! write 2d variable data
-    !-----------------------------------------------------------------
-
-    if (history_parallel_io) then
-        call write_2d_variables_parallel(ns, ncid)
-    else
-        call write_2d_variables(ns, ncid)
-    endif
-
-    if (history_parallel_io) then
-        call write_3d_and_4d_variables_parallel(ns, ncid)
-    else
-        call write_3d_and_4d_variables(ns, ncid)
-    endif
-
-    !-----------------------------------------------------------------
-    ! close output dataset
-    !-----------------------------------------------------------------
-
-    if (my_task == master_task .or. history_parallel_io) then
-        call check(nf90_close(ncid), 'closing netCDF history file')
-        write(nu_diag,*) ' '
-        write(nu_diag,*) 'Finished writing ',trim(ncfile(ns))
-    endif
-
-end subroutine ice_write_hist
 
 subroutine write_coordinate_variables(ncid, coord_var, var_nz)
 
@@ -1101,8 +1139,8 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
 
       work_g1(:,:) = c0
 
-        do i = 1,ncoord
-        coord_var_name = coord_var(i)%short_name
+      do i = 1,ncoord
+        if (my_task == master_task) coord_var_name = coord_var(i)%short_name
         call broadcast_scalar(coord_var_name, master_task)
         SELECT CASE (coord_var_name)
             CASE ('TLON')
@@ -1121,9 +1159,9 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
               work1 = ULAT*rad_to_deg
               call gather_global(work_g1,work1,master_task,distrb_info)
           END SELECT
-          
+
           if (my_task == master_task) then
-             work_gr = work_g1
+            work_gr = work_g1
             call check(nf90_inq_varid(ncid, coord_var_name, varid), &
                         'inq varid '//coord_var_name)
             call check(nf90_put_var(ncid,varid,work_gr), &
@@ -1134,12 +1172,13 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
         ! Extra dimensions (NCAT, VGRD*)
 
         do i = 1, nvarz
+          if (my_task == master_task) coord_var_name = var_nz(i)%short_name
           if (igrdz(i)) then
-          call broadcast_scalar(var_nz(i)%short_name,master_task)
+          call broadcast_scalar(coord_var_name,master_task)
           if (my_task == master_task) then
-            call check(nf90_inq_varid(ncid, var_nz(i)%short_name, varid), &
-                     'inq varid '//var_nz(i)%short_name)
-             SELECT CASE (var_nz(i)%short_name)
+            call check(nf90_inq_varid(ncid, coord_var_name, varid), &
+                     'inq varid '//coord_var_name)
+             SELECT CASE (coord_var_name)
                CASE ('NCAT') 
                  status = nf90_put_var(ncid,varid,hin_max(1:ncat_hist))
                CASE ('VGRDi') ! index - needed for Met Office analysis code
@@ -1150,7 +1189,7 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
                  status = nf90_put_var(ncid,varid,(/(k, k=1,nzblyr)/))
              END SELECT
              if (status /= nf90_noerr) call abort_ice( &
-                           'ice: Error writing'//var_nz(i)%short_name)
+                           'ice: Error writing'//coord_var_name)
           endif
           endif
         enddo
@@ -1216,10 +1255,9 @@ subroutine write_grid_variables(ncid, var, var_nverts)
 
       do i = 3, nvar      ! note n_tmask=1, n_blkmask=2
         if (igrd(i)) then
-            var_name = var(i)%req%short_name
-
-            call broadcast_scalar(var_name,master_task)
-            SELECT CASE (var_name)
+          if (my_task == master_task) var_name = var(i)%req%short_name
+          call broadcast_scalar(var_name,master_task)
+          SELECT CASE (var_name)
           CASE ('tarea')
             call gather_global(work_g1, tarea, master_task, distrb_info)
           CASE ('uarea')
@@ -1261,9 +1299,9 @@ subroutine write_grid_variables(ncid, var, var_nverts)
       work1   (:,:,:) = c0
 
       do i = 1, nvar_verts
-            var_nverts_name = var_nverts(i)%short_name
-            call broadcast_scalar(var_nverts_name,master_task)
-            SELECT CASE (var_nverts_name)
+        if (my_task == master_task) var_nverts_name = var_nverts(i)%short_name
+        call broadcast_scalar(var_nverts_name,master_task)
+        SELECT CASE (var_nverts_name)
         CASE ('lont_bounds')
         do ivertex = 1, nverts 
            work1(:,:,:) = lont_bounds(ivertex,:,:,:)
@@ -1306,10 +1344,9 @@ subroutine write_grid_variables(ncid, var, var_nverts)
 end subroutine write_grid_variables
 
 
-subroutine write_2d_variables(ns, ncid)
+subroutine write_2d_variables(ns, ncid, i_time)
 
-    integer, intent(in) :: ns
-    integer, intent(in) :: ncid
+    integer, intent(in) :: ns, ncid, i_time
 
     real (kind=dbl_kind),  dimension(:,:), allocatable :: work_g1
     real (kind=real_kind), dimension(:,:), allocatable :: work_gr
@@ -1337,6 +1374,7 @@ subroutine write_2d_variables(ns, ncid)
                 call check(nf90_inq_varid(ncid,avail_hist_fields(n)%vname,varid), &
                            'inq varid '//avail_hist_fields(n)%vname)
                 call check(nf90_put_var(ncid,varid,work_gr(:,:), &
+                                        start=(/1,1,i_time/), &
                                         count=(/nx_global,ny_global/)), &
                             'put var '//avail_hist_fields(n)%vname)
           endif
@@ -1349,10 +1387,9 @@ subroutine write_2d_variables(ns, ncid)
 end subroutine write_2d_variables
 
 
-subroutine write_3d_and_4d_variables(ns, ncid)
+subroutine write_3d_and_4d_variables(ns, ncid, i_time)
 
-    integer, intent(in) :: ns
-    integer, intent(in) :: ncid
+    integer, intent(in) :: ns, ncid, i_time
 
     real (kind=dbl_kind),  dimension(:,:), allocatable :: work_g1
     real (kind=real_kind), dimension(:,:), allocatable :: work_gr
@@ -1385,7 +1422,7 @@ subroutine write_3d_and_4d_variables(ns, ncid)
 
              if (my_task == master_task) then
                     call check(nf90_put_var(ncid,varid,work_gr(:,:), &
-                                            start=(/        1,        1, k/), &
+                                            start=(/1,1,k,i_time/), &
                                             count=(/nx_global,ny_global, 1/)), &
                                'put var '//avail_hist_fields(n)%vname)
              endif
@@ -1410,7 +1447,7 @@ subroutine write_3d_and_4d_variables(ns, ncid)
 
              if (my_task == master_task) then
                     call check(nf90_put_var(ncid,varid,work_gr(:,:), &
-                                    start=(/        1,        1,k/), &
+                                            start=(/1,1,k,i_time/), &
                                             count=(/nx_global,ny_global,1/)), &
                                'put var '//avail_hist_fields(n)%vname)
            endif
@@ -1435,7 +1472,7 @@ subroutine write_3d_and_4d_variables(ns, ncid)
 
              if (my_task == master_task) then
                     call check(nf90_put_var(ncid,varid,work_gr(:,:),    &
-                                    start=(/        1,        1,k/), &
+                                            start=(/1,1,k,i_time/), &
                                             count=(/nx_global,ny_global,1/)), &
                                'put var '//avail_hist_fields(n)%vname)
            endif
@@ -1460,7 +1497,7 @@ subroutine write_3d_and_4d_variables(ns, ncid)
                 work_gr(:,:) = work_g1(:,:)
                 if (my_task == master_task) then
                         call check(nf90_put_var(ncid,varid,work_gr(:,:), &
-                                         start=(/        1,        1,k,ic/), &
+                                                start=(/1,1,k,ic,i_time/), &
                                                 count=(/nx_global,ny_global,1, 1/)), &
                                    'put var '//avail_hist_fields(n)%vname)
                 endif
@@ -1486,7 +1523,7 @@ subroutine write_3d_and_4d_variables(ns, ncid)
                 work_gr(:,:) = work_g1(:,:)
                 if (my_task == master_task) then
                         call check(nf90_put_var(ncid,varid,work_gr(:,:), &
-                                         start=(/        1,        1,k,ic/), &
+                                                start=(/1,1,k,ic,i_time/), &
                                                 count=(/nx_global,ny_global,1, 1/)), &
                                   'put var '//avail_hist_fields(n)%vname)
                 endif
@@ -1512,7 +1549,7 @@ subroutine write_3d_and_4d_variables(ns, ncid)
                 work_gr(:,:) = work_g1(:,:)
                 if (my_task == master_task) then
                         call check(nf90_put_var(ncid,varid,work_gr(:,:), &
-                                         start=(/        1,        1,k,ic/), &
+                                                start=(/1,1,k,ic,i_time/), &
                                                 count=(/nx_global,ny_global,1, 1/)), &
                                    'put var '//avail_hist_fields(n)%vname)
                 endif
@@ -1552,7 +1589,7 @@ subroutine write_coordinate_variables_parallel(ncid, coord_var, var_nz)
             work1 = ULAT*rad_to_deg
         END SELECT
 
-        call put_2d_with_blocks(ncid, coord_var(i)%short_name, work1)
+        call put_2d_with_blocks(ncid, 1, coord_var(i)%short_name, work1)
     enddo
 
     ! Extra dimensions (NCAT, VGRD*)
@@ -1598,11 +1635,11 @@ subroutine write_grid_variables_parallel(ncid, var, var_nverts)
     integer :: varid
 
     if (igrd(n_tmask)) then
-        call put_2d_with_blocks(ncid, 'tmask', hm)
+        call put_2d_with_blocks(ncid, 1, 'tmask', hm)
     endif
 
     if (igrd(n_blkmask)) then
-        call put_2d_with_blocks(ncid, 'blkmask', bm)
+        call put_2d_with_blocks(ncid, 1, 'blkmask', bm)
     endif
 
     do i = 3, nvar      ! note n_tmask=1, n_blkmask=2
@@ -1630,7 +1667,7 @@ subroutine write_grid_variables_parallel(ncid, var, var_nverts)
                 work1 = ANGLET
             END SELECT
 
-            call put_2d_with_blocks(ncid, var(i)%req%short_name, work1)
+            call put_2d_with_blocks(ncid, 1, var(i)%req%short_name, work1)
         endif
     enddo
 
@@ -1679,17 +1716,16 @@ subroutine write_grid_variables_parallel(ncid, var, var_nverts)
 end subroutine write_grid_variables_parallel
 
 
-subroutine write_2d_variables_parallel(ns, ncid)
+subroutine write_2d_variables_parallel(ns, ncid, i_time)
 
-    integer, intent(in) :: ns
-    integer, intent(in) :: ncid
+    integer, intent(in) :: ns, ncid, i_time
 
     integer :: varid
     integer :: n
 
     do n=1, num_avail_hist_fields_2D
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            call put_2d_with_blocks(ncid, avail_hist_fields(n)%vname, &
+            call put_2d_with_blocks(ncid, i_time, avail_hist_fields(n)%vname, &
                                     a2D(:, :, n, :))
         endif
     enddo ! num_avail_hist_fields_2D
@@ -1698,10 +1734,9 @@ end subroutine write_2d_variables_parallel
 
 
 
-subroutine write_3d_and_4d_variables_parallel(ns, ncid)
+subroutine write_3d_and_4d_variables_parallel(ns, ncid, i_time)
 
-    integer, intent(in) :: ns
-    integer, intent(in) :: ncid
+    integer, intent(in) :: ns, ncid, i_time
 
     integer :: varid
     integer :: n, nn, k, ic
@@ -1709,7 +1744,7 @@ subroutine write_3d_and_4d_variables_parallel(ns, ncid)
     do n = n2D + 1, n3Dccum
         nn = n - n2D
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            call put_3d_with_blocks(ncid, avail_hist_fields(n)%vname, &
+            call put_3d_with_blocks(ncid, i_time, avail_hist_fields(n)%vname, &
                                     ncat_hist, a3Dc(:, :, :, nn, :))
         endif
     enddo ! num_avail_hist_fields_3Dc
@@ -1718,7 +1753,7 @@ subroutine write_3d_and_4d_variables_parallel(ns, ncid)
     do n = n3Dccum+1, n3Dzcum
         nn = n - n3Dccum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            call put_3d_with_blocks(ncid, avail_hist_fields(n)%vname, &
+            call put_3d_with_blocks(ncid, i_time, avail_hist_fields(n)%vname, &
                                     nzilyr, a3Dz(:, :, :, nn, :))
         endif
     enddo ! num_avail_hist_fields_3Dz
@@ -1727,7 +1762,7 @@ subroutine write_3d_and_4d_variables_parallel(ns, ncid)
     do n = n3Dzcum+1, n3Dbcum
         nn = n - n3Dzcum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            call put_3d_with_blocks(ncid, avail_hist_fields(n)%vname, &
+            call put_3d_with_blocks(ncid, i_time, avail_hist_fields(n)%vname, &
                                     nzblyr, a3Db(:, :, :, nn, :))
         endif
     enddo ! num_avail_hist_fields_3Db
@@ -1736,7 +1771,7 @@ subroutine write_3d_and_4d_variables_parallel(ns, ncid)
     do n = n3Dbcum+1, n4Dicum
         nn = n - n3Dbcum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            call put_4d_with_blocks(ncid, avail_hist_fields(n)%vname, &
+            call put_4d_with_blocks(ncid, i_time, avail_hist_fields(n)%vname, &
                                     nzilyr, ncat_hist, a4Di(:, :, :, :, nn, :))
         endif
     enddo ! num_avail_hist_fields_4Di
@@ -1745,7 +1780,7 @@ subroutine write_3d_and_4d_variables_parallel(ns, ncid)
     do n = n4Dicum+1, n4Dscum
         nn = n - n4Dicum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            call put_4d_with_blocks(ncid, avail_hist_fields(n)%vname, &
+            call put_4d_with_blocks(ncid, i_time, avail_hist_fields(n)%vname, &
                                     nzslyr, ncat_hist, a4Ds(:, :, :, :, nn, :))
         endif
     enddo ! num_avail_hist_fields_4Ds
@@ -1753,7 +1788,7 @@ subroutine write_3d_and_4d_variables_parallel(ns, ncid)
     do n = n4Dscum+1, n4Dbcum
         nn = n - n4Dscum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            call put_4d_with_blocks(ncid, avail_hist_fields(n)%vname, &
+            call put_4d_with_blocks(ncid, i_time, avail_hist_fields(n)%vname, &
                                     nzblyr, ncat_hist, a4Db(:, :, :, :, nn, :))
         endif
     enddo ! num_avail_hist_fields_4Db
@@ -1761,47 +1796,14 @@ subroutine write_3d_and_4d_variables_parallel(ns, ncid)
 end subroutine write_3d_and_4d_variables_parallel
 
 
-subroutine put_2d_with_blocks(ncid, var_name, data)
+subroutine put_2d_with_blocks(ncid, i_start, var_name, data)
 
-    integer, intent(in) :: ncid
+  ! by convention only, 2d variables are actually 3d if you consider time
+  ! sometimes the third array is a different index (e.g. number of bounds )
+
+    integer, intent(in) :: ncid, i_start
     character(len=*), intent(in) :: var_name
     real(kind=dbl_kind), dimension(nx_block, ny_block, max_blocks), intent(in) :: data
-
-    integer :: varid
-    integer :: iblk
-    integer :: ilo, jlo, ihi, jhi, gilo, gjlo, gihi, gjhi
-    integer, dimension(2) :: start, count
-    type(block) :: the_block
-
-    call check(nf90_inq_varid(ncid, var_name, varid), &
-               'inq varid for '//var_name)
-
-    do iblk=1, nblocks
-        the_block = get_block(blocks_ice(iblk), iblk)
-        ilo = the_block%ilo
-        jlo = the_block%jlo
-        ihi = the_block%ihi
-        jhi = the_block%jhi
-
-        gilo = the_block%i_glob(ilo)
-        gjlo = the_block%j_glob(jlo)
-        gihi = the_block%i_glob(ihi)
-        gjhi = the_block%j_glob(jhi)
-
-        start = (/ gilo, gjlo /)
-        count = (/ gihi - gilo + 1, gjhi - gjlo + 1 /)
-        call check(nf90_put_var(ncid, varid, real(data(ilo:ihi, jlo:jhi, iblk)), &
-                                start=start, count=count), &
-                    'put_2d_with_blocks put '//trim(var_name))
-    enddo
-
-end subroutine put_2d_with_blocks
-
-subroutine put_3d_with_blocks(ncid, var_name, len_3dim, data)
-
-    integer, intent(in) :: ncid, len_3dim
-    character(len=*), intent(in) :: var_name
-    real(kind=dbl_kind), dimension(nx_block, ny_block, len_3dim, max_blocks), intent(in) :: data
 
     integer :: varid
     integer :: iblk
@@ -1824,23 +1826,23 @@ subroutine put_3d_with_blocks(ncid, var_name, len_3dim, data)
         gihi = the_block%i_glob(ihi)
         gjhi = the_block%j_glob(jhi)
 
-        start = (/ gilo, gjlo, 1 /)
-        count = (/ gihi - gilo + 1, gjhi - gjlo + 1, len_3dim /)
-        call check(nf90_put_var(ncid, varid, &
-                                real(data(ilo:ihi, jlo:jhi, 1:len_3dim, iblk)), &
+        start = (/ gilo, gjlo,i_start /)
+        count = (/ gihi - gilo + 1, gjhi - gjlo + 1 , 1/)
+        call check(nf90_put_var(ncid, varid, real(data(ilo:ihi, jlo:jhi, iblk)), &
                                 start=start, count=count), &
-                    'put_3d_with_blocks put '//trim(var_name))
+                    'put_2d_with_blocks put '//trim(var_name))
     enddo
 
-end subroutine put_3d_with_blocks
+end subroutine put_2d_with_blocks
+
+subroutine put_3d_with_blocks(ncid, i_time, var_name, len_3dim, data)
+
+  ! by convention only, 3d variables are actually 4d if you consider time
 
 
-subroutine put_4d_with_blocks(ncid, var_name, len_3dim, len_4dim, data)
-
-    integer, intent(in) :: ncid, len_3dim, len_4dim
+    integer, intent(in) :: ncid, i_time, len_3dim
     character(len=*), intent(in) :: var_name
-    real(kind=dbl_kind), dimension(nx_block, ny_block, len_3dim, &
-                                   len_4dim, max_blocks), intent(in) :: data
+    real(kind=dbl_kind), dimension(nx_block, ny_block, len_3dim, max_blocks), intent(in) :: data
 
     integer :: varid
     integer :: iblk
@@ -1863,8 +1865,49 @@ subroutine put_4d_with_blocks(ncid, var_name, len_3dim, len_4dim, data)
         gihi = the_block%i_glob(ihi)
         gjhi = the_block%j_glob(jhi)
 
-        start = (/ gilo, gjlo, 1, 1 /)
-        count = (/ gihi - gilo + 1, gjhi - gjlo + 1, len_3dim, len_4dim /)
+        start = (/ gilo, gjlo, 1 , i_time/)
+        count = (/ gihi - gilo + 1, gjhi - gjlo + 1, len_3dim, 1 /)
+        call check(nf90_put_var(ncid, varid, &
+                                real(data(ilo:ihi, jlo:jhi, 1:len_3dim, iblk)), &
+                                start=start, count=count), &
+                    'put_3d_with_blocks put '//trim(var_name))
+    enddo
+
+end subroutine put_3d_with_blocks
+
+
+subroutine put_4d_with_blocks(ncid, i_time, var_name, len_3dim, len_4dim, data)
+  ! by convention only, 4d variables are actually 5d if you consider time
+
+
+    integer, intent(in) :: ncid, i_time, len_3dim, len_4dim
+    character(len=*), intent(in) :: var_name
+    real(kind=dbl_kind), dimension(nx_block, ny_block, len_3dim, &
+                                   len_4dim, max_blocks), intent(in) :: data
+
+    integer :: varid
+    integer :: iblk
+    integer :: ilo, jlo, ihi, jhi, gilo, gjlo, gihi, gjhi
+    integer, dimension(5) :: start, count
+    type(block) :: the_block
+
+    call check(nf90_inq_varid(ncid, var_name, varid), &
+               'inq varid for '//var_name)
+
+    do iblk=1, nblocks
+        the_block = get_block(blocks_ice(iblk), iblk)
+        ilo = the_block%ilo
+        jlo = the_block%jlo
+        ihi = the_block%ihi
+        jhi = the_block%jhi
+
+        gilo = the_block%i_glob(ilo)
+        gjlo = the_block%j_glob(jlo)
+        gihi = the_block%i_glob(ihi)
+        gjhi = the_block%j_glob(jhi)
+
+        start = (/ gilo, gjlo, 1, 1 , i_time/)
+        count = (/ gihi - gilo + 1, gjhi - gjlo + 1, len_3dim, len_4dim, 1 /)
         call check(nf90_put_var(ncid, varid, &
                                 real(data(ilo:ihi, jlo:jhi, 1:len_3dim, 1:len_4dim, iblk)), &
                                 start=start, count=count), &

@@ -51,7 +51,7 @@
       use ice_calendar, only: year_init, istep0, histfreq, histfreq_n, &
                               dumpfreq, dumpfreq_n, diagfreq, nstreams, &
                               npt, dt, ndtd, days_per_year, use_leap_years, &
-                              write_ic, dump_last
+                              write_ic, dump_last, hist_file_freq
       use ice_restart_shared, only: &
           restart, restart_ext, restart_dir, restart_file, pointer_file, &
           runid, runtype, use_restart_time, restart_format
@@ -134,6 +134,7 @@
         diagfreq,       diag_type,      diag_file,                      &
         print_global,   print_points,   latpnt,          lonpnt,        &
         dbug,           histfreq,       histfreq_n,      hist_avg,      &
+        hist_file_freq,                                                 &
         history_dir,    history_file,   history_deflate_level,          &
         history_parallel_io, history_chunksize_x, history_chunksize_y,  &
         write_ic,       incond_dir,     incond_file
@@ -222,6 +223,7 @@
       histfreq(4) = 'm'      ! output frequency option for different streams
       histfreq(5) = 'y'      ! output frequency option for different streams
       histfreq_n(:) = 1      ! output frequency 
+      hist_file_freq(:) = 'x' ! default to histfreq (below)
       hist_avg = .true.      ! if true, write time-averages (not snapshots)
       history_dir  = './'    ! write to executable dir for default
       history_file = 'iceh'  ! history file name prefix
@@ -731,6 +733,13 @@
       endif
 #endif
 
+      !is hist file freq not set, defailt to histfreq
+      if (my_task == master_task) then
+         do n = 1, max_nstrm
+            if (hist_file_freq(n)=='x') hist_file_freq(n) = histfreq(n)
+         enddo
+      endif
+
       call broadcast_scalar(days_per_year,      master_task)
       call broadcast_scalar(use_leap_years,     master_task)
       call broadcast_scalar(year_init,          master_task)
@@ -745,7 +754,10 @@
       call broadcast_scalar(diag_file,          master_task)
       do n = 1, max_nstrm
          call broadcast_scalar(histfreq(n),     master_task)
-      enddo  
+      enddo
+      do n = 1, max_nstrm
+         call broadcast_scalar(hist_file_freq(n),     master_task)
+      enddo
       call broadcast_array(histfreq_n,          master_task)
       call broadcast_scalar(hist_avg,           master_task)
       call broadcast_scalar(history_dir,        master_task)
@@ -916,6 +928,7 @@
          write(nu_diag,1010) ' print_points              = ', print_points
          write(nu_diag,1010) ' bfbflag                   = ', bfbflag
          write(nu_diag,1050) ' histfreq                  = ', histfreq(:)
+         write(nu_diag,1050) ' hist_file_freq            = ', hist_file_freq(:)
          write(nu_diag,1040) ' histfreq_n                = ', histfreq_n(:)
          write(nu_diag,1010) ' hist_avg                  = ', hist_avg
          if (.not. hist_avg) write (nu_diag,*) 'History data will be snapshots'
@@ -923,8 +936,10 @@
                                trim(history_dir)
          write(nu_diag,*)    ' history_file              = ', &
                                trim(history_file)
-         write(nu_diag,*)    ' history_deflate_level     = ', &
+         write(nu_diag,1020) ' history_deflate_level     = ', &
                                history_deflate_level
+         write(nu_diag,1010) ' history_parallel_io       = ', &
+                               history_parallel_io
          if (write_ic) then
             write (nu_diag,*) 'Initial condition will be written in ', &
                                trim(incond_dir)

@@ -25,7 +25,6 @@
       module ice_history_shared
 
       use ice_kinds_mod
-      use ice_fileunits, only: nu_diag
       use ice_domain_size, only: ncat, nilyr, nslyr, nblyr, max_nstrm
 
       implicit none
@@ -597,12 +596,13 @@
       subroutine construct_filename(ncfile,suffix,ns)
 
       use ice_calendar, only: time, sec, nyr, month, daymo,  &
-                              mday, write_ic, histfreq, histfreq_n, &
+                              mday, write_ic, histfreq, hist_file_freq, histfreq_n, &
                               year_init, new_year, new_month, new_day, &
                               dt
       use ice_restart_shared, only: lenstr
 
       character (char_len_long), intent(inout) :: ncfile
+      character (char_len) :: date_string
       character (len=2), intent(in) :: suffix
       integer (kind=int_kind), intent(in) :: ns
 
@@ -639,42 +639,41 @@
           endif
          endif
 
-         cstream = ''
-         if (ns > 10) write(cstream,'(i1.1)') ns-1
-! ABK: Disable the addition of a stream number to the history file
-! (now only occurs for more than 10 streams, which is v unlikely!)
+         ncfile=history_file(1:lenstr(history_file))
 
          if (histfreq(ns) == '1') then ! instantaneous, write every dt
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'_inst.', &
-            iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
-
+            ncfile=ncfile(1:lenstr(ncfile))//'_inst.'
          elseif (hist_avg) then    ! write averaged data
-
-          if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,a)')  &
-           history_file(1:lenstr(history_file))//trim(cstream), &
-             '.',iyear,'-',imonth,'-',iday,'.',suffix
-          elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
-           write(ncfile,'(a,a,i2.2,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'_', &
-            histfreq_n(ns),'h.',iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
-
-          elseif (histfreq(ns) == 'm'.or.histfreq(ns) == 'M') then ! monthly
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'.', &
-             iyear,'-',imonth,'.',suffix
-          elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
-           write(ncfile,'(a,a,i4.4,a,a)') &
-            history_file(1:lenstr(history_file))//trim(cstream),'.', &
-          iyear,'.',suffix
-          endif
-
+            if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
+               ncfile=ncfile(1:lenstr(ncfile))//'_d.'
+            elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
+               write(date_string,'(i2.2)') histfreq_n(ns)
+               ncfile=ncfile(1:lenstr(ncfile))//'_'//date_string(1:len(date_string))//'h.'
+            elseif (histfreq(ns) == 'm'.or.histfreq(ns) == 'M') then ! monthly
+               ncfile=ncfile(1:lenstr(ncfile))//'_m.'
+            elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
+               ncfile=ncfile(1:lenstr(ncfile))//'_y.'
+            endif
          else                     ! instantaneous with histfreq > dt
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file)),'_inst.', &
-             iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
+           ncfile=ncfile(1:lenstr(ncfile))//'_inst.'
          endif
+
+         if (hist_file_freq(ns) == 'd'.or.hist_file_freq(ns) == 'D') then     ! daily
+            write(date_string,'(i4.4,a,i2.2,a,i2.2,a,a)')  &
+                  iyear,'-',imonth,'-',iday,'.',suffix
+         elseif (hist_file_freq(ns) == 'h'.or.hist_file_freq(ns) == 'H') then ! hourly
+            write(date_string,'(i2.2,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
+               iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
+         elseif (hist_file_freq(ns) == 'm'.or.hist_file_freq(ns) == 'M') then ! monthly
+            write(date_string,'(i4.4,a,i2.2,a,a)') iyear,'-',imonth,'.',suffix
+         elseif (hist_file_freq(ns) == 'y'.or.hist_file_freq(ns) == 'Y') then ! yearly
+            write(date_string,'(i4.4,a,a)') iyear,'.',suffix
+         else !instantaneous
+            write(date_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
+                 iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
+         endif
+
+         ncfile=ncfile(1:lenstr(ncfile))//date_string(1:lenstr(date_string))
         endif
 
       end subroutine construct_filename
