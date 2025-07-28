@@ -733,7 +733,7 @@
       endif
 #endif
 
-      !is hist file freq not set, defailt to histfreq
+      !if hist_file_freq not set, default to histfreq
       if (my_task == master_task) then
          do n = 1, max_nstrm
             if (hist_file_freq(n)=='x') hist_file_freq(n) = histfreq(n)

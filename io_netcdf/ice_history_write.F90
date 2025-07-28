@@ -70,11 +70,16 @@
 
 
 subroutine check(status, msg)
+    use ice_fileunits, only: nu_diag, ice_stderr, ice_stdout
     integer, intent (in) :: status
     character(len=*), intent (in) :: msg
 
     if(status /= nf90_noerr) then
-        call abort_ice('ice: NetCDF error '//trim(nf90_strerror(status)//' '//trim(msg)))
+        !sometimes the netcdf error string is quit long, so print seperately to prevent overrun
+        write(nu_diag,*) trim(nf90_strerror(status))
+        write (ice_stdout,*) trim(nf90_strerror(status))
+        write (ice_stderr,*) trim(nf90_strerror(status))
+        call abort_ice('ice: NetCDF error '//trim(msg))
     end if
 end subroutine check
 
@@ -100,6 +105,7 @@ end subroutine check
 
       real (kind=real_kind) :: ltime                 !history timestamp in seconds
       character (char_len_long) :: ncfile(max_nstrm) !filenames
+      character (char_len) :: time_string            !model time for logging
       logical :: file_exists
       integer (kind=int_kind) :: & 
         ncid,   &    ! netcdf id
@@ -130,7 +136,7 @@ end subroutine check
         ltime=time/int(secday)
 #endif
 
-        call construct_filename(ncfile(ns),'nc',ns)
+        call construct_filename(ncfile(ns),'nc',ns,time_string)
 
         ! add local directory path name to ncfile
         if (write_ic) then
@@ -141,9 +147,8 @@ end subroutine check
 
         inquire(file=trim(ncfile(ns)),exist=file_exists)
         if (.not. file_exists) then 
-          write(nu_diag,*) 'creating'//trim(ncfile(ns))
           call ice_hist_create(ns, ncfile(ns), ncid, var, coord_var, var_nverts, var_nz)
-          write(nu_diag,*) 'created'//trim(ncfile(ns))
+          write(nu_diag,*) 'Created:'//trim(ncfile(ns))
         else
           if (history_parallel_io) then
             call check(nf90_open(trim(ncfile(ns)), NF90_WRITE, ncid, &
@@ -180,6 +185,10 @@ end subroutine check
         if (hist_avg) then
             call check(nf90_inq_varid(ncid,'time_bounds',varid), &
                        'inq varid time_bounds')
+            if (history_parallel_io) then
+              call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
+                      'parallel access time')
+            endif
             call check(nf90_put_var(ncid,varid,time_beg(ns),start=(/1,i_time/)), &
                        'put var time_bounds beginning')
             call check(nf90_put_var(ncid,varid,time_end(ns),start=(/2,i_time/)), &
@@ -231,7 +240,7 @@ end subroutine check
 
     if (my_task == master_task .or. history_parallel_io) then
         call check(nf90_close(ncid), 'closing netCDF history file')
-        write(nu_diag,*) 'Finished writing ',trim(ncfile(ns)),' at time'
+        write(nu_diag,*) 'Wrote ',trim(ncfile(ns)),' at time ',trim(time_string)
     endif
 
 end subroutine ice_write_hist
@@ -1200,7 +1209,6 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
 end subroutine write_coordinate_variables
 
 
-
 subroutine write_grid_variables(ncid, var, var_nverts)
 
     integer, intent(in) :: ncid
@@ -1597,6 +1605,8 @@ subroutine write_coordinate_variables_parallel(ncid, coord_var, var_nz)
         if (igrdz(i)) then
             call check(nf90_inq_varid(ncid, var_nz(i)%short_name, varid), &
                         'inq_varid '//var_nz(i)%short_name)
+            call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
+                      'parallel access time')
             SELECT CASE (var_nz(i)%short_name)
             CASE ('NCAT')
                 call check(nf90_put_var(ncid, varid, hin_max(1:ncat_hist)), &
@@ -1690,6 +1700,8 @@ subroutine write_grid_variables_parallel(ncid, var, var_nverts)
 
             call check(nf90_inq_varid(ncid, var_nverts(i)%short_name, varid), &
                        'inq varid '//var_nverts(i)%short_name)
+            call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
+                      'parallel access time')
 
             do iblk=1, nblocks
                 the_block = get_block(blocks_ice(iblk), iblk)
@@ -1813,7 +1825,9 @@ subroutine put_2d_with_blocks(ncid, i_start, var_name, data)
 
     call check(nf90_inq_varid(ncid, var_name, varid), &
                'inq varid for '//var_name)
-
+    call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
+              'parallel access time')
+    
     do iblk=1, nblocks
         the_block = get_block(blocks_ice(iblk), iblk)
         ilo = the_block%ilo
@@ -1852,6 +1866,8 @@ subroutine put_3d_with_blocks(ncid, i_time, var_name, len_3dim, data)
 
     call check(nf90_inq_varid(ncid, var_name, varid), &
                'inq varid for '//var_name)
+    call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
+              'parallel access time')
 
     do iblk=1, nblocks
         the_block = get_block(blocks_ice(iblk), iblk)
@@ -1893,6 +1909,8 @@ subroutine put_4d_with_blocks(ncid, i_time, var_name, len_3dim, len_4dim, data)
 
     call check(nf90_inq_varid(ncid, var_name, varid), &
                'inq varid for '//var_name)
+    call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
+              'parallel access time')
 
     do iblk=1, nblocks
         the_block = get_block(blocks_ice(iblk), iblk)
