@@ -214,7 +214,7 @@ if (my_task == master_task) then
 endif
 !
 if (nml_error /= 0) then
-   write(errstr, '(a,i3)') 'CICE ERROR failed opening input_ice.nml. Error code: ', nml_error
+   write(errstr, '(a,i3)') 'CICE: ERROR failed to open input_ice.nml. Error code: ', nml_error
    call abort_ice(trim(errstr))
 else
    nml_error =  1
