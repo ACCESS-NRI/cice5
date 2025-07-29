@@ -207,15 +207,16 @@ character (len=256) :: errstr, tmpstr         ! For holding namelist read errors
 ! all processors read the namelist--
 
 call get_fileunit(nu_nml)
-open(unit=nu_nml,file="input_ice.nml",form="formatted",status="old",iostat=nml_error)
+open(unit=nu_nml,file="input_ice.nml",form="formatted",status="old",iostat=nml_error, iomsg=errstr)
 !
 if (my_task == master_task) then
    write(ice_stdout,*)'CICE: input_ice.nml opened at unit = ', nu_nml
 endif
 !
 if (nml_error /= 0) then
-   write(errstr, '(a,i3)') 'CICE: ERROR failed to open input_ice.nml. Error code: ', nml_error
-   call abort_ice(trim(errstr))
+   write(tmpstr, '(a,i3,a)') 'CICE: ERROR failed to open input_ice.nml. Error code: ', nml_error, &
+                            '  - ' // trim(errstr)
+   call abort_ice(trim(tmpstr))
 else
    nml_error =  1
 endif
