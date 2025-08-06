@@ -186,7 +186,7 @@ end subroutine check
                        'inq varid time_bounds')
             if (history_parallel_io) then
               call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
-                      'parallel access time')
+                      'parallel access time_bounds')
             endif
             call check(nf90_put_var(ncid,varid,time_beg(ns),start=(/1,i_time/)), &
                        'put var time_bounds beginning')
@@ -197,7 +197,8 @@ end subroutine check
 
     call broadcast_scalar(i_time, master_task) !we need this on every processor for parallel writes
     if (i_time == 1) then
-      ! these are time-invariant, only write once
+      ! these variables are time-invariant, only write once per file
+      ! ice_hist_create is only run on master task, but these variables are distributed, so call on all tasks
       !-----------------------------------------------------------------
       ! write coordinate variables
       !-----------------------------------------------------------------
@@ -247,9 +248,6 @@ end subroutine ice_write_hist
 subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
 
       use ice_calendar, only: idate, idate0, &
-! #ifdef ACCESS
-!         month, daymo, &
-! #endif
         dayyr, days_per_year, use_leap_years
       use ice_restart_shared, only: runid
 
@@ -1699,7 +1697,7 @@ subroutine write_grid_variables_parallel(ncid, var, var_nverts)
             call check(nf90_inq_varid(ncid, var_nverts(i)%short_name, varid), &
                        'inq varid '//var_nverts(i)%short_name)
             call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
-                      'parallel access time')
+                      'parallel access '//var_nverts(i)%short_name)
 
             do iblk=1, nblocks
                 the_block = get_block(blocks_ice(iblk), iblk)
@@ -1825,8 +1823,8 @@ subroutine put_2d_with_blocks(ncid, i_start, var_name, data)
     call check(nf90_inq_varid(ncid, var_name, varid), &
                'inq varid for '//var_name)
     call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
-              'parallel access time')
-    
+              'parallel access '//var_name)
+
     do iblk=1, nblocks
         the_block = get_block(blocks_ice(iblk), iblk)
         ilo = the_block%ilo
@@ -1866,7 +1864,7 @@ subroutine put_3d_with_blocks(ncid, i_time, var_name, len_3dim, data)
     call check(nf90_inq_varid(ncid, var_name, varid), &
                'inq varid for '//var_name)
     call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
-              'parallel access time')
+              'parallel access '//var_name)
 
     do iblk=1, nblocks
         the_block = get_block(blocks_ice(iblk), iblk)
@@ -1909,7 +1907,7 @@ subroutine put_4d_with_blocks(ncid, i_time, var_name, len_3dim, len_4dim, data)
     call check(nf90_inq_varid(ncid, var_name, varid), &
                'inq varid for '//var_name)
     call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
-              'parallel access time')
+              'parallel access '//var_name)
 
     do iblk=1, nblocks
         the_block = get_block(blocks_ice(iblk), iblk)

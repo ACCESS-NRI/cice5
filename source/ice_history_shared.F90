@@ -652,6 +652,8 @@
             write(ldate_string,'(i1)') histfreq_n(ns)  
          endif
 
+         ncfile=ncfile(1:lenstr(ncfile))//'-'//trim(ldate_string)
+
          ! name file based on history frequency (e.g. "daily-mean")
          if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
             ncfile=ncfile(1:lenstr(ncfile))//'daily'
@@ -665,7 +667,7 @@
 
          if (hist_avg) then
             ncfile=ncfile(1:lenstr(ncfile))//'-mean'
-         else                     ! instantaneous with histfreq > dt
+         else
             ncfile=ncfile(1:lenstr(ncfile))//'-snap'
          endif
 
