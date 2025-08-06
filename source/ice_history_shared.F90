@@ -661,6 +661,7 @@
             ncfile=ncfile(1:lenstr(ncfile))//'monthly'
          elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
             ncfile=ncfile(1:lenstr(ncfile))//'yearly'
+         endif
 
          if (hist_avg) then
             ncfile=ncfile(1:lenstr(ncfile))//'-mean'
