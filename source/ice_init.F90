@@ -736,7 +736,7 @@
       !if hist_file_freq not set, default to histfreq
       if (my_task == master_task) then
          do n = 1, max_nstrm
-            if (hist_file_freq(n)=='x' .or. hist_file_freq(ns) == 'D') hist_file_freq(n) = histfreq(n)
+            if (hist_file_freq(n)=='x' .or. hist_file_freq(n) == 'X') hist_file_freq(n) = histfreq(n)
          enddo
       endif
 

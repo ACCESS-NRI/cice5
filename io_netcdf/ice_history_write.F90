@@ -246,11 +246,11 @@ end subroutine ice_write_hist
 
 subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
 
-      use ice_calendar, only: idate, idate0
+      use ice_calendar, only: idate, idate0, &
 ! #ifdef ACCESS
 !         month, daymo, &
 ! #endif
-!         dayyr, days_per_year, use_leap_years
+        dayyr, days_per_year, use_leap_years
       use ice_restart_shared, only: runid
 
       integer (kind=int_kind), intent(in) :: ns
