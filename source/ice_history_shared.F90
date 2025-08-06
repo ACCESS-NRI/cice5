@@ -612,7 +612,6 @@
       integer (kind=int_kind), intent(in) :: ns
 
       integer (kind=int_kind) :: iyear, imonth, iday, isec
-      character (len=1) :: cstream
 
         iyear = nyr + year_init - 1 ! set year_init=1 in ice_in to get iyear=nyr
         imonth = month
@@ -624,7 +623,7 @@
 #endif
         ! construct filename
         if (write_ic) then
-            ncfile=incond_file(1:lenstr(incond_file))//'.'
+            ncfile=incond_file(1:lenstr(incond_file))
             write(ldate_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5)')  &
                iyear,'-',imonth,'-',iday,'-',sec
         else
@@ -646,45 +645,40 @@
 
          ncfile=history_file(1:lenstr(history_file))
 
-         ! frequency of history ouput (typicall 1)
+         ! frequency of history ouput (typically 1)
          if (histfreq_n(ns)>9) then
             write(ldate_string,'(i2)') histfreq_n(ns)  
          else
             write(ldate_string,'(i1)') histfreq_n(ns)  
          endif
 
-         !name file based on history frequency (e.g. "daily-mean")
-         if (histfreq(ns) == '1') then ! instantaneous, write every dt
-            ncfile=ncfile(1:lenstr(ncfile))//'-snap'
-         elseif (hist_avg) then    ! write averaged data
-            ncfile=ncfile(1:lenstr(ncfile))//'-'//trim(ldate_string)
-            if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
-               ncfile=ncfile(1:lenstr(ncfile))//'daily-mean'
-            elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
-               ncfile=ncfile(1:lenstr(ncfile))//'hourly-mean'
-            elseif (histfreq(ns) == 'm'.or.histfreq(ns) == 'M') then ! monthly
-               ncfile=ncfile(1:lenstr(ncfile))//'monthly-mean'
-            elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
-               ncfile=ncfile(1:lenstr(ncfile))//'yearly-mean'
-            endif
+         ! name file based on history frequency (e.g. "daily-mean")
+         if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
+            ncfile=ncfile(1:lenstr(ncfile))//'daily'
+         elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
+            ncfile=ncfile(1:lenstr(ncfile))//'hourly'
+         elseif (histfreq(ns) == 'm'.or.histfreq(ns) == 'M') then ! monthly
+            ncfile=ncfile(1:lenstr(ncfile))//'monthly'
+         elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
+            ncfile=ncfile(1:lenstr(ncfile))//'yearly'
+
+         if (hist_avg) then
+            ncfile=ncfile(1:lenstr(ncfile))//'-mean'
          else                     ! instantaneous with histfreq > dt
-           ncfile=ncfile(1:lenstr(ncfile))//'-snap'
+            ncfile=ncfile(1:lenstr(ncfile))//'-snap'
          endif
 
-         !date in filename is based on history file output frequency (e.g. "0001-01")
+         ! date in filename is based on history file output frequency (e.g. "0001-01" for one file per month)
          if (hist_file_freq(ns) == 'd'.or.hist_file_freq(ns) == 'D') then     ! daily
-            write(ldate_string,'(i4.4,a,i2.2,a,i2.2)')  &
-                  iyear,'-',imonth,'-',iday
+            write(ldate_string,'(i4.4,a,i2.2,a,i2.2)') iyear,'-',imonth,'-',iday
          elseif (hist_file_freq(ns) == 'h'.or.hist_file_freq(ns) == 'H') then ! hourly
-            write(ldate_string,'(i2.2,a,i4.4,a,i2.2,a,i2.2,a,i5.5)')  &
-               iyear,'-',imonth,'-',iday,'-',sec
+            write(ldate_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5)') iyear,'-',imonth,'-',iday,'-',sec
          elseif (hist_file_freq(ns) == 'm'.or.hist_file_freq(ns) == 'M') then ! monthly
             write(ldate_string,'(i4.4,a,i2.2)') iyear,'-',imonth
          elseif (hist_file_freq(ns) == 'y'.or.hist_file_freq(ns) == 'Y') then ! yearly
-            write(ldate_string,'(i4.4,a,a)') iyear
+            write(ldate_string,'(i4.4)') iyear
          else !instantaneous
-            write(ldate_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5)')  &
-                 iyear,'-',imonth,'-',iday,'-',sec
+            write(ldate_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5)') iyear,'-',imonth,'-',iday,'-',sec
          endif
 
         endif

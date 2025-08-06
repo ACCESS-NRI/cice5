@@ -38,6 +38,7 @@
     use ice_history_shared
     use ice_itd, only: hin_max
     use ice_calendar, only: write_ic, histfreq
+    use ice_fileunits, only: nu_diag, ice_stderr, ice_stdout
 
 
       implicit none
@@ -70,7 +71,6 @@
 
 
 subroutine check(status, msg)
-    use ice_fileunits, only: nu_diag, ice_stderr, ice_stdout
     integer, intent (in) :: status
     character(len=*), intent (in) :: msg
 
@@ -97,7 +97,6 @@ end subroutine check
         month, daymo, &
 #endif
         dayyr, days_per_year, use_leap_years
-      use ice_fileunits, only: nu_diag
 
       integer (kind=int_kind), intent(in) :: ns !history stream number
 
@@ -247,12 +246,11 @@ end subroutine ice_write_hist
 
 subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
 
-      use ice_calendar, only: time, sec, idate, idate0, &
-#ifdef ACCESS
-        month, daymo, &
-#endif
-        dayyr, days_per_year, use_leap_years
-      use ice_fileunits, only: nu_diag
+      use ice_calendar, only: idate, idate0
+! #ifdef ACCESS
+!         month, daymo, &
+! #endif
+!         dayyr, days_per_year, use_leap_years
       use ice_restart_shared, only: runid
 
       integer (kind=int_kind), intent(in) :: ns
@@ -1606,7 +1604,7 @@ subroutine write_coordinate_variables_parallel(ncid, coord_var, var_nz)
             call check(nf90_inq_varid(ncid, var_nz(i)%short_name, varid), &
                         'inq_varid '//var_nz(i)%short_name)
             call check(nf90_var_par_access(ncid, varid, NF90_COLLECTIVE), &
-                      'parallel access time')
+                      'parallel access '//var_nz(i)%short_name)
             SELECT CASE (var_nz(i)%short_name)
             CASE ('NCAT')
                 call check(nf90_put_var(ncid, varid, hin_max(1:ncat_hist)), &
@@ -1812,6 +1810,7 @@ subroutine put_2d_with_blocks(ncid, i_start, var_name, data)
 
   ! by convention only, 2d variables are actually 3d if you consider time
   ! sometimes the third array is a different index (e.g. number of bounds )
+  ! typically i_start is the current time index, but can be different
 
     integer, intent(in) :: ncid, i_start
     character(len=*), intent(in) :: var_name
