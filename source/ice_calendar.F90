@@ -111,8 +111,9 @@
          write_history(max_nstrm) ! write history now
 
       character (len=1), public :: &
-         histfreq(max_nstrm), & ! history output frequency, 'y','m','d','h','1'
-         dumpfreq               ! restart frequency, 'y','m','d'
+         histfreq(max_nstrm),       & ! history output frequency, 'y','m','d','h','1'
+         hist_file_freq(max_nstrm), & ! history output file save frequency, 'y','m','d','h','1'
+         dumpfreq                     ! restart frequency, 'y','m','d'
 
       character (len=char_len),public :: calendar_type
 
