@@ -1498,8 +1498,8 @@
         enddo ! num_avail_hist_fields_tot
         write(nu_diag,*) ' '
       endif
-  100 format (1x,a40,2x,a16,2x,a12,1x,a1,2x,i6)
-  101 format (2x,a19,10x,a16,9x,a12,2x,a,3x,a1)
+  100 format (1x,a50,2x,a16,2x,a16,1x,a1,2x,i6)
+  101 format (2x,a19,21x,a16,5x,a16,2x,a,3x,a1)
 
       call broadcast_array(ntmp, master_task)
       do ns = 1, nstreams
