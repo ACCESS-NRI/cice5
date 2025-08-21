@@ -266,7 +266,7 @@
            f_sidmassth = 'x', f_sidmassdyn = 'x', &
            f_sidmassgrowthwat = 'x', &
            f_sidmassgrowthbot = 'x', &
-           f_sidmasssi = 'x', &
+           f_sidmasssi = 'x', f_sidmassgrowthsi = 'x', &
            f_sidmassevapsubl = 'x', &
            f_sidmassmelttop = 'x', &
            f_sidmassmeltbot = 'x', &
@@ -528,7 +528,7 @@
            n_sidmassth  , n_sidmassdyn,  &
            n_sidmassgrowthwat, &
            n_sidmassgrowthbot,  &
-           n_sidmasssi,  &
+           n_sidmasssi, n_sidmassgrowthsi,  &
            n_sidmasssubl, &
            n_sidmassevapsubl,  &
            n_sndmasssubl,  &

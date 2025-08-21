@@ -352,6 +352,7 @@
       call broadcast_scalar (f_sidmassgrowthwat, master_task)
       call broadcast_scalar (f_sidmassgrowthbot, master_task)
       call broadcast_scalar (f_sidmasssi, master_task)
+      call broadcast_scalar (f_sidmassgrowthsi, master_task)
       call broadcast_scalar (f_sidmassevapsubl, master_task)
       call broadcast_scalar (f_sndmasssubl, master_task)
       call broadcast_scalar (f_sidmassmelttop, master_task)
@@ -1150,6 +1151,7 @@
              "none", c1, c0,         &
              ns1, f_sidconcdyn)
 
+             !to-do: the next set of vars surely should be ice area weighted ?
          call define_hist_field(n_sidmassth,"sidmassth","kg m^-2 s^-1",tstr2D, tcstr,  &
              "sea ice mass change from thermodynamics",              &
              "none", c1, c0,         &
@@ -1174,6 +1176,11 @@
              "sea ice mass change from snow-ice formation", &
              "none", c1, c0,         &
              ns1, f_sidmasssi)
+
+        call define_hist_field(n_sidmassgrowthsi,"sidmassgrowthsi","kg m^-2 s^-1",tstr2D, tcstr,  &
+             "sea ice mass change from snow-ice formation", &
+             "none", c1, c0,         &
+             ns1, f_sidmassgrowthsi)
 
          call define_hist_field(n_sidmassevapsubl,"sidmassevapsubl","kg m^-2 s^-1",tstr2D, tcstr,  &
              "sea ice mass change from evaporation and sublimation", &
@@ -2392,6 +2399,22 @@
            enddo
            enddo
            call accum_hist_field(n_sidmasssi, iblk, worka(:,:), a2D)
+         endif
+
+         if (f_sidmassgrowthsi(1:1) /= 'x') then
+           !To-do: revisit to see if still needs aice/aice_init weighting
+            !to-do : divide by dt
+           worka(:,:) = c0
+           do j = jlo, jhi
+           do i = ilo, ihi
+              if (aice_init(i,j,iblk) > puny) then
+               worka(i,j) = snoice(i,j,iblk)*rhoi/dt
+         !         worka(i,j) = aice(i,j,iblk)*snoice(i,j,iblk)*rhoi /&
+         !  (dt * aice_init(i,j,iblk))
+              endif
+           enddo
+           enddo
+           call accum_hist_field(n_sidmassgrowthsi, iblk, worka(:,:), a2D)
          endif
 
          if (f_sidmassevapsubl(1:1) /= 'x') then
