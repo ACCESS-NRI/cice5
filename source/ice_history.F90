@@ -124,7 +124,8 @@
                ! backspace and re-read erroneous line
                backspace(nu_nml)
                read(nu_nml,fmt='(A)') tmpstr2
-               call abort_ice('ice ERROR: ' // trim(nml_name) // ' reading ')
+               call abort_ice('ice ERROR: ' // trim(nml_name) // ' reading '// &
+                    trim(tmpstr2))
             endif
          end do
 
@@ -2116,8 +2117,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                worka(i,j) = (rhoi*p5*(vice(i+1,j,iblk)+vice(i,j,iblk))*HTE(i,j,iblk) &
-                            + rhos*p5*(vsno(i+1,j,iblk)+vsno(i,j,iblk))*HTE(i,j,iblk)) &
+                worka(i,j) = p5*(rhoi*(vice(i+1,j,iblk)+vice(i,j,iblk))*HTE(i,j,iblk) &
+                            + rhos*(vsno(i+1,j,iblk)+vsno(i,j,iblk))*HTE(i,j,iblk)) &
                             *  p5*(uvel(i,j-1,iblk)+uvel(i,j,iblk))
            enddo
            enddo
