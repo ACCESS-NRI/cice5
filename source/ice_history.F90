@@ -1207,6 +1207,11 @@
              "none", c1, c0,         &
              ns1, f_sidmasslat)
 
+         call define_hist_field(n_sidmasslat,"sidmasslat","kg m^-2 s^-1",tstr2D, tcstr,  & 
+            "sea ice mass change from lateral ice melt",                      &
+             "none", c1, c0,         &
+             ns1, f_sidmassmeltlat)
+
          call define_hist_field(n_sndmasssnf,"sndmasssnf","kg m^-2 s^-1",tstr2D, tcstr,  & 
             "snow mass change from snow fall", &
              "none", c1, c0,         &
@@ -2477,7 +2482,7 @@
            call accum_hist_field(n_sidmassmeltbot, iblk, worka(:,:), a2D)
          endif
 
-       if (f_sidmasslat(1:1) /= 'x') then
+       if (f_sidmasslat(1:1) /= 'x' .or. f_sidmassmeltlat(1:1) /= 'x') then
            !To-do: revisit to see if still needs aice/aice_init weighting
             !to-do : divide by dt
            worka(:,:) = c0
