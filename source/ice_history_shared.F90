@@ -198,7 +198,8 @@
 !          f_example   = 'md', &
            f_hi        = 'm', f_hs         = 'm', &
            f_snowfrac  = 'x', f_snowfracn  = 'x', &
-           f_Tsfc      = 'm', f_aice       = 'm', &
+           f_Tsfc      = 'm', & 
+           f_aice      = 'm', f_siconc    = 'x' , & !same var, two names
            f_uvel      = 'm', f_vvel       = 'm', &
            f_uatm      = 'm', f_vatm       = 'm', &
            f_fswdn     = 'm', f_flwdn      = 'm', &
@@ -380,6 +381,7 @@
            f_iage,      f_FY       , &
            f_hisnap,    f_aisnap   , &
            f_sithick,   f_sisnthick, &
+           f_siconc, &
            f_simass,    f_sisnmass, &
            f_sisnconc,  f_siage,     &
            f_sifb,                   &

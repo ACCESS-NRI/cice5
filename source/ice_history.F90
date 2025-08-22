@@ -456,6 +456,11 @@
              "ice area  (aggregate)",                             &
              "none", c1, c0,                                      &
              ns1, f_aice)
+
+         call define_hist_field(n_aice,"siconc","1",tstr2D, tcstr,    &
+             "sea ice area fraction",                             &
+             "none", c1, c0,                                      &
+             ns1, f_siconc)
       
          call define_hist_field(n_uvel,"uvel","m/s",ustr2D, ucstr,  &
              "ice velocity (x)",                                  &
@@ -1004,6 +1009,7 @@
               ns1, f_FY)
       ! CMIP6 2D variables
 
+                ! check these definitions against the intensive/extensive/inst def in notz et al 2016
          call define_hist_field(n_sithick,"sithick","m",tstr2D, tcstr, &
              "sea ice thickness",                             &
              "volume divided by area", c1, c0, &
@@ -2054,7 +2060,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi 
-             if (aice(i,j,iblk) > puny) worka(i,j) = snowfrac(i,j,iblk)
+             if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) worka(i,j) = aice(i,j,iblk) * snowfrac(i,j,iblk)
            enddo
            enddo
             call accum_hist_field(n_sisnconc, iblk, worka(:,:), a2D)
