@@ -364,6 +364,7 @@
       call broadcast_scalar (f_sndmasssnf, master_task)
       call broadcast_scalar (f_sndmassmelt, master_task)
       call broadcast_scalar (f_sndmassdyn, master_task)
+      call broadcast_scalar (f_sisndmassdyn, master_task)
       call broadcast_scalar (f_siflswdtop, master_task)
       call broadcast_scalar (f_siflswutop, master_task)
       call broadcast_scalar (f_siflswdbot, master_task)
@@ -1243,9 +1244,14 @@
              ns1, f_sndmassmelt)
 
          call define_hist_field(n_sndmassdyn,"sndmassdyn","kg m-2 s-1",tstr2D, tcstr,  &
-             "snow mass change from dynamics ridging",                      &
+             "snow mass change from dynamics (advection)",                      &
              "none", c1, c0,         &
              ns1, f_sndmassdyn)
+
+         call define_hist_field(n_sndmassdyn,"sisndmassdyn","kg m-2 s-1",tstr2D, tcstr,  &
+             "snow mass rate of change through advection by sea ice dynamics",           &
+             "none", c1, c0,         &
+             ns1, f_sisndmassdyn)
 
          call define_hist_field(n_siflswdtop,"siflswdtop","W/m2",tstr2D, tcstr, &
              "down shortwave flux over sea ice", &
@@ -1782,7 +1788,7 @@
             call accum_hist_field(n_snowfrac, iblk, snowfrac(:,:,iblk), a2D)
          if (f_Tsfc   (1:1) /= 'x') &
              call accum_hist_field(n_Tsfc,   iblk, trcr(:,:,nt_Tsfc,iblk), a2D)
-         if (f_aice   (1:1) /= 'x') &
+         if (f_aice   (1:1) /= 'x' .or. f_siconc   (1:1) /= 'x') &
              call accum_hist_field(n_aice,   iblk, aice(:,:,iblk), a2D)
          if (f_uvel   (1:1) /= 'x') &
              call accum_hist_field(n_uvel,   iblk, uvel(:,:,iblk), a2D)
@@ -2061,7 +2067,8 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi 
-             if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) worka(i,j) = aice(i,j,iblk) * snowfrac(i,j,iblk)
+             if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) & 
+                worka(i,j) = aice(i,j,iblk) * snowfrac(i,j,iblk)
            enddo
            enddo
             call accum_hist_field(n_sisnconc, iblk, worka(:,:), a2D)
@@ -2575,7 +2582,7 @@
            call accum_hist_field(n_sndmassmelt, iblk, worka(:,:), a2D)
          endif
 
-         if (f_sndmassdyn(1:1) /= 'x') then
+         if (f_sndmassdyn(1:1) /= 'x' .or. f_sisndmassdyn(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi

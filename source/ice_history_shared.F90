@@ -275,7 +275,7 @@
            f_sidmasslat = 'x', f_sidmassmeltlat = 'x', & !same var, two names
            f_sndmasssnf = 'x', &
            f_sndmassmelt = 'x', &
-           f_sndmassdyn = 'x', &
+           f_sndmassdyn = 'x', f_sisndmassdyn = 'x', &
            f_sndmasssubl = 'x', &
            f_sidivvel = 'x', &
            f_siflswdtop = 'x', &
@@ -331,7 +331,8 @@
 !          f_example  , &
            f_hi,        f_hs       , &
            f_snowfrac,  f_snowfracn, &
-           f_Tsfc,      f_aice     , &
+           f_Tsfc     , &
+           f_aice     , f_siconc   , &
            f_uvel,      f_vvel     , &
            f_uatm,      f_vatm     , &
            f_fswdn,     f_flwdn    , &
@@ -381,7 +382,6 @@
            f_iage,      f_FY       , &
            f_hisnap,    f_aisnap   , &
            f_sithick,   f_sisnthick, &
-           f_siconc, &
            f_simass,    f_sisnmass, &
            f_sisnconc,  f_siage,     &
            f_sifb,                   &
@@ -410,7 +410,7 @@
            f_sidmasslat, f_sidmassmeltlat,&
            f_sndmasssnf, &
            f_sndmassmelt, &
-           f_sndmassdyn, &
+           f_sndmassdyn, f_sisndmassdyn, &
            f_siflswdtop, &
            f_siflswutop, &
            f_siflswdbot, &
