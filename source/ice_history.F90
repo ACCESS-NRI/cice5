@@ -369,6 +369,7 @@
       call broadcast_scalar (f_sifllwutop, master_task)
       call broadcast_scalar (f_siflsenstop, master_task)
       call broadcast_scalar (f_siflsensupbot, master_task)
+      call broadcast_scalar (f_siflsensbot, master_task)
       call broadcast_scalar (f_sifllatstop, master_task)
       call broadcast_scalar (f_siflcondtop, master_task)
       call broadcast_scalar (f_siflcondbot, master_task)
@@ -1262,6 +1263,11 @@
              "sensible heat flux at bottom of sea ice", &
              "positive downward", c1, c0,                            &
              ns1, f_siflsensupbot, avg_ice_present=.true., mask_ice_free_points=.true.)
+
+             call define_hist_field(n_siflsensupbot,"siflsensbot","W/m^2",tstr2D, tcstr, &
+             "sensible heat flux at bottom of sea ice", &
+             "positive downward", c1, c0,                            &
+             ns1, f_siflsensbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sifllatstop,"sifllatstop","W/m^2",tstr2D, tcstr, &
              "latent heat flux over sea ice", &
@@ -2616,7 +2622,7 @@
            call accum_hist_field(n_siflsenstop, iblk, worka(:,:), a2D)
          endif
 
-         if (f_siflsensupbot(1:1) /= 'x') then
+         if (f_siflsensupbot(1:1) /= 'x' .or. f_siflsensbot(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi

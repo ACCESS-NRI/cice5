@@ -282,7 +282,7 @@
            f_sifllwdtop = 'x', &
            f_sifllwutop = 'x', &
            f_siflsenstop = 'x', &
-           f_siflsensupbot = 'x', &
+           f_siflsensupbot = 'x', f_siflsensbot = 'x', & !same var, two names
            f_sifllatstop = 'x', &
            f_siflcondtop = 'x', &
            f_siflcondbot = 'x', &
@@ -413,7 +413,7 @@
            f_sifllwdtop, &
            f_sifllwutop, &
            f_siflsenstop, &
-           f_siflsensupbot, &
+           f_siflsensupbot, f_siflsensbot, &
            f_sifllatstop, &
            f_siflcondtop, &
            f_siflcondbot, &
