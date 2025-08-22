@@ -325,9 +325,11 @@
       call broadcast_scalar (f_aisnap, master_task)
       call broadcast_scalar (f_hisnap, master_task)
       call broadcast_scalar (f_sithick, master_task)
+      call broadcast_scalar (f_simass, master_task)
       call broadcast_scalar (f_siage, master_task)
       call broadcast_scalar (f_sisnconc, master_task)
       call broadcast_scalar (f_sisnthick, master_task)
+      call broadcast_scalar (f_sisnmass, master_task)
       call broadcast_scalar (f_sitemptop, master_task)
       call broadcast_scalar (f_sitempsnic, master_task)
       call broadcast_scalar (f_sitempbot, master_task)
@@ -339,7 +341,6 @@
       call broadcast_scalar (f_sistrydtop, master_task)
       call broadcast_scalar (f_sistrxubot, master_task)
       call broadcast_scalar (f_sistryubot, master_task)
-
       call broadcast_scalar (f_sicompstren, master_task)
       call broadcast_scalar (f_sispeed, master_task)
       call broadcast_scalar (f_sialb, master_task)
@@ -1008,6 +1009,11 @@
              "volume divided by area", c1, c0, &
              ns1, f_sithick, avg_ice_present=.true., mask_ice_free_points=.true.)
 
+         call define_hist_field(n_simass,"simass","kg m^-2",tstr2D, tcstr, &
+             "sea ice mass",                             &
+             "mass divided by area", c1, c0, &
+             ns1, f_simass, avg_ice_present=.true., mask_ice_free_points=.true.)
+
          call define_hist_field(n_siage,"siage","s",tstr2D, tcstr,    &
              "sea ice age",                             &
              "none", c1, c0,                                      &
@@ -1027,6 +1033,11 @@
              "sea ice snow thickness",                            &
              "snow volume divided by area", c1, c0, &
              ns1, f_sisnthick, avg_ice_present=.true., mask_ice_free_points=.true.)
+
+         call define_hist_field(n_sisnmass,"sisnmass","m",tstr2D, tcstr,    &
+             "snow mass per areas",                            &
+             "snow mass divided by area", c1, c0, &
+             ns1, f_sisnmass, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sitemptop,"sitemptop","K",tstr2D, tcstr,    &
              "sea ice surface temperature", &
@@ -2018,6 +2029,16 @@
            call accum_hist_field(n_sithick, iblk, worka(:,:), a2D)
          endif
 
+         if (f_simass(1:1) /= 'x') then
+           worka(:,:) = c0
+           do j = jlo, jhi
+           do i = ilo, ihi
+              if (aice(i,j,iblk) > puny) worka(i,j) = rhoi*vice(i,j,iblk)
+           enddo
+           enddo
+           call accum_hist_field(n_simass, iblk, worka(:,:), a2D)
+         endif
+
          if (f_siage(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
@@ -2048,8 +2069,18 @@
            enddo
            enddo
            call accum_hist_field(n_sisnthick, iblk, worka(:,:), a2D)
-           endif
+        endif
 
+        if (f_sisnmass(1:1) /= 'x') then
+           worka(:,:) = c0
+           do j = jlo, jhi
+           do i = ilo, ihi 
+             if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) &
+                 worka(i,j) = vsno(i,j,iblk) * rhos
+           enddo
+           enddo
+           call accum_hist_field(n_sisnmass, iblk, worka(:,:), a2D)
+        endif
 
         if (f_sitemptop(1:1) /= 'x') then
            worka(:,:) = c0 

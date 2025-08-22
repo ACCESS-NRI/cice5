@@ -248,6 +248,7 @@
            f_iage      = 'm', f_FY         = 'm', &
            f_hisnap    = 'm', f_aisnap     = 'm', &
            f_sithick   = 'x', f_sisnthick  = 'x', &
+           f_simass    = 'x', f_sisnmass   = 'x', &
            f_sisnconc  = 'x', f_siage      = 'x', &
            f_sitemptop = 'x', f_sitempsnic = 'x', &
            f_sitempbot = 'x', f_sispeed    = 'x', &
@@ -379,6 +380,7 @@
            f_iage,      f_FY       , &
            f_hisnap,    f_aisnap   , &
            f_sithick,   f_sisnthick, &
+           f_simass,    f_sisnmass, &
            f_sisnconc,  f_siage,     &
            f_sifb,                   &
            f_sitemptop, f_sitempsnic,&
@@ -510,6 +512,7 @@
            n_fsalt      , n_fsalt_ai   , &
            n_sidivvel,                   &
            n_sithick    , n_sisnthick  , &
+           n_simass     , n_sisnmass   , &
            n_sisnconc,    n_siage,       &
            n_sifb,                       &
            n_sitemptop  , n_sitempsnic , &
