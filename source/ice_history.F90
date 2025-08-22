@@ -234,6 +234,7 @@
       call broadcast_scalar (f_snowfracn, master_task)
       call broadcast_scalar (f_Tsfc, master_task)
       call broadcast_scalar (f_aice, master_task)
+      call broadcast_scalar (f_siconc, master_task)
       call broadcast_scalar (f_uvel, master_task)
       call broadcast_scalar (f_vvel, master_task)
       call broadcast_scalar (f_uatm, master_task)
