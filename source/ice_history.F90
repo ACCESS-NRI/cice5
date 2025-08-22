@@ -1208,7 +1208,7 @@
              "none", c1, c0,         &
              ns1, f_sidmasslat)
 
-         call define_hist_field(n_sidmasslat,"sidmasslat","kg m^-2 s^-1",tstr2D, tcstr,  & 
+         call define_hist_field(n_sidmasslat,"sidmassmeltlat","kg m^-2 s^-1",tstr2D, tcstr,  & 
             "sea ice mass change from lateral ice melt",                      &
              "none", c1, c0,         &
              ns1, f_sidmassmeltlat)
@@ -2117,9 +2117,10 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                worka(i,j) = p5*(rhoi*(vice(i+1,j,iblk)+vice(i,j,iblk))*HTE(i,j,iblk) &
-                            + rhos*(vsno(i+1,j,iblk)+vsno(i,j,iblk))*HTE(i,j,iblk)) &
-                            *  p5*(uvel(i,j-1,iblk)+uvel(i,j,iblk))
+                worka(i,j) = p25*HTE(i,j,iblk)*( &
+                                    rhoi*(vice(i,j,iblk)+vice(i+1,j,iblk)) &
+                                    + rhos*(vsno(i,j,iblk)+vsno(i+1,j,iblk)) &
+                                ) * (uvel(i,j-1,iblk)+uvel(i,j,iblk))
            enddo
            enddo
            call accum_hist_field(n_sidmasstranx, iblk, worka(:,:), a2D)
@@ -2130,12 +2131,13 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                 worka(i,j) = (rhoi*p5*(vice(i,j+1,iblk)+vice(i,j,iblk))*HTN(i,j,iblk) &
-                            + rhos*p5*(vsno(i,j+1,iblk)+vsno(i,j,iblk))*HTN(i,j,iblk)) &
-                            *  p5*(vvel(i-1,j,iblk)+vvel(i,j,iblk))
+                 worka(i,j) = p25*HTN(i,j,iblk)*( &
+                                rhoi*(vice(i,j,iblk)+vice(i,j+1,iblk)) &
+                                + rhos*(vsno(i,j,iblk)+vsno(i,j+1,iblk)) &
+                            ) * (vvel(i-1,j,iblk)+vvel(i,j,iblk))
            enddo
            enddo
-           call accum_hist_field(n_sidmasstrany, iblk, worka(:,:), a2D)  
+           call accum_hist_field(n_sidmasstrany, iblk, worka(:,:), a2D)
          endif
 
          !to-do: use aice_init
