@@ -398,7 +398,7 @@
            f_sidmassth, f_sidmassdyn,&
            f_sidmassgrowthwat, &
            f_sidmassgrowthbot, &
-           f_sidmasssi, &
+           f_sidmasssi, f_sidmassgrowthsi &
            f_sidmassevapsubl, &
            f_sndmasssubl, &
            f_sidmassmelttop, &
