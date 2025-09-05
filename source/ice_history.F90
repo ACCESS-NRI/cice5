@@ -362,6 +362,7 @@
       call broadcast_scalar (f_sidmassmeltbot, master_task)
       call broadcast_scalar (f_sidmasslat, master_task)
       call broadcast_scalar (f_sndmasssnf, master_task)
+      call broadcast_scalar (f_sisndmasssnf, master_task)
       call broadcast_scalar (f_sndmassmelt, master_task)
       call broadcast_scalar (f_sisndmassmelt, master_task)
       call broadcast_scalar (f_sndmassdyn, master_task)
@@ -1237,7 +1238,12 @@
          call define_hist_field(n_sndmasssnf,"sndmasssnf","kg m^-2 s^-1",tstr2D, tcstr,  & 
             "snow mass change from snow fall", &
              "none", c1, c0,         &
-             ns1, f_sndmasssnf)
+             ns1, f_sndmasssnf, avg_ice_present=.true., mask_ice_free_points=.true.)
+
+         call define_hist_field(n_sndmasssnf,"sisndmasssnf","kg m^-2 s^-1",tstr2D, tcstr,  & 
+            "snow mass change from snow fall", &
+             "none", c1, c0,         &
+             ns1, f_sisndmasssnf, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmassmelt,"sndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change from melt",                      &
@@ -2471,6 +2477,8 @@
          endif
 
          if (f_sisndmasssi(1:1) /= 'x') then
+           !To-do: calculate a seperate icesno diag for change in snow thickness in ice_therm_vertical ?
+           ! Its equivalent though, so fairly moot
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2558,13 +2566,14 @@
            call accum_hist_field(n_sidmasslat, iblk, worka(:,:), a2D)
          endif
 
-       if (f_sndmasssnf(1:1) /= 'x') then
-         !to-do: CICE6 does not include rhos
-           worka(:,:) = c0
+       if (f_sndmasssnf(1:1) /= 'x' .or. f_sisndmasssnf(1:1) /= 'x') then
+         !to-do: fsnow seems to already be multiplied by aice - https://github.com/ACCESS-NRI/cice5/blob/77622b30cd68ee4f74fc835559a922cd64ee7fca/drivers/access/cpl_forcing_handler.F90#L702-L703
+         !and then unweighted again - https://github.com/ACCESS-NRI/cice5/blob/77622b30cd68ee4f74fc835559a922cd64ee7fca/source/ice_step_mod.F90#L331-L332
+         !therefore i will weight again. in theory should weight by aice_init so it from the same time as the incoming flux ?
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk) * fsnow(i,j,iblk) * rhos
+                 worka(i,j) = aice(i,j,iblk)*fsnow(i,j,iblk)
               endif
            enddo
            enddo
