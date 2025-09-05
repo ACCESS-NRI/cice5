@@ -274,8 +274,9 @@
            f_sidmassmeltbot = 'x', &
            f_sidmasslat = 'x', f_sidmassmeltlat = 'x', & !same var, two names
            f_sndmasssnf = 'x', &
-           f_sndmassmelt = 'x', &
-           f_sndmassdyn = 'x', f_sisndmassdyn = 'x', &
+           f_sndmassmelt = 'x', f_sisndmassmelt = 'x', & !same var, two names
+           f_sndmassdyn = 'x', f_sisndmassdyn = 'x', &   !same var, two names
+           f_sisndmasssi = 'x', &
            f_sndmasssubl = 'x', &
            f_sidivvel = 'x', &
            f_siflswdtop = 'x', &
@@ -409,8 +410,9 @@
            f_sidmassmeltbot, &
            f_sidmasslat, f_sidmassmeltlat,&
            f_sndmasssnf, &
-           f_sndmassmelt, &
+           f_sndmassmelt, f_sisndmassmelt, &
            f_sndmassdyn, f_sisndmassdyn, &
+           f_sisndmasssi, &
            f_siflswdtop, &
            f_siflswutop, &
            f_siflswdbot, &
@@ -533,7 +535,7 @@
            n_sidmassth  , n_sidmassdyn,  &
            n_sidmassgrowthwat, &
            n_sidmassgrowthbot,  &
-           n_sidmasssi, n_sidmassgrowthsi,  &
+           n_sidmasssi,  &
            n_sidmasssubl, &
            n_sidmassevapsubl,  &
            n_sndmasssubl,  &
@@ -543,6 +545,7 @@
            n_sndmasssnf,  &
            n_sndmassmelt,  &
            n_sndmassdyn,  &
+           n_sisndmasssi, &
            n_siflswdtop,  &
            n_siflswutop,  &
            n_siflswdbot,  &

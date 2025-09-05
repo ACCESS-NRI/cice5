@@ -363,6 +363,7 @@
       call broadcast_scalar (f_sidmasslat, master_task)
       call broadcast_scalar (f_sndmasssnf, master_task)
       call broadcast_scalar (f_sndmassmelt, master_task)
+      call broadcast_scalar (f_sisndmassmelt, master_task)
       call broadcast_scalar (f_sndmassdyn, master_task)
       call broadcast_scalar (f_sisndmassdyn, master_task)
       call broadcast_scalar (f_siflswdtop, master_task)
@@ -1198,7 +1199,7 @@
              "none", c1, c0,         &
              ns1, f_sidmasssi)
 
-        call define_hist_field(n_sidmassgrowthsi,"sidmassgrowthsi","kg m^-2 s^-1",tstr2D, tcstr,  &
+        call define_hist_field(n_sidmasssi,"sidmassgrowthsi","kg m^-2 s^-1",tstr2D, tcstr,  &
              "sea ice mass change from snow-ice formation", &
              "none", c1, c0,         &
              ns1, f_sidmassgrowthsi)
@@ -1241,17 +1242,27 @@
          call define_hist_field(n_sndmassmelt,"sndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change from melt",                      &
              "none", c1, c0,         &
-             ns1, f_sndmassmelt)
+             ns1, f_sndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
+
+        call define_hist_field(n_sndmassmelt,"sisndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
+             "snow mass change from melt",                      &
+             "none", c1, c0,         &
+             ns1, f_sisndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
+
+        call define_hist_field(n_sndmassmelt,"sisndmasssi","kg m^-2 s^-1",tstr2D, tcstr,  &
+             "snow mass change through snow to ice conversion",                      &
+             "none", c1, c0,         &
+             ns1, f_sisndmasssi, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmassdyn,"sndmassdyn","kg m-2 s-1",tstr2D, tcstr,  &
              "snow mass change from dynamics (advection)",                      &
              "none", c1, c0,         &
-             ns1, f_sndmassdyn)
+             ns1, f_sndmassdyn, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmassdyn,"sisndmassdyn","kg m-2 s-1",tstr2D, tcstr,  &
              "snow mass rate of change through advection by sea ice dynamics",           &
              "none", c1, c0,         &
-             ns1, f_sisndmassdyn)
+             ns1, f_sisndmassdyn, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_siflswdtop,"siflswdtop","W/m2",tstr2D, tcstr, &
              "down shortwave flux over sea ice", &
@@ -1317,7 +1328,6 @@
              "rainfall over sea ice", &
              "none", c1, c0,                            &
               ns1, f_sipr, avg_ice_present=.true., mask_ice_free_points=.true.)
-
 
          call define_hist_field(n_siflsaltbot,"siflsaltbot","kg m^-2 s^-1",tstr2D, tcstr, &
              "salt flux from sea ice", &
@@ -2444,7 +2454,7 @@
            call accum_hist_field(n_sidmassgrowthbot, iblk, worka(:,:), a2D)
          endif
 
-         if (f_sidmasssi(1:1) /= 'x') then
+         if (f_sidmasssi(1:1) /= 'x' .or. f_sidmassgrowthsi(1:1) /= 'x') then
            !To-do: revisit to see if still needs aice/aice_init weighting
             !to-do : divide by dt
            worka(:,:) = c0
@@ -2460,20 +2470,16 @@
            call accum_hist_field(n_sidmasssi, iblk, worka(:,:), a2D)
          endif
 
-         if (f_sidmassgrowthsi(1:1) /= 'x') then
-           !To-do: revisit to see if still needs aice/aice_init weighting
-            !to-do : divide by dt
+         if (f_sisndmasssi(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
-               worka(i,j) = snoice(i,j,iblk)*rhoi/dt
-         !         worka(i,j) = aice(i,j,iblk)*snoice(i,j,iblk)*rhoi /&
-         !  (dt * aice_init(i,j,iblk))
+                worka(i,j) = -c1*snoice(i,j,iblk)*rhoi/dt
               endif
            enddo
            enddo
-           call accum_hist_field(n_sidmassgrowthsi, iblk, worka(:,:), a2D)
+           call accum_hist_field(n_sisndmasssi, iblk, worka(:,:), a2D)
          endif
 
          if (f_sidmassevapsubl(1:1) /= 'x') then
@@ -2538,7 +2544,6 @@
 
        if (f_sidmasslat(1:1) /= 'x' .or. f_sidmassmeltlat(1:1) /= 'x') then
            !To-do: revisit to see if still needs aice/aice_init weighting
-            !to-do : divide by dt
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2566,7 +2571,7 @@
            call accum_hist_field(n_sndmasssnf, iblk, worka(:,:), a2D)
          endif
 
-         if (f_sndmassmelt(1:1) /= 'x') then
+         if (f_sndmassmelt(1:1) /= 'x' .or. f_sisndmassmelt(1:1) /= 'x') then
            !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
