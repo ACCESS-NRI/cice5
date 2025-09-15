@@ -1215,6 +1215,11 @@
              "none", c1, c0,         &
              ns1, f_sndmasssubl)
 
+         call define_hist_field(n_sndmasssubl,"sisndmasssubl","kg m^-2 s^-1",tstr2D, tcstr,  &
+             "snow mass change from evaporation and sublimation", &
+             "none", c1, c0,         &
+             ns1, f_sisndmasssubl)
+
          call define_hist_field(n_sidmassmelttop,"sidmassmelttop","kg m^-2 s^-1",tstr2D, tcstr,  &
             "sea ice mass change from top ice melt",                      &
              "none", c1, c0,         &
@@ -2504,7 +2509,7 @@
            call accum_hist_field(n_sidmassevapsubl, iblk, worka(:,:), a2D)
           endif
 
-         if (f_sndmasssubl(1:1) /= 'x') then
+         if (f_sndmasssubl(1:1) /= 'x' .or. f_sisndmasssubl(1:1) /= 'x') then
            !To-do: revisit to see if aice weighting is correct, looks like evap_snow is already weighted
            worka(:,:) = c0
            do j = jlo, jhi
