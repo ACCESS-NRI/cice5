@@ -196,7 +196,8 @@
 
       character (len=max_nstrm), public :: &
 !          f_example   = 'md', &
-           f_hi        = 'm', f_hs         = 'm', &
+           f_hi        = 'm', f_sivol = 'x', &
+           f_hs        = 'm', &
            f_snowfrac  = 'x', f_snowfracn  = 'x', &
            f_Tsfc      = 'm', & 
            f_aice      = 'm', f_siconc    = 'x' , & !same var, two names
@@ -331,7 +332,8 @@
            f_VGRDi    , f_VGRDs    , &
            f_VGRDb    , &
 !          f_example  , &
-           f_hi,        f_hs       , &
+           f_hi       , f_sivol    , &
+           f_hs       , &
            f_snowfrac,  f_snowfracn, &
            f_Tsfc     , &
            f_aice     , f_siconc   , &

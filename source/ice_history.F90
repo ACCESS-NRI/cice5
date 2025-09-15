@@ -443,6 +443,11 @@
             "ice volume per unit grid cell area", c1, c0,         &
             ns1, f_hi)
 
+         call define_hist_field(n_hi,"hi","m",tstr2D, tcstr,        & 
+            "grid cell mean ice thickness",                       &
+            "ice volume per unit grid cell area", c1, c0,         &
+            ns1, f_sivol)
+
          call define_hist_field(n_hs,"hs","m",tstr2D, tcstr,        &
              "grid cell mean snow thickness",                     &
              "snow volume per unit grid cell area", c1, c0,       &
@@ -1805,7 +1810,7 @@
 
 !        if (f_example(1:1) /= 'x') &
 !            call accum_hist_field(n_example,iblk, vice(:,:,iblk), a2D)
-         if (f_hi     (1:1) /= 'x') &
+         if (f_hi     (1:1) /= 'x' .or. f_sivol(1:1) /= 'x') &
              call accum_hist_field(n_hi,     iblk, vice(:,:,iblk), a2D)
          if (f_hs     (1:1) /= 'x') &
              call accum_hist_field(n_hs,     iblk, vsno(:,:,iblk), a2D)
