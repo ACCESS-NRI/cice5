@@ -395,6 +395,7 @@
       call broadcast_scalar (f_vsnon, master_task)
       call broadcast_scalar (f_trsig, master_task)
       call broadcast_scalar (f_icepresent, master_task)
+      call broadcast_scalar (f_sitimefrac, master_task)
       call broadcast_scalar (f_fsurf_ai, master_task)
       call broadcast_scalar (f_fcondtop_ai, master_task)
       call broadcast_scalar (f_fmeltt_ai, master_task)
@@ -927,6 +928,11 @@
              "ice extent flag", c1, c0,                                     &
              ns1, f_icepresent)
 
+         call define_hist_field(n_icepresent,"ice_present","1",tstr2D, tcstr, &
+             "fraction of time-avg interval that ice is present",           &
+             "ice extent flag", c1, c0,                                     &
+             ns1, f_sitimefrac)
+
          call define_hist_field(n_fsurf_ai,"fsurf_ai","W/m^2",tstr2D, tcstr, &
              "net surface heat flux",                                      &
              "positive downward, excludes conductive flux, weighted by ice area", &
@@ -1013,7 +1019,7 @@
               ns1, f_FY)
       ! CMIP6 2D variables
 
-                ! check these definitions against the intensive/extensive/inst def in notz et al 2016
+        ! check these definitions against the intensive/extensive/inst def in notz et al 2016
          call define_hist_field(n_sithick,"sithick","m",tstr2D, tcstr, &
              "sea ice thickness",                             &
              "volume divided by area", c1, c0, &
@@ -2040,7 +2046,7 @@
              call accum_hist_field(n_fcondtop_ai, iblk, &
                                                  fcondtop(:,:,iblk)*workb(:,:), a2D)
 
-         if (f_icepresent(1:1) /= 'x') then
+         if (f_icepresent(1:1) /= 'x' .or. f_sitimefrac(1:1) /= 'x') then
            worka(:,:) = c0
            area_threshold = max(a_min,aicenmin)
            do j = jlo, jhi
@@ -2212,7 +2218,7 @@
            call accum_hist_field(n_sidmasstrany, iblk, worka(:,:), a2D)
          endif
 
-         !to-do: use aice_init
+         !to-do: scale by aice/aice_init as its a calculated based on initial state ?
          if (f_sistrxdtop(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
@@ -2224,7 +2230,7 @@
            call accum_hist_field(n_sistrxdtop, iblk, worka(:,:), a2D)
          endif
 
-         !to-do: use aice_init
+         !to-do: scale by aice/aice_init ?
          if (f_sistrydtop(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi

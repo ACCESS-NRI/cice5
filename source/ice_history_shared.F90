@@ -296,7 +296,8 @@
            f_sisaltmass = 'x', &
            f_aicen     = 'x', f_vicen      = 'x', &
            f_vsnon     = 'x',                     &
-           f_trsig     = 'm', f_icepresent = 'm', &
+           f_trsig     = 'm', &
+           f_icepresent = 'm', f_sitimefrac = 'x',&
            f_fsurf_ai  = 'm', f_fcondtop_ai= 'm', &
            f_fmeltt_ai = 'm',                     &
            f_fsurfn_ai = 'x' ,f_fcondtopn_ai='x', &
@@ -430,7 +431,8 @@
            f_sisaltmass, &
            f_aicen,     f_vicen    , &
            f_vsnon,                  &
-           f_trsig,     f_icepresent,&
+           f_trsig, &
+           f_icepresent, f_sitimefrac,& !same var, two names
            f_fsurf_ai,  f_fcondtop_ai,&
            f_fmeltt_ai, &
            f_fsurfn_ai,f_fcondtopn_ai,&
