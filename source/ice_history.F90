@@ -2478,7 +2478,6 @@
 
          if (f_sidmasssi(1:1) /= 'x' .or. f_sidmassgrowthsi(1:1) /= 'x') then
            !To-do: revisit to see if still needs aice/aice_init weighting
-            !to-do : divide by dt
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2507,13 +2506,11 @@
          endif
 
          if (f_sidmassevapsubl(1:1) /= 'x') then
-           !To-do: revisit to see if aice weighting is correct, looks like evap_ice is already weighted
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                  worka(i,j) = evap_ice(i,j,iblk)*rhoi
-               !   worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)*rhoi
+                worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)*rhoi
               endif
            enddo
            enddo
@@ -2521,13 +2518,11 @@
           endif
 
          if (f_sndmasssubl(1:1) /= 'x' .or. f_sisndmasssubl(1:1) /= 'x') then
-           !To-do: revisit to see if aice weighting is correct, looks like evap_snow is already weighted
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                  worka(i,j) = rhos*evap_snow(i,j,iblk)/dt
-               !   worka(i,j) = rhos*aice(i,j,iblk)*evap_snow(i,j,iblk)
+                worka(i,j) = rhos*aice(i,j,iblk)*evap_snow(i,j,iblk)
               endif
            enddo
            enddo
@@ -2862,7 +2857,6 @@
          if (f_vsnon   (1:1) /= 'x') &
              call accum_hist_field(n_vsnon-n2D, iblk, ncat_hist, &
                                    vsnon(:,:,1:ncat_hist,iblk), a3Dc)
-         !to-do: check aicen !
          if (f_snowfracn(1:1) /= 'x') &
              call accum_hist_field(n_snowfracn-n2D, iblk, ncat_hist, &
                                    snowfracn(:,:,1:ncat_hist,iblk)*aicen(:,:,:,iblk), a3Dc)
@@ -3037,8 +3031,7 @@
            !to-do: figure out how to make sure n_aice actually exists
            do j = jlo, jhi
            do i = ilo, ihi
-              ! Alex West - enforce time mean ice area threshold based
-              ! on
+              ! Alex West - enforce time mean ice area threshold based on
               ! the maximum of aicenmin (thermodynamic min ice fraction)
               ! and a_min (dynamic min ice fraction) so that intensive
               ! variables are reported only where both dynamics and

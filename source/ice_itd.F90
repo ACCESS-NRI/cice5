@@ -242,8 +242,8 @@
         hi_min   = p2     ! 0.2m
         hs_min   = p1     ! 0.1m
       else
-        !  aicenmin = puny   ! Standard CICE setting
-        aicenmin = 2.0e-4_dbl_kind   ! Same as setting in UM7.3 for ESM1.6
+        aicenmin = puny   ! Standard CICE setting
+      !   aicenmin = 2.0e-4_dbl_kind   ! Same as setting in UM7.3 for ESM1.6
       endif
 
       if (my_task == master_task) then
