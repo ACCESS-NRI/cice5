@@ -789,6 +789,7 @@
           fsurf   , & ! net heat flux to top surface    (W/m**2)
           fcondtop, & ! downward cond flux at top sfc   (W/m**2)
           fcondbot, & ! downward cond flux at bottom sfc   (W/m**2)
+          fcondbot_init, & ! downward cond flux at bottom sfc, based on aicen_init   (W/m**2)
           fsens   , & ! sensible heat flx               (W/m**2)
           flat    , & ! latent   heat flx               (W/m**2)
           fswabs  , & ! shortwave absorbed heat flx     (W/m**2)

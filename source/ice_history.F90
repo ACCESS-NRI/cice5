@@ -2740,7 +2740,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*fcondbot(i,j,iblk)/aice_init(i,j,iblk)
+                 worka(i,j) = (aice(i,j,iblk)/aice_init(i,j,iblk))*fcondbot(i,j,iblk)
               endif
            enddo
            enddo
