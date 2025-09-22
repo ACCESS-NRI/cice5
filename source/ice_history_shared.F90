@@ -486,7 +486,6 @@
            n_hi         , n_hs         , &
            n_snowfrac,    n_snowfracn,   &
            n_Tsfc       , n_aice       , &
-           n_siconc, &
            n_uvel       , n_vvel       , &
            n_uatm       , n_vatm       , &
            n_sice       , &

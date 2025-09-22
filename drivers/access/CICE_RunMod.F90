@@ -51,6 +51,8 @@
       use ice_calendar, only: month, mday, istep, istep1, time, dt, stop_now, calendar, &
           write_restart, dump_last
       use ice_restart_driver, only: dumpfile     !temporary debug
+      use ice_state, only: vsno, aice, tr_pond
+      use ice_flux, only: snowfrac
 #endif
       use ice_flux, only: init_flux_atm, init_flux_ocn
       use ice_state, only: tr_aero
@@ -82,12 +84,15 @@
    !--------------------------------------------------------------------
 
 #ifdef ACCESS
-      write(il_out,*)'A <==> I coupling num_cpl_ai =          ',num_cpl_ai
-      write(il_out,*)' ice steps per ai interval num_ice_ai = ',num_ice_ai
-      write(il_out,*)' runtime, runtime0 =                    ',runtime, runtime0
+
+      if (my_task == master_task) then
+         write(il_out,*)'A <==> I coupling num_cpl_ai =          ',num_cpl_ai
+         write(il_out,*)' ice steps per ai interval num_ice_ai = ',num_ice_ai
+         write(il_out,*)' runtime, runtime0 =                    ',runtime, runtime0
+      endif
 
       time_sec = 0
-
+      
       DO icpl_ai = 1, num_cpl_ai   !begin A <==> I coupling iterations
 
         !receive a2i fields 
@@ -153,10 +158,20 @@
           call time_average_fields_4_i2a        !time averaging over ia cpl interval
 
           tmp_time = time_sec + dt
-          if ( mod(tmp_time, dt_cpl_ai) == 0  ) then  !this happens at itap = num_ice_ai 
+          if ( mod(tmp_time, dt_cpl_ai) == 0 ) then  !this happens at itap = num_ice_ai 
             !call ice_timer_start(timer_into_atm)  
             !i2a fields ready to be sent for next IA cpl int in atm.
             call get_i2a_fields
+
+#ifdef ACCESS
+            if ( .not. tr_pond) then
+               ! calculate a snowfrac diagnostic in the same way the UM does
+               ! set snow fraction using JULES empirical formula based
+               ! on snow volume
+               ! ref: https://github.com/ACCESS-NRI/UM7/blob/6602dadd15c190ee37c6644190f52d428bc66917/umbase_hg3/src/atmosphere/short_wave_radiation/ftsa.F90#L201-L202
+               where (aice > puny) snowfrac(:,:,:) = c1 - exp(-p2*rhos*(vsno(:,:,:) / aice(:,:,:)))
+            endif
+#endif
 
             stimestamp_ai = time_sec 
 

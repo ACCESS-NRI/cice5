@@ -771,6 +771,7 @@
                                     trcrn(:,:,nt_hpnd,:,iblk),                 &
                                     trcrn(:,:,nt_ipnd,:,iblk))
          endif
+
          call ice_timer_stop(timer_ponds,iblk)
 
       end subroutine step_therm1

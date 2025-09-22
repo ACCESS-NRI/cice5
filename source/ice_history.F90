@@ -474,7 +474,7 @@
              "none", c1, c0,                                      &
              ns1, f_aice)
 
-         call define_hist_field(n_siconc,"siconc","1",tstr2D, tcstr,    &
+         call define_hist_field(n_aice,"siconc","1",tstr2D, tcstr,    &
              "sea ice area fraction",                             &
              "none", c1, c0,                                      &
              ns1, f_siconc)
@@ -1827,10 +1827,8 @@
             call accum_hist_field(n_snowfrac, iblk, snowfrac(:,:,iblk), a2D)
          if (f_Tsfc   (1:1) /= 'x') &
              call accum_hist_field(n_Tsfc,   iblk, trcr(:,:,nt_Tsfc,iblk), a2D)
-         if (f_aice   (1:1) /= 'x') &
+         if (f_aice   (1:1) /= 'x' .or. f_siconc (1:1) /= 'x') &
              call accum_hist_field(n_aice,   iblk, aice(:,:,iblk), a2D)
-         if (f_siconc (1:1) /= 'x') & 
-             call accum_hist_field(n_siconc,   iblk, aice(:,:,iblk), a2D)
          if (f_uvel   (1:1) /= 'x') &
              call accum_hist_field(n_uvel,   iblk, uvel(:,:,iblk), a2D)
          if (f_vvel   (1:1) /= 'x') &
@@ -2104,15 +2102,13 @@
          endif
 
         if (f_sisnconc(1:1) /= 'x') then
-            ! this is not prognostic in cice
-            ! could repeat this:            https://github.com/ACCESS-NRI/cice5/blob/bce3629b7b11df704e2a632392ec139023e95ff1/source/ice_meltpond_topo.F90#L190C1-L195C56
            worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi 
-             if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) & 
-                worka(i,j) = aice(i,j,iblk) * snowfrac(i,j,iblk)
-           enddo
-           enddo
+            do j = jlo, jhi
+            do i = ilo, ihi 
+                if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) & 
+                    worka(i,j) = aice(i,j,iblk) * snowfrac(i,j,iblk)
+            enddo
+            enddo
             call accum_hist_field(n_sisnconc, iblk, worka(:,:), a2D)
          endif
 
