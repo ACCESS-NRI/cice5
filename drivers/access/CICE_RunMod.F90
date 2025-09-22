@@ -62,14 +62,13 @@
       use ice_timers, only: ice_timer_start, &
           ice_timer_stop, timer_couple, timer_step, &
           timer_from_atm, timer_into_atm, timer_from_ocn, timer_into_ocn
-      use ice_grid, only: t2ugrid_vector, u2tgrid_vector
+      use ice_grid, only: t2ugrid_vector
       integer (kind=int_kind) :: time_sec, itap, icpl_ai, tmp_time
       integer (kind=int_kind) :: rtimestamp_ai, stimestamp_ai
       integer (kind=int_kind) :: rtimestamp_io, stimestamp_io
       !receive and send timestamps (seconds)
       integer (kind=int_kind) :: imon 
 
-        logical ::  write_tmp_dump = .true.
 #endif
 
    !--------------------------------------------------------------------
@@ -88,13 +87,13 @@
       write(il_out,*)' runtime, runtime0 =                    ',runtime, runtime0
 
       time_sec = 0
-      
+
       DO icpl_ai = 1, num_cpl_ai   !begin A <==> I coupling iterations
 
         !receive a2i fields 
         rtimestamp_ai = time_sec
         !call ice_timer_start(timer_from_atm)  ! atm/ice coupling
-        write(il_out,*)' calling from_atm at icpl_ai, time_sec = ', icpl_ai, time_sec
+      !   write(il_out,*)' calling from_atm at icpl_ai, time_sec = ', icpl_ai, time_sec
         !===========================
         call from_atm(rtimestamp_ai)
         !===========================
@@ -116,8 +115,8 @@
           call t2ugrid_vector(io_strsu)
           call t2ugrid_vector(io_strsv)
 
-          write(il_out,'(a,3i10)') &
-                ' calling into_ocn at icpl_ai, itap, time_sec = ', icpl_ai, itap, time_sec
+         !  write(il_out,'(a,3i10)') &
+               !  ' calling into_ocn at icpl_ai, itap, time_sec = ', icpl_ai, itap, time_sec
           !call ice_timer_start(timer_into_ocn)  ! atm/ocn coupling
           !===========================
           !call check_iceberg_fields('chk_iceberg_i2o.nc')
@@ -142,7 +141,7 @@
           if (dump_last .and. (itap == num_ice_ai) .and. (icpl_ai == num_cpl_ai)) then
             write_restart = 1
           endif
- 
+
           !*** ice "update" ***!
           call ice_step
 
@@ -161,8 +160,8 @@
 
             stimestamp_ai = time_sec 
 
-            write(il_out,'(a,3i10)') &
-                ' calling into_atm at icpl_ai, itap, time_sec = ',icpl_ai, itap, time_sec
+            ! write(il_out,'(a,3i10)') &
+               !  ' calling into_atm at icpl_ai, itap, time_sec = ',icpl_ai, itap, time_sec
             !===========================
             call into_atm(stimestamp_ai)
             !===========================

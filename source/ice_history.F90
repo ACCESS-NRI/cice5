@@ -160,7 +160,9 @@
       enddo
 
       if (.not. tr_iage) then
+        !todo: abort here if trying to use these diagnostics and the tracer (and its restart) are not available
          f_iage = 'x'
+         f_siage = 'x'
          f_dagedtt = 'x'
          f_dagedtd = 'x'
       endif
@@ -194,8 +196,9 @@
       ! AEW: These are only calculated under certain circumstances
       ! (if using multilayers with UM-style coupling)
       if (calc_Tsfc .or. .not. heat_capacity) then
+        !to-do: abort here if trying to use these
         f_Tn_top     = 'x'
-	f_keffn_top  = 'x'
+        f_keffn_top  = 'x'
       endif
 
 #ifndef ncdf
@@ -358,13 +361,16 @@
       call broadcast_scalar (f_sidmassgrowthsi, master_task)
       call broadcast_scalar (f_sidmassevapsubl, master_task)
       call broadcast_scalar (f_sndmasssubl, master_task)
+      call broadcast_scalar (f_sisndmasssubl, master_task)
       call broadcast_scalar (f_sidmassmelttop, master_task)
       call broadcast_scalar (f_sidmassmeltbot, master_task)
       call broadcast_scalar (f_sidmasslat, master_task)
+      call broadcast_scalar (f_sidmassmeltlat, master_task)
       call broadcast_scalar (f_sndmasssnf, master_task)
       call broadcast_scalar (f_sisndmasssnf, master_task)
       call broadcast_scalar (f_sndmassmelt, master_task)
       call broadcast_scalar (f_sisndmassmelt, master_task)
+      call broadcast_scalar (f_sisndmasssi, master_task)
       call broadcast_scalar (f_sndmassdyn, master_task)
       call broadcast_scalar (f_sisndmassdyn, master_task)
       call broadcast_scalar (f_siflswdtop, master_task)
@@ -452,6 +458,7 @@
              "grid cell mean snow thickness",                     &
              "snow volume per unit grid cell area", c1, c0,       &
              ns1, f_hs)
+
          call define_hist_field(n_snowfrac,"snowfrac","1",tstr2D, tcstr, &
              "grid cell mean snow fraction",                     &
              "snow fraction per unit grid cell area", c1, c0,       &
@@ -467,7 +474,7 @@
              "none", c1, c0,                                      &
              ns1, f_aice)
 
-         call define_hist_field(n_aice,"siconc","1",tstr2D, tcstr,    &
+         call define_hist_field(n_siconc,"siconc","1",tstr2D, tcstr,    &
              "sea ice area fraction",                             &
              "none", c1, c0,                                      &
              ns1, f_siconc)
@@ -847,22 +854,22 @@
              "strain rate (divergence)",                           &
              "divu is instantaneous, on T grid", secday*c100, c0,                              &
              ns1, f_divu)
-      
+
          call define_hist_field(n_shear,"shear","%/day",tstr2D, tcstr, &
              "strain rate (shear)",                                  &
              "none", secday*c100, c0,                                &
              ns1, f_shear)
-      
+
          call define_hist_field(n_sig1,"sig1","1",ustr2D, ucstr, &
              "norm. principal stress 1",                       &
              "sig1 is instantaneous", c1, c0,                  &
              ns1, f_sig1)
-      
+
          call define_hist_field(n_sig2,"sig2","1",ustr2D, ucstr, &
              "norm. principal stress 2",                       &
              "sig2 is instantaneous", c1, c0,                  &
              ns1, f_sig2)
-      
+
          call define_hist_field(n_dvidtt,"dvidtt","cm/day",tstr2D, tcstr, &
              "ice volume tendency thermo",                              &
              "none", mps_to_cmpdy, c0,                                  &
@@ -933,7 +940,7 @@
              "ice extent flag", c1, c0,                                     &
              ns1, f_icepresent)
 
-         call define_hist_field(n_icepresent,"ice_present","1",tstr2D, tcstr, &
+         call define_hist_field(n_icepresent,"sitimefrac","1",tstr2D, tcstr, &
              "fraction of time-avg interval that ice is present",           &
              "ice extent flag", c1, c0,                                     &
              ns1, f_sitimefrac)
@@ -1271,7 +1278,7 @@
              "none", c1, c0,         &
              ns1, f_sisndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-        call define_hist_field(n_sndmassmelt,"sisndmasssi","kg m^-2 s^-1",tstr2D, tcstr,  &
+        call define_hist_field(n_sisndmasssi,"sisndmasssi","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change through snow to ice conversion",                      &
              "none", c1, c0,         &
              ns1, f_sisndmasssi, avg_ice_present=.true., mask_ice_free_points=.true.)
@@ -1321,7 +1328,7 @@
              "positive downward", c1, c0,                            &
              ns1, f_siflsensupbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-             call define_hist_field(n_siflsensupbot,"siflsensbot","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_siflsensupbot,"siflsensbot","W/m^2",tstr2D, tcstr, &
              "sensible heat flux at bottom of sea ice", &
              "positive downward", c1, c0,                            &
              ns1, f_siflsensbot, avg_ice_present=.true., mask_ice_free_points=.true.)
@@ -1820,8 +1827,10 @@
             call accum_hist_field(n_snowfrac, iblk, snowfrac(:,:,iblk), a2D)
          if (f_Tsfc   (1:1) /= 'x') &
              call accum_hist_field(n_Tsfc,   iblk, trcr(:,:,nt_Tsfc,iblk), a2D)
-         if (f_aice   (1:1) /= 'x' .or. f_siconc   (1:1) /= 'x') &
+         if (f_aice   (1:1) /= 'x') &
              call accum_hist_field(n_aice,   iblk, aice(:,:,iblk), a2D)
+         if (f_siconc (1:1) /= 'x') & 
+             call accum_hist_field(n_siconc,   iblk, aice(:,:,iblk), a2D)
          if (f_uvel   (1:1) /= 'x') &
              call accum_hist_field(n_uvel,   iblk, uvel(:,:,iblk), a2D)
          if (f_vvel   (1:1) /= 'x') &
@@ -2094,8 +2103,9 @@
            call accum_hist_field(n_siage, iblk, worka(:,:), a2D)
          endif
 
-
         if (f_sisnconc(1:1) /= 'x') then
+            ! this is not prognostic in cice
+            ! could repeat this:            https://github.com/ACCESS-NRI/cice5/blob/bce3629b7b11df704e2a632392ec139023e95ff1/source/ice_meltpond_topo.F90#L190C1-L195C56
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi 
@@ -2110,7 +2120,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi 
-             if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) &
+             if (aice(i,j,iblk) > puny .and.  vsno(i,j,iblk) > puny) &
                  worka(i,j) = vsno(i,j,iblk)
            enddo
            enddo
@@ -2121,7 +2131,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi 
-             if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) &
+             if (aice(i,j,iblk) > puny .and.  vsno(i,j,iblk) > puny) &
                  worka(i,j) = vsno(i,j,iblk) * rhos
            enddo
            enddo
@@ -2733,7 +2743,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice_init(i,j,iblk) > puny) then
+              if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
                  worka(i,j) = aice(i,j,iblk)*fcondbot(i,j,iblk)/aice_init(i,j,iblk)
               endif
            enddo
@@ -2742,6 +2752,7 @@
          endif
 
          if (f_sipr(1:1) /= 'x') then
+            !to-do: check scaling ?
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
