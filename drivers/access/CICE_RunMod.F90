@@ -51,8 +51,6 @@
       use ice_calendar, only: month, mday, istep, istep1, time, dt, stop_now, calendar, &
           write_restart, dump_last
       use ice_restart_driver, only: dumpfile     !temporary debug
-      use ice_state, only: vsno, aice, tr_pond
-      use ice_flux, only: snowfrac
 #endif
       use ice_flux, only: init_flux_atm, init_flux_ocn
       use ice_state, only: tr_aero
@@ -162,16 +160,6 @@
             !call ice_timer_start(timer_into_atm)  
             !i2a fields ready to be sent for next IA cpl int in atm.
             call get_i2a_fields
-
-#ifdef ACCESS
-            if ( .not. tr_pond) then
-               ! calculate a snowfrac diagnostic in the same way the UM does
-               ! set snow fraction using JULES empirical formula based
-               ! on snow volume
-               ! ref: https://github.com/ACCESS-NRI/UM7/blob/6602dadd15c190ee37c6644190f52d428bc66917/umbase_hg3/src/atmosphere/short_wave_radiation/ftsa.F90#L201-L202
-               where (aice > puny) snowfrac(:,:,:) = c1 - exp(-p2*rhos*(vsno(:,:,:) / aice(:,:,:)))
-            endif
-#endif
 
             stimestamp_ai = time_sec 
 
@@ -306,6 +294,10 @@
       use ice_algae, only: bgc_diags, write_restart_bgc
       use ice_zbgc, only: init_history_bgc, biogeochemistry
       use ice_zbgc_shared, only: skl_bgc
+#ifdef ACCESS
+      use ice_state, only: vsno, aice, tr_pond
+      use ice_flux, only: snowfrac
+#endif
 
       integer (kind=int_kind) :: &
          iblk        , & ! block index 
@@ -455,7 +447,7 @@
       use ice_ocean, only: oceanmixed_ice, ocean_mixed_layer
       use ice_shortwave, only: alvdfn, alidfn, alvdrn, alidrn, &
                                albicen, albsnon, albpndn, apeffn
-      use ice_state, only: aicen, aice, aice_init, nbtrcr
+      use ice_state, only: aicen, aice, aice_init, nbtrcr, tr_pond, vsno
       use ice_therm_shared, only: calc_Tsfc, heat_capacity
       use ice_timers, only: timer_couple, ice_timer_start, ice_timer_stop
       use ice_zbgc_shared, only: flux_bio, flux_bio_ai
@@ -541,8 +533,19 @@
 
             apeff_ai(i,j,iblk) = apeff_ai(i,j,iblk) &       ! for history
                + apeffn(i,j,n,iblk)*aicen(i,j,n,iblk)
-            snowfrac(i,j,iblk) = snowfrac(i,j,iblk) &       ! for history
-               + snowfracn(i,j,n,iblk)*aicen(i,j,n,iblk)
+
+            if ( .not. tr_pond .and. .not. calc_Tsfc ) then
+               ! calculate a snowfrac diagnostic in the same way the UM does
+               ! set snow fraction using JULES empirical formula based
+               ! on snow volume
+               ! ref: https://github.com/ACCESS-NRI/UM7/blob/6602dadd15c190ee37c6644190f52d428bc66917/umbase_hg3/src/atmosphere/short_wave_radiation/ftsa.F90#L201-L202
+               if (aice(i,j,iblk) > 2e-4) & 
+                  snowfrac(i,j,iblk) = c1 - exp(-p2*rhos*(vsno(i,j,iblk) / aice(i,j,iblk)))
+            else
+               snowfrac(i,j,iblk) = snowfrac(i,j,iblk) &       ! for history
+                  + snowfracn(i,j,n,iblk)*aicen(i,j,n,iblk)
+            endif
+
          enddo
          enddo
          enddo

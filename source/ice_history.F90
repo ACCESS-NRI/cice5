@@ -1031,7 +1031,11 @@
               ns1, f_FY)
       ! CMIP6 2D variables
 
-        ! check these definitions against the intensive/extensive/inst def in notz et al 2016
+        ! these definitions against the intensive/extensive/inst def 
+        ! we use updated "mean where sea" or "mean where sea_ice" per CMIP7 data request
+        ! intensive means sea ice area weighted, and then averaged only when sea ice is present
+        ! extensive means a normal average (over all time and grid box area)
+        ! extensive vars tend to zero when aice is zero, intensive vars do not
          call define_hist_field(n_sithick,"sithick","m",tstr2D, tcstr, &
              "sea ice thickness",                             &
              "volume divided by area", c1, c0, &
@@ -1040,7 +1044,7 @@
          call define_hist_field(n_simass,"simass","kg m^-2",tstr2D, tcstr, &
              "sea ice mass",                             &
              "mass divided by area", c1, c0, &
-             ns1, f_simass, avg_ice_present=.true., mask_ice_free_points=.true.)
+             ns1, f_simass)
 
          call define_hist_field(n_siage,"siage","s",tstr2D, tcstr,    &
              "sea ice age",                             &
@@ -1159,7 +1163,7 @@
 
          call define_hist_field(n_sidivvel,"sidivvel","1/s",ustr2D, ucstr,    &   
              "divergence of the sea ice velocity field (ice area weighted)",  &
-             "none", c1, c0,         &          
+             "none", c1, c0,         &
              ns1, f_sidivvel, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sispeed,"sispeed","m/s",ustr2D, ucstr, &
@@ -1192,7 +1196,6 @@
              "none", c1, c0,         &
              ns1, f_sidconcdyn)
 
-             !to-do: the next set of vars surely should be ice area weighted ?
          call define_hist_field(n_sidmassth,"sidmassth","kg m^-2 s^-1",tstr2D, tcstr,  &
              "sea ice mass change from thermodynamics",              &
              "none", c1, c0,         &
@@ -2740,7 +2743,12 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-                 worka(i,j) = (aice(i,j,iblk)/aice_init(i,j,iblk))*fcondbot(i,j,iblk)
+                worka(i,j) = aice(i,j,iblk)*fcondbot(i,j,iblk)
+                ! CICE6 has this weighting, presumably an incorrent attempt to adjust 
+                ! fcondbot so its consistent with aice ?
+                ! for ACCESS, fcondbot was caluclated in the UM, using aice from the timestep
+                ! before aice_init, so it doesn't really help
+                ! worka(i,j) = (aice(i,j,iblk)/aice_init(i,j,iblk))*fcondbot(i,j,iblk)
               endif
            enddo
            enddo
@@ -2753,7 +2761,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*frain(i,j,iblk)
+                 worka(i,j) = aice(i,j,iblk)*frain(i,j,iblk) 
               endif
            enddo
            enddo
@@ -2791,7 +2799,6 @@
 !            call accum_hist_field(n_sifb, iblk, worka(:,:), a2D)
 !          endif
 
-!to-do: fix for mushy? / frazil????
          if (f_siflsaltbot(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
@@ -2816,7 +2823,6 @@
            call accum_hist_field(n_sisaltmass, iblk, worka(:,:), a2D)
          endif
 
-         !to-do : fix for frazil ????
          if (f_siflfwbot(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
