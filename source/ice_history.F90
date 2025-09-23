@@ -1351,7 +1351,7 @@
              "positive downward", c1, c0,                            &
              ns1, f_siflcondbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflfwdrain,"siflfwdrain","kg m-2 s-1",tstr2D, tcstr, &
+         call define_hist_field(n_siflfwdrain,"siflfwdrain","kg m^-2 s^-1",tstr2D, tcstr, &
              "freshwater drainage through sea ice", &  
              "positive downward", c1, c0,                            &
              ns1, f_siflfwdrain, avg_ice_present=.true., mask_ice_free_points=.true.)
