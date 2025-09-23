@@ -2153,9 +2153,9 @@
            do j = jlo, jhi
            do i = ilo, ihi
             if (vsno(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-               worka(i,j) = aice(i,j,iblk)*Tsnic(i,j,iblk)/aice_init(i,j,iblk)+Tffresh
+               worka(i,j) = aice(i,j,iblk)*(Tsnic(i,j,iblk)/aice_init(i,j,iblk)+Tffresh)
             else
-               worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)+Tffresh
+               worka(i,j) = aice(i,j,iblk)*(trcr(i,j,nt_Tsfc,iblk)+Tffresh)
             endif
            enddo
            enddo
