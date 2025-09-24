@@ -1066,7 +1066,7 @@
              "snow volume divided by area", c1, c0, &
              ns1, f_sisnthick, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_sisnmass,"sisnmass","m",tstr2D, tcstr,    &
+         call define_hist_field(n_sisnmass,"sisnmass","kg m^-2",tstr2D, tcstr,    &
              "snow mass per areas",                            &
              "snow mass divided by area", c1, c0, &
              ns1, f_sisnmass, avg_ice_present=.true., mask_ice_free_points=.true.)
