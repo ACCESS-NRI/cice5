@@ -29,8 +29,8 @@
                            nt_Tsfc, nt_iage, nt_sice, nt_qice, nt_qsno, &
                            nt_apnd, nt_hpnd
       use ice_therm_shared, only: ktherm, ferrmax, heat_capacity, l_brine, &
-                                  calc_Tsfc, calculate_tin_from_qin, Tmin, &
-				  cap_fluxes
+                           calc_Tsfc, calculate_tin_from_qin, Tmin, Tsnice,  &
+                           cap_fluxes
       use ice_therm_bl99, only: temperature_changes
       use ice_therm_0layer, only: zerolayer_temperature
       use ice_flux, only: Tf
@@ -101,7 +101,7 @@
                                   mlt_onset,   frz_onset, &
                                   yday,        l_stop,    &
                                   istop,       jstop,     &
-                                  dsnow)
+                                  dsnow,       Tsnice)
 
       use ice_communicate, only: my_task
       use ice_therm_mushy, only: temperature_changes_salinity
@@ -221,6 +221,7 @@
 ! 2D state variables (thickness, temperature, enthalpy)
 
       real (kind=dbl_kind), dimension (icells) :: &
+         Tsnice      , & ! snow ice interface temperature (deg C), (diagnostic)
          hilyr       , & ! ice layer thickness
          hslyr       , & ! snow layer thickness
          Tsf         , & ! ice/snow top surface temp, same as Tsfcn (deg C)
@@ -464,25 +465,38 @@
 
       endif         ! heat_capacity
 
-      ! Alex West: Read 1D bottom conductive flux array into 2D array
-      ! for diagnostics (SIMIP)i
+      ! intermediate energy for error check
+      do ij = 1, icells
+         einter(ij) = c0
+         do k = 1, nslyr
+            einter(ij) = einter(ij) + hslyr(ij) * zqsn(ij,k)
+         enddo ! k
+         do k = 1, nilyr
+            einter(ij) = einter(ij) + hilyr(ij) * zqin(ij,k)
+         enddo ! k
+      enddo ! ij
+
+      ! Read 1D bottom conductive flux array into 2D array for diagnostics (SIMIP)
       do ij = 1, icells
          i = indxi(ij)
          j = indxj(ij)
          fcondbotn(i,j) = fcondbot(ij)
+
+         ! Tsnice from https://github.com/CICE-Consortium/Icepack/blob/e9d626f0e5b743e143a2e87248a1aa22ee4f3751/columnphysics/icepack_therm_vertical.F90#L378C1-L385C12
+         ! Tsnice is :
+               ! - the average of temperature of bottom snow layer and top ice layer,
+               ! - weighted by aicen across all thicknii categories
+         if ((hslyr(ij)+hilyr(ij)) > puny) then
+            if (hslyr(ij) > puny) then
+               Tsnice(ij) = Tsnice(ij) + aicen(i,j)*(&
+                  (hslyr(ij)*zTsn(ij,nslyr) + hilyr(ij)*zTin(ij,1)) &
+                  / (hslyr(ij)+hilyr(ij)) &
+                  )
+            else
+               Tsnice(ij) = Tsnice(ij) + aicen(i,j)*Tsf(ij)
+            endif
+         endif
       enddo
-
-
-            ! intermediate energy for error check
-            do ij = 1, icells
-               einter(ij) = c0
-               do k = 1, nslyr
-                  einter(ij) = einter(ij) + hslyr(ij) * zqsn(ij,k)
-               enddo ! k
-               do k = 1, nilyr
-                  einter(ij) = einter(ij) + hilyr(ij) * zqin(ij,k)
-               enddo ! k
-            enddo ! ij
 
       if (l_stop) return
 

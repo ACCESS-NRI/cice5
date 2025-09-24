@@ -1702,7 +1702,7 @@
       use ice_meltpond_cesm, only: hs0
       use ice_state ! almost everything
       use ice_therm_shared, only: calculate_Tin_from_qin, Tmlt, ktherm, &
-          Ti_bot, Tsnic
+          Ti_bot, Tsnice
       use ice_therm_mushy, only: temperature_mush, temperature_snow
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_readwrite
       use ice_zbgc_shared, only: skl_bgc
@@ -2152,10 +2152,10 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-            if (vsno(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-               worka(i,j) = aice(i,j,iblk)*(Tsnic(i,j,iblk)/aice_init(i,j,iblk)+Tffresh)
-            else
-               worka(i,j) = aice(i,j,iblk)*(trcr(i,j,nt_Tsfc,iblk)+Tffresh)
+            if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
+               ! Tsnice is aice_init weighted in thermo_vertical , so adjust that first
+               ! then convert C->K and weight by aice (as intrinsic CMIP diag)
+               worka(i,j) = aice(i,j,iblk)*(Tsnice(i,j,iblk)/aice_init(i,j,iblk)+Tffresh)
             endif
            enddo
            enddo

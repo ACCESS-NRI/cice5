@@ -204,7 +204,7 @@
           nt_apnd, nt_hpnd, nt_ipnd, nt_alvl, nt_vlvl, nt_Tsfc, &
           tr_iage, nt_iage, tr_FY, nt_FY, tr_aero, tr_pond, tr_pond_cesm, &
           tr_pond_lvl, nt_qice, nt_sice, tr_pond_topo, uvel, vvel
-      use ice_therm_shared, only: calc_Tsfc, Tsnic, Ti_bot
+      use ice_therm_shared, only: calc_Tsfc, Tsnice, Ti_bot
       use ice_therm_vertical, only: frzmlt_bottom_lateral, thermo_vertical
       use ice_timers, only: ice_timer_start, ice_timer_stop, timer_ponds
       !BBB:
@@ -391,6 +391,8 @@
                         dfloe       (:,:,iblk), ncat)
          endif 
 
+         Tsnice(:,:,iblk) = c0
+
          do n = 1, ncat
 
             meltsn(:,:,n,iblk)  = c0
@@ -571,7 +573,7 @@
                                 mlt_onset(:,:,iblk), frz_onset(:,:,iblk), &
                                 yday,                l_stop,              &
                                 istop,               jstop,               &
-                                dsnown(:,:,n,iblk))
+                                dsnown(:,:,n,iblk),  Tsnice(:,:,iblk))
 
          if (l_stop) then
             write (nu_diag,*) 'istep1, my_task, iblk =', &
@@ -749,7 +751,6 @@
          enddo                  ! ncat
 
          Ti_bot(:,:,iblk) = Tbot(:,:) * aice(:,:,iblk)
-         Tsnic(:,:,iblk) = c0
 
       !-----------------------------------------------------------------
       ! Calculate ponds from the topographic scheme
