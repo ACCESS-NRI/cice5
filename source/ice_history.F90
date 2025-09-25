@@ -2519,7 +2519,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)*rhoi
+                worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)
               endif
            enddo
            enddo
@@ -2531,7 +2531,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                worka(i,j) = rhos*aice(i,j,iblk)*evap_snow(i,j,iblk)
+                worka(i,j) = aice(i,j,iblk)*evap_snow(i,j,iblk)
               endif
            enddo
            enddo
