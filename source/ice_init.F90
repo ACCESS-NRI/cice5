@@ -60,7 +60,7 @@
                              history_chunksize_x, history_chunksize_y,   &
                              incond_dir, incond_file
       use ice_exit, only: abort_ice
-      use ice_itd, only: kitd, kcatbound
+      use ice_itd, only: kitd, kcatbound, aicenmin
       use ice_ocean, only: oceanmixed_ice, tfrz_option
       use ice_firstyear, only: restart_FY
       use ice_flux, only: update_ocn_f, l_mpond_fresh
@@ -146,9 +146,8 @@
       namelist /thermo_nml/ &
         kitd,           ktherm,          conduct,                       &
         a_rapid_mode,   Rac_rapid_mode,  aspect_rapid_mode,             &
-!ars599: 24092014 (CODE: petteri)
 #ifdef AusCOM
-        chio, ice_ref_salinity, ksno,                                   &
+        chio, ice_ref_salinity, ksno, aicenmin,                         &
 #endif
         saltmax, dSdt_slow_mode, phi_c_slow_mode, phi_i_mushy
 
@@ -330,6 +329,9 @@
       ice_ref_salinity = 5._dbl_kind ! (ppt)
       ksno   = 0.30_dbl_kind     ! thermal conductivity of snow (W/m/deg) 
                                  ! (use 0.2 for cm2)
+      aicenmin = 99              ! maximum ice concentration to zap
+                                 ! we set a sensible default after namelist read
+
 #endif
       atmbndy   = 'default'       ! or 'constant'
 
@@ -441,7 +443,16 @@
          call abort_ice('ice: error reading namelist')
       endif
       call release_fileunit(nu_nml)
-  
+
+#ifdef ACCESS
+      if (ktherm == 1 .and. aicenmin == 99) then
+         !Set a higher value
+         ! of aicenmin if we're using multilayers with UM-style coupling for stability.
+         aicenmin = 0.00001_dbl_kind
+      endif
+#endif
+      if (aicenmin == 99) aicenmin = puny
+
       !-----------------------------------------------------------------
       ! set up diagnostics output and resolve conflicts
       !-----------------------------------------------------------------
@@ -838,6 +849,7 @@
       call broadcast_scalar(chio,               master_task)
       call broadcast_scalar(ice_ref_salinity,   master_task)
       call broadcast_scalar(ksno,               master_task)
+      call broadcast_scalar(aicenmin,           master_task)
       call broadcast_scalar(Tocnfrz,            master_task)
 #endif
       call broadcast_scalar(atmbndy,            master_task)
@@ -1083,6 +1095,7 @@
          write(nu_diag,1005) ' chio                      = ', chio
          write(nu_diag,1005) ' ice_ref_salinity          = ', ice_ref_salinity
          write(nu_diag,1005) ' ksno                      = ', ksno
+         write(nu_diag,1006) ' aicenmin                  = ', aicenmin
 #endif
          write(nu_diag,1005) ' ustar_min                 = ', ustar_min
          write(nu_diag, *)   ' fbot_xfer_type            = ', &
@@ -1220,6 +1233,7 @@
 
  1000    format (a30,2x,f9.2)  ! a30 to align formatted, unformatted statements
  1005    format (a30,2x,f9.6)  ! float
+ 1006    format (a30,2x,f16.12)! double 
  1010    format (a30,2x,l6)    ! logical
  1020    format (a30,2x,i6)    ! integer
  1030    format (a30,   a8)    ! character
