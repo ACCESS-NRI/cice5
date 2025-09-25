@@ -85,12 +85,10 @@
          ! kseaice is used only for zero-layer thermo
          kseaice= 2.00_dbl_kind  ,&! thermal conductivity of sea ice (W/m/deg)
                                    ! (used in zero layer thermodynamics option)
-         zref   = 10._dbl_kind   ,&! reference height for stability (m)
 #ifndef AusCOM
          snowpatch = 0.02_dbl_kind, & ! parameter for fractional snow area (m)
 #endif
-         ! multilayers with the UM coupling
-         aicenmin_ml = 0.00001_dbl_kind! AEW: min aice we want to allow when using
+         zref   = 10._dbl_kind        ! reference height for stability (m)
 #ifndef AusCOM
       real (kind=dbl_kind), parameter, public :: &
          !!! dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
