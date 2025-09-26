@@ -53,7 +53,7 @@
       real (kind=dbl_kind), public :: &
 	 aicenmin   ! AEW: This variable will replace puny as the min ice conc to 
 	            ! allow when zap_small_areas is called.  Set equal to puny
-		    ! if zerolayers or standard coupling, set equal to aicenmin_ml
+		    ! if zerolayers or standard coupling, set equal to 1e-5
 		    ! if multilayers AND UM-style coupling
 	 
       real (kind=dbl_kind), public :: &
@@ -230,20 +230,15 @@
       endif ! kcatbound
 
       ! AEW: (based on Alison McLaren's vn4 modifications) Set a higher value
-      ! of aicenmin if we're using multilayers with UM-style coupling.
+      ! of aicenmin in ice_init if we're using multilayers with UM-style coupling.
       ! Also allow higher values of hi_min, hs_min to be set (this is a 
       ! bit ad-hoc).
-      ! Set aicenmin - this may want to be done via a namelist in future
       !-----------------------------------------------------------------
 
       if (heat_capacity) then
         ! Set higher values to help with stability
-        aicenmin = aicenmin_ml    ! 1.e-5.  Changed from 1.e-2
         hi_min   = p2     ! 0.2m
         hs_min   = p1     ! 0.1m
-      else
-        aicenmin = puny   ! Standard CICE setting
-      !   aicenmin = 2.0e-4_dbl_kind   ! Same as setting in UM7.3 for ESM1.6
       endif
 
       if (my_task == master_task) then
