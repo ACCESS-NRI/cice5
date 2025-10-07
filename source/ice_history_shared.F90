@@ -295,8 +295,9 @@
            f_siflfwbot = 'x', &
            f_siflfwdrain = 'x', &
            f_sisaltmass = 'x', &
-           f_aicen     = 'x', f_vicen      = 'x', &
-           f_vsnon     = 'x',                     &
+           f_aicen     = 'x' , f_siitdconc = 'x', & !same var, two names
+           f_vicen      = 'x', &
+           f_vsnon     = 'x',  &
            f_trsig     = 'm', &
            f_icepresent = 'm', f_sitimefrac = 'x',&
            f_fsurf_ai  = 'm', f_fcondtop_ai= 'm', &
@@ -431,8 +432,9 @@
            f_siflfwbot, &
            f_siflfwdrain, &
            f_sisaltmass, &
-           f_aicen,     f_vicen    , &
-           f_vsnon,                  &
+           f_aicen, f_siitdconc, &    
+           f_vicen, &
+           f_vsnon, &
            f_trsig, &
            f_icepresent, f_sitimefrac,& !same var, two names
            f_fsurf_ai,  f_fcondtop_ai,&

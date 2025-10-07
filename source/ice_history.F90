@@ -396,6 +396,7 @@
       call broadcast_scalar (f_siforcecorioly, master_task)
       call broadcast_scalar (f_siforceintstrx, master_task)
       call broadcast_scalar (f_siforceintstry, master_task)
+      call broadcast_scalar (f_siitdconc, master_task)
       call broadcast_scalar (f_aicen, master_task)
       call broadcast_scalar (f_vicen, master_task)
       call broadcast_scalar (f_vsnon, master_task)
@@ -1445,6 +1446,14 @@
               "effective thermal conductivity of the top ice layer, categories", &
               "multilayer scheme", c1, c0,      &
               ns1, f_keffn_top)
+
+            ! CMIP 3D
+            call define_hist_field(n_aicen,"siitdconc","1",tstr3Dc, tcstr, &
+              "ice area, categories","none", c1, c0,                  &
+              ns1, f_siitdconc)
+
+            ! siitdthick, siitdsnconc, siitdsnthick are not implemented because it's not clear how to 
+            ! mask them when ice free (e.g. by aice or aicen ? )
 
       endif ! if (histfreq(ns1) /= 'x') then
       enddo ! ns1
@@ -2856,7 +2865,7 @@
 
 !3D category fields
 
-         if (f_aicen   (1:1) /= 'x') &
+         if (f_aicen   (1:1) /= 'x' .or. f_siitdconc   (1:1) /= 'x') &
              call accum_hist_field(n_aicen-n2D, iblk, ncat_hist, &
                                    aicen(:,:,1:ncat_hist,iblk), a3Dc)
          if (f_vicen   (1:1) /= 'x') &
