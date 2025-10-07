@@ -2141,7 +2141,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-              worka(i,j) = aice(i,j,iblk)*(trcr(i,j,nt_Tsfc,iblk)+Tffresh)
+              worka(i,j) = trcr(i,j,nt_Tsfc,iblk)+Tffresh
            enddo
            enddo
            call accum_hist_field(n_sitemptop, iblk, worka(:,:), a2D)
@@ -2151,11 +2151,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-            if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-               ! Tsnice is aice_init weighted in thermo_vertical , so adjust that first
-               ! then convert C->K and weight by aice (as intrinsic CMIP diag)
-               worka(i,j) = aice(i,j,iblk)*(Tsnice(i,j,iblk)/aice_init(i,j,iblk)+Tffresh)
-            endif
+            if (aice(i,j,iblk) > puny) worka(i,j) = Tsnice(i,j,iblk)+Tffresh
            enddo
            enddo
          call accum_hist_field(n_sitempsnic, iblk, worka(:,:), a2D)
@@ -2165,8 +2161,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice_init(i,j,iblk) > puny) &
-               worka(i,j) = aice(i,j,iblk)*(Ti_bot(i,j,iblk)/aice_init(i,j,iblk)+Tffresh)
+              if (aice(i,j,iblk) > puny) worka(i,j) = Ti_bot(i,j,iblk)+Tffresh
            enddo
            enddo
            call accum_hist_field(n_sitempbot, iblk, worka(:,:), a2D)
