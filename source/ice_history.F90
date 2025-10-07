@@ -1374,7 +1374,7 @@
          call define_hist_field(n_sisaltmass,"sisaltmass","kg m^-2",tstr2D, tcstr, &
              "mass of salt in sea ice (for ocean fluxes)",&
              "none", c1, c0, & 
-              ns1, f_sisaltmass, avg_ice_present=.true., mask_ice_free_points=.true.) !To-do : check this !
+              ns1, f_sisaltmass) 
 
       endif ! if (histfreq(ns1) /= 'x') then
       enddo ! ns1
