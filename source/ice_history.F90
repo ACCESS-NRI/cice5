@@ -1235,12 +1235,12 @@
          call define_hist_field(n_sndmasssubl,"sndmasssubl","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change from evaporation and sublimation", &
              "none", c1, c0,         &
-             ns1, f_sndmasssubl)
+             ns1, f_sndmasssubl, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmasssubl,"sisndmasssubl","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change from evaporation and sublimation", &
              "none", c1, c0,         &
-             ns1, f_sisndmasssubl)
+             ns1, f_sisndmasssubl, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sidmassmelttop,"sidmassmelttop","kg m^-2 s^-1",tstr2D, tcstr,  &
             "sea ice mass change from top ice melt",                      &
@@ -1275,12 +1275,12 @@
          call define_hist_field(n_sndmassmelt,"sndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change from melt",                      &
              "none", c1, c0,         &
-             ns1, f_sndmassmelt)
+             ns1, f_sndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
 
         call define_hist_field(n_sndmassmelt,"sisndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change from melt",                      &
              "none", c1, c0,         &
-             ns1, f_sisndmassmelt)
+             ns1, f_sisndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
 
         call define_hist_field(n_sisndmasssi,"sisndmasssi","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change through snow to ice conversion",                      &
@@ -2497,8 +2497,8 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice_init(i,j,iblk) > puny) then
-                worka(i,j) = -c1*snoice(i,j,iblk)*rhoi/dt
+              if (aice(i,j,iblk) > puny) then
+                worka(i,j) = -c1*aice(i,j,iblk)*snoice(i,j,iblk)*rhoi/dt
               endif
            enddo
            enddo
@@ -2530,7 +2530,6 @@
           endif
 
          if (f_sidmassmelttop(1:1) /= 'x') then
-           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2596,7 +2595,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
             if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = melts(i,j,iblk)*rhos/dt
+                 worka(i,j) = aice(i,j,iblk)*melts(i,j,iblk)*rhos/dt
               endif
            enddo
            enddo
