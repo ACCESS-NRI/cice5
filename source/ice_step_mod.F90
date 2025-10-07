@@ -183,8 +183,7 @@
       use ice_flux, only: frzmlt, sst, Tf, strocnxT, strocnyT, rside, &
           meltsn, melttn, meltbn, congeln, snoicen, dsnown, uatm, vatm, &
           wind, rhoa, potT, Qa, zlvl, strax, stray, flatn, fsensn, fsurfn,  &
-          fcondtopn, fcondbotn, fcondbot, &
-          ice_freeboardn, ice_freeboard, snowfracn, &
+          fcondtopn, fcondbotn, fcondbot, snowfracn, &
           flw, fsnow, fpond, sss, mlt_onset, frz_onset, faero_atm, faero_ocn, &
           frain, Tair, coszen, strairxT, strairyT, fsurf, fcondtop, fsens, &
           flat, fswabs, flwout, evap, Tref, Qref, Uref, fresh, fsalt, fhocn, &
@@ -562,7 +561,6 @@
                                 fcondtopn(:,:,n,iblk), fcondbotn(:,:,n,iblk),   &
                                 fsensn(:,:,n,iblk),  flatn(:,:,n,iblk),   &
                                 flwoutn,                                  &
-                                ice_freeboardn,                           &
                                 evapn,                                    &
                                 evapn_ice,           evapn_snow,          &
                                 freshn,                                   & 
@@ -724,7 +722,6 @@
                             fswabsn,            flwoutn,              &
                             evapn,                                    &
                             evapn_ice,          evapn_snow,           &
-                            ice_freeboardn(:,:,n,iblk),               &
                             Trefn,              Qrefn,                &
                             freshn,             fsaltn,               &
                             fhocnn,             fswthrun(:,:,n,iblk), &
@@ -736,7 +733,6 @@
                             fswabs  (:,:,iblk), flwout    (:,:,iblk), &
                             evap    (:,:,iblk),                       &
                             evap_ice(:,:,iblk), evap_snow (:,:,iblk), &
-                            ice_freeboard(:,:,iblk),                  &
                             Tref    (:,:,iblk), Qref      (:,:,iblk), &
                             fresh   (:,:,iblk), fsalt     (:,:,iblk), &
                             fhocn   (:,:,iblk), fswthru   (:,:,iblk), &

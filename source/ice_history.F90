@@ -1652,7 +1652,7 @@
       use ice_fileunits, only: nu_diag
 
       use ice_constants, only: c0, c1, p25, puny, secday, depressT, &
-          awtvdr, awtidr, awtvdf, awtidf, Lfresh, rhoi, rhos, cp_ice, &
+          awtvdr, awtidr, awtvdf, awtidf, Lfresh, rhoi, rhos, rhow, cp_ice, &
           spval_dbl, Tffresh, ice_ref_salinity, c1000
       use ice_domain, only: blocks_ice, nblocks
       use ice_grid, only: tmask, lmask_n, lmask_s, tarea, HTE, HTN
@@ -1682,7 +1682,7 @@
           fswthru_ai, strairx, strairy, strtltx, strtlty, strintx, strinty, &
           strocnx, strocny, fm, daidtt, dvidtt, dvsdtt, daidtd, dvidtd, dvsdtd, fsurf, &
           fcondtop, fsurfn, fcondtopn, &
-          fcondbot, fcondbotn, ice_freeboard, &
+          fcondbot, fcondbotn, &
           flatn, fsensn, albcnt, prs_sig, &
           stressp_1, stressm_1, stress12_1, &
           stressp_2, stressm_2, stress12_2, &
@@ -1725,7 +1725,8 @@
       real (kind=dbl_kind) :: & 
            qn                , & ! temporary variable for enthalpy
            hs                , & ! temporary variable for snow depth
-           Tmlts                 !  temporary variable for melting temperature
+           Tmlts             , & ! temporary variable for melting temperature
+           rho_ice, rho_ocn      ! temporary variables for freeboard
 
       real (kind=dbl_kind), dimension (nx_block,ny_block,ncat_hist) :: &
          ravgipn
@@ -1824,8 +1825,6 @@
              call accum_hist_field(n_hi,     iblk, vice(:,:,iblk), a2D)
          if (f_hs     (1:1) /= 'x') &
              call accum_hist_field(n_hs,     iblk, vsno(:,:,iblk), a2D)
-         if (f_sifb   (1:1) /= 'x') &
-            call accum_hist_field(n_sifb,   iblk, ice_freeboard(:,:,iblk), a2D)
          if (f_snowfrac(1:1) /= 'x') &
             call accum_hist_field(n_snowfrac, iblk, snowfrac(:,:,iblk), a2D)
          if (f_Tsfc   (1:1) /= 'x') &
@@ -2768,36 +2767,37 @@
            call accum_hist_field(n_sipr, iblk, worka(:,:), a2D)
          endif
 
-! to-do: Possibly fix for mushy ?
-!          if (f_sifb(1:1) /= 'x') then
-!            worka(:,:) = c0
-!            rho_ice = rhoi
-!            rho_ocn = rhow
-!            do j = jlo, jhi
-!            do i = ilo, ihi
-!               if (aice(i,j,iblk) > puny) then
-!                  if (ktherm == 2) then
-!                     rho_ocn = icepack_mushy_density_brine(sss(i,j,iblk))
-!                     rho_ice = c0
-!                     do k = 1, nzilyr
-!                        Tice = icepack_mushy_temperature_mush(trcr(i,j,nt_qice+k-1,iblk),trcr(i,j,nt_sice+k-1,iblk))
-!                        Sbr = trcr(i,j,nt_sice+k-1,iblk)
-!                        phi = icepack_mushy_liquid_fraction(Tice,Sbr)
-!                        rhob = icepack_mushy_density_brine(Sbr)
-!                        rho_ice = rho_ice + min(phi*rhob+(c1-phi)*rhoi,rho_ocn)
-!                     enddo
-!                     rho_ice = rho_ice / real(nzilyr,kind=dbl_kind)
-!                  endif
-!                  worka(i,j) = ((rho_ocn-rho_ice)*vice(i,j,iblk) - rhos*vsno(i,j,iblk))/rho_ocn
-! !                if (worka(i,j) < c0) then
-! !                   write(nu_diag,*) 'negative fb',rho_ocn,rho_ice,rhos
-! !                   write(nu_diag,*) vice(i,j,iblk),vsno(i,j,iblk)
-! !                endif
-!               endif
-!            enddo
-!            enddo
-!            call accum_hist_field(n_sifb, iblk, worka(:,:), a2D)
-!          endif
+         if (f_sifb(1:1) /= 'x') then
+           worka(:,:) = c0
+           rho_ice = rhoi
+           rho_ocn = rhow
+           do j = jlo, jhi
+           do i = ilo, ihi
+              if (aice(i,j,iblk) > puny) then
+                !to-do : fix for mushy 
+                if (ktherm == 2) then
+                    call abort_ice("sifb not available when ktherm==2, set f_sifb = 'x' or fix in cice5 code")
+                !     ! rho_ocn = icepack_mushy_density_brine(sss(i,j,iblk))
+                !     ! rho_ice = c0
+                !     do k = 1, nzilyr
+                !        Tice = icepack_mushy_temperature_mush(trcr(i,j,nt_qice+k-1,iblk),trcr(i,j,nt_sice+k-1,iblk))
+                !        Sbr = trcr(i,j,nt_sice+k-1,iblk)
+                !        phi = icepack_mushy_liquid_fraction(Tice,Sbr)
+                !        rhob = icepack_mushy_density_brine(Sbr)
+                !        rho_ice = rho_ice + min(phi*rhob+(c1-phi)*rhoi,rho_ocn)
+                !     enddo
+                !     rho_ice = rho_ice / real(nzilyr,kind=dbl_kind)
+                endif
+                worka(i,j) = ((rho_ocn-rho_ice)*vice(i,j,iblk) - rhos*vsno(i,j,iblk))/rho_ocn
+                if (worka(i,j) < c0) then
+                    write(nu_diag,*) 'negative fb',rho_ocn,rho_ice,rhos
+                    write(nu_diag,*) vice(i,j,iblk),vsno(i,j,iblk)
+                endif
+              endif
+           enddo
+           enddo
+           call accum_hist_field(n_sifb, iblk, worka(:,:), a2D)
+         endif
 
          if (f_siflsaltbot(1:1) /= 'x') then
            worka(:,:) = c0

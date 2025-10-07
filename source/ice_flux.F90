@@ -74,10 +74,7 @@
          dardg1dt, & ! rate of area loss by ridging ice (1/s)
          dardg2dt, & ! rate of area gain by new ridges (1/s)
          dvirdgdt, & ! rate of ice volume ridged (m/s)
-         opening , & ! rate of opening due to divergence/shear (1/s)
-         ice_freeboard ! height of ice surface (i.e. not snow surface)
-                       ! above sea level (m)
-
+         opening     ! rate of opening due to divergence/shear (1/s)
 
       real (kind=dbl_kind), & 
          dimension (nx_block,ny_block,ncat,max_blocks), public :: &
@@ -92,10 +89,7 @@
          araftn,    & ! rafting ice area
          vraftn,    & ! rafting ice volume 
          aredistn,  & ! redistribution function: fraction of new ridge area
-         vredistn , & ! redistribution function: fraction of new ridge volume
-         ice_freeboardn ! category height of ice surface (i.e. not snow
-                        ! surface) above sea level (m)
-
+         vredistn     ! redistribution function: fraction of new ridge volume
 
        ! restart
 
@@ -601,7 +595,6 @@
       melts  (:,:,:) = c0
       meltb  (:,:,:) = c0
       meltl  (:,:,:) = c0
-      ice_freeboard (:,:,:) = c0
       daidtt (:,:,:) = aice(:,:,:) ! temporary initial area
       dvidtt (:,:,:) = vice(:,:,:) ! temporary initial volume
       dvsdtt (:,:,:) = vsno(:,:,:) ! temporary initial volume
@@ -716,7 +709,6 @@
                                fswabsn,  flwoutn,    &
                                evapn,                &
                                evapn_ice,evapn_snow, &
-                               ice_freeboardn,       &
                                Trefn,    Qrefn,      &
                                freshn,   fsaltn,     &
                                fhocnn,   fswthrun,   &
@@ -728,7 +720,6 @@
                                fswabs,   flwout,     &
                                evap,                 & 
                                evap_ice, evap_snow,  &
-                               ice_freeboard,        &
                                Tref,     Qref,       &
                                fresh,    fsalt,      & 
                                fhocn,    fswthru,    &
@@ -773,7 +764,6 @@
           meltsn  , & ! snow melt                       (m)
           congeln , & ! congelation ice growth          (m)
           snoicen , & ! snow-ice growth                 (m)
-          ice_freeboardn , & ! ice freeboard                (m)
           evapn_ice, & ! evaporation over ice only (kg/m2/s)
           evapn_snow   ! evaporation over snow only (kg/m2/s)
 
@@ -807,7 +797,6 @@
           melts   , & ! snow melt                       (m)
           congel  , & ! congelation ice growth          (m)
           snoice  , & ! snow-ice growth                 (m)
-          ice_freeboard, & ! ice freeboard
           evap_ice, & ! evaporation over ice only
           evap_snow   ! evaporation over snow only
 
@@ -850,8 +839,6 @@
          evap     (i,j)  = evap    (i,j) + evapn   (i,j)*aicen(i,j)
          evap_ice  (i,j)  = evap_ice(i,j) + evapn_ice(i,j)*aicen(i,j)
          evap_snow (i,j)  = evap_snow(i,j) + evapn_snow(i,j)*aicen(i,j)
-         ice_freeboard (i,j)  = ice_freeboard(i,j) + &
-                                ice_freeboardn(i,j)*aicen(i,j)
          Tref     (i,j)  = Tref    (i,j) + Trefn   (i,j)*aicen(i,j)
          Qref     (i,j)  = Qref    (i,j) + Qrefn   (i,j)*aicen(i,j)
          if (present(Urefn) .and. present(Uref)) then

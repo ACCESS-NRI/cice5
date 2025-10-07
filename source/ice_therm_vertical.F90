@@ -91,7 +91,6 @@
                                   fcondbotn,              &
                                   fsensn,      flatn,     &
                                   flwoutn,                & 
-                                  ice_freeboardn,         &
                                   evapn,                  &
                                   evapn_ice,   evapn_snow,&
                                   freshn,      fsaltn,    &
@@ -193,10 +192,7 @@
          snoice   , & ! snow-ice formation       (m/step-->cm/day) 
          dsnow    , & ! change in snow thickness (m/step-->cm/day) 
          mlt_onset, & ! day of year that sfc melting begins 
-         frz_onset, & ! day of year that freezing begins (congel or frazil) 
-         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
-                         ! above sea level in m
-
+         frz_onset    ! day of year that freezing begins (congel or frazil) 
 
       real (kind=dbl_kind), intent(in) :: &
          yday      ! day of year
@@ -287,7 +283,6 @@
          fhocnn (i,j) = c0
          fadvocn(i,j) = c0
          fcondbotn(i,j) = c0
-         ice_freeboardn(i,j) = c0
          evapn_ice(i,j)= c0
          evapn_snow(i,j)=c0
 
@@ -517,7 +512,6 @@
                                 fbot,         Tbot,     &
                                 flatn,        fsurfn,   &
                                 fcondtopn,    fcondbot, &
-                                ice_freeboardn,         &
                                 fsnow,        hsn_new,  &
                                 fhocnn,       evapn,    &
                                 evapn_ice,    evapn_snow,&
@@ -1460,7 +1454,6 @@
                                     fbot,      Tbot,     &
                                     flatn,     fsurfn,   &
                                     fcondtopn, fcondbot, &
-                                    ice_freeboardn,      &
                                     fsnow,     hsn_new,  &
                                     fhocnn,    evapn,    &
                                     evapn_ice, evapn_snow,&
@@ -1522,10 +1515,7 @@
          dsnow       , & ! snow  formation          (m/step-->cm/day)
          iage        , & ! ice age (s)
          mlt_onset   , & ! day of year that sfc melting begins
-         frz_onset   , & ! day of year that freezing begins (congel or frazil)
-         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
-                         ! above sea level in m
-
+         frz_onset       ! day of year that freezing begins (congel or frazil)
 
       real (kind=dbl_kind), dimension (icells), &
          intent(inout) :: &
@@ -2030,7 +2020,7 @@
                       hin,      hsn,      &
                       zqin,     zqsn,     &
                       dzi,      dzs,      &
-                      dsnow,    ice_freeboardn)
+                      dsnow )
 
 !---!-------------------------------------------------------------------
 !---! Repartition the ice and snow into equal-thickness layers,
@@ -2233,7 +2223,7 @@
                             hin,      hsn,      &
                             zqin,     zqsn,     &
                             dzi,      dzs,      &
-                            dsnow,    ice_freeboardn)
+                            dsnow )
 
       integer (kind=int_kind), intent(in) :: &
          nx_block, ny_block, & ! block dimensions
@@ -2251,12 +2241,6 @@
          snoice  , & ! snow-ice formation       (m/step-->cm/day)
          dsnow   , & ! change in snow thickness after snow-ice formation (m)
          iage        ! snow thickness (m)
-
-      real (kind=dbl_kind), dimension(nx_block,ny_block), &
-         intent(inout) :: &
-         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
-                         ! above sea level in m
-
 
       real (kind=dbl_kind), dimension (icells), &
          intent(inout) :: &
@@ -2365,16 +2349,6 @@
             snoice(i,j) = snoice(i,j) + dhin(ij)
          endif               ! dhin > puny
       enddo                  ! ij
-
-      ! Calculate diagnostic sea ice freeboard after adjustments (SIMIP)
-      do ij = 1, icells
-         i = indxi(ij)
-         j = indxj(ij)
-
-         ice_freeboardn(i,j) = &
-            hin(ij) * (1 - rhoi / rhow)  -  hsn(ij) * (rhos / rhow)
-      enddo
-
 
       end subroutine freeboard
 
