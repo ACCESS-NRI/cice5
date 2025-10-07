@@ -1235,12 +1235,12 @@
          call define_hist_field(n_sndmasssubl,"sndmasssubl","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change from evaporation and sublimation", &
              "none", c1, c0,         &
-             ns1, f_sndmasssubl)
+             ns1, f_sndmasssubl, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmasssubl,"sisndmasssubl","kg m^-2 s^-1",tstr2D, tcstr,  &
              "snow mass change from evaporation and sublimation", &
              "none", c1, c0,         &
-             ns1, f_sisndmasssubl)
+             ns1, f_sisndmasssubl, avg_ice_present=.true., mask_ice_free_points=.true. )
 
          call define_hist_field(n_sidmassmelttop,"sidmassmelttop","kg m^-2 s^-1",tstr2D, tcstr,  &
             "sea ice mass change from top ice melt",                      &
@@ -2456,17 +2456,11 @@
          endif
 
          if (f_sidmassgrowthwat(1:1) /= 'x') then
-           !Sea-Ice Mass Change Through Growth in Supercooled Open Water (Frazil) 
-           !To-do: revisit to see if frazil still needs aice/aice_init weighting
-           !Data can be noisy. Weighting not used in CICE6.
-           !Possibly if weighting is included, set  avg_ice_present=.true., mask_ice_free_points=.true.
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
                   worka(i,j) = frazil(i,j,iblk)*rhoi/dt
-         !         worka(i,j) = aice(i,j,iblk)*frazil(i,j,iblk)*rhoi / &
-         !   (dt*aice_init(i,j,iblk))
               endif
            enddo
            enddo
@@ -2474,14 +2468,11 @@
          endif
 
          if (f_sidmassgrowthbot(1:1) /= 'x') then
-           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
                   worka(i,j) = congel(i,j,iblk)*rhoi/dt
-         !         worka(i,j) = aice(i,j,iblk)*congel(i,j,iblk)*rhoi / &
-         ! (dt *aice_init(i,j,iblk))
               endif
            enddo
            enddo
@@ -2489,14 +2480,11 @@
          endif
 
          if (f_sidmasssi(1:1) /= 'x' .or. f_sidmassgrowthsi(1:1) /= 'x') then
-           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice_init(i,j,iblk) > puny) then
                worka(i,j) = snoice(i,j,iblk)*rhoi/dt
-         !         worka(i,j) = aice(i,j,iblk)*snoice(i,j,iblk)*rhoi /&
-         !  (dt * aice_init(i,j,iblk))
               endif
            enddo
            enddo
@@ -2522,7 +2510,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)
+                worka(i,j) = evap_ice(i,j,iblk)
               endif
            enddo
            enddo
