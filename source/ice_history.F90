@@ -232,6 +232,7 @@
 
 !     call broadcast_scalar (f_example, master_task)
       call broadcast_scalar (f_hi, master_task)
+      call broadcast_scalar (f_sivol, master_task)
       call broadcast_scalar (f_hs, master_task)
       call broadcast_scalar (f_snowfrac, master_task)
       call broadcast_scalar (f_snowfracn, master_task)
@@ -2776,10 +2777,10 @@
                 !     rho_ice = rho_ice / real(nzilyr,kind=dbl_kind)
                 endif
                 worka(i,j) = ((rho_ocn-rho_ice)*vice(i,j,iblk) - rhos*vsno(i,j,iblk))/rho_ocn
-                if (worka(i,j) < c0) then
-                    write(nu_diag,*) 'negative fb',rho_ocn,rho_ice,rhos
-                    write(nu_diag,*) vice(i,j,iblk),vsno(i,j,iblk)
-                endif
+                ! if (worka(i,j) < c0) then
+                !     write(nu_diag,*) 'negative fb',rho_ocn,rho_ice,rhos
+                !     write(nu_diag,*) vice(i,j,iblk),vsno(i,j,iblk)
+                ! endif
               endif
            enddo
            enddo
