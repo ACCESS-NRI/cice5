@@ -751,6 +751,7 @@
          do j = 1, ny_block
          do i = 1, nx_block
             if (tmask(i,j,iblk) .and. aice(i,j,iblk) > c0) &
+               Ti_bot(i,j,iblk) = Tbot(i,j) * aice(i,j,iblk)
                Tsnice(i,j,iblk) = Tsnice(i,j,iblk)/aice(i,j,iblk)
          enddo
          enddo
