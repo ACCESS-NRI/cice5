@@ -748,8 +748,12 @@
 
          ! Tsnice is diagnostic only, it aggregated over ice thickness cats in thermo_vertical, 
          ! return to temperature over ice only
-         Tsnice(:,:,iblk) = Tsnice(:,:,iblk)/aice(:,:,iblk)
-
+         do j = 1, ny_block
+         do i = 1, nx_block
+            if (tmask(i,j) .and. aice(i,j) > c0) &
+               Tsnice(i,j,iblk) = Tsnice(i,j,iblk)/aice(i,j,iblk)
+         enddo
+         enddo
       !-----------------------------------------------------------------
       ! Calculate ponds from the topographic scheme
       !-----------------------------------------------------------------
