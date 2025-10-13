@@ -1075,17 +1075,17 @@
 
          call define_hist_field(n_sitemptop,"sitemptop","K",tstr2D, tcstr,    &
              "sea ice surface temperature", &
-             "none", c1, c0,           &
+             "none", c1, Tffresh,           &
              ns1, f_sitemptop, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sitempsnic,"sitempsnic","K",tstr2D, tcstr,    &
              "snow ice interface temperature", &
-             "surface temperature when no snow present", c1, c0, &
+             "surface temperature when no snow present", c1, Tffresh, &
              ns1, f_sitempsnic, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sitempbot,"sitempbot","K",tstr2D, tcstr,    &
              "sea ice bottom temperature",                             &
-             "none", c1, c0,           &
+             "none", c1, Tffresh,           &
              ns1, f_sitempbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_siu,"siu","m/s",ustr2D, ucstr,  &
@@ -2151,7 +2151,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-              worka(i,j) = trcr(i,j,nt_Tsfc,iblk)+Tffresh
+                worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)
            enddo
            enddo
            call accum_hist_field(n_sitemptop, iblk, worka(:,:), a2D)
@@ -2161,7 +2161,8 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-            if (aice(i,j,iblk) > puny) worka(i,j) = Tsnice(i,j,iblk)+Tffresh
+            if (aice(i,j,iblk) > puny) &
+                worka(i,j) = aice(i,j,iblk)*Tsnice(i,j,iblk)
            enddo
            enddo
          call accum_hist_field(n_sitempsnic, iblk, worka(:,:), a2D)
@@ -2171,7 +2172,8 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) worka(i,j) = Ti_bot(i,j,iblk)+Tffresh
+              if (aice(i,j,iblk) > puny) &
+                worka(i,j) = aice(i,j,iblk)*Ti_bot(i,j,iblk)
            enddo
            enddo
            call accum_hist_field(n_sitempbot, iblk, worka(:,:), a2D)
@@ -2236,11 +2238,11 @@
            call accum_hist_field(n_sidmasstrany, iblk, worka(:,:), a2D)
          endif
 
-         !to-do: scale by aice/aice_init as its a calculated based on initial state ?
          if (f_sistrxdtop(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
+            !to-do: scale by aice/aice_init as its a calculated based on initial state ?
               if (aice(i,j,iblk) > puny) &
                  worka(i,j) = aice(i,j,iblk)*strairx(i,j,iblk)
            enddo
@@ -2248,11 +2250,11 @@
            call accum_hist_field(n_sistrxdtop, iblk, worka(:,:), a2D)
          endif
 
-         !to-do: scale by aice/aice_init ?
          if (f_sistrydtop(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
+            !to-do: scale by aice/aice_init ?
               if (aice(i,j,iblk) > puny) &
                  worka(i,j) = aice(i,j,iblk)*strairy(i,j,iblk)
            enddo
@@ -2499,7 +2501,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                worka(i,j) = -c1*aice(i,j,iblk)*snoice(i,j,iblk)*rhoi/dt
+                worka(i,j) = aice(i,j,iblk)*snoice(i,j,iblk)*rhoi/dt
               endif
            enddo
            enddo
@@ -2527,7 +2529,7 @@
               endif
            enddo
            enddo
-           call accum_hist_field(n_sidmasssubl, iblk, worka(:,:), a2D)
+           call accum_hist_field(n_sndmasssubl, iblk, worka(:,:), a2D)
           endif
 
          if (f_sidmassmelttop(1:1) /= 'x') then
@@ -2536,9 +2538,12 @@
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
                   worka(i,j) = meltt(i,j,iblk)*rhoi/dt
+            ! arguably meltt is calculated by thermodynamics only, and is not 
+            ! advected during dynamics, and so should be corrected for aice_init
+            ! e.g.:
             !   if (aice_init(i,j,iblk) > puny) then
-               !   worka(i,j) = aice(i,j,iblk)*meltt(i,j,iblk)*rhoi /&
-         !   (dt * aice_init(i,j,iblk))
+            !       worka(i,j) = aice(i,j,iblk)*meltt(i,j,iblk)*rhoi /&
+            !       (dt * aice_init(i,j,iblk))
               endif
            enddo
            enddo
@@ -2546,15 +2551,15 @@
          endif
 
          if (f_sidmassmeltbot(1:1) /= 'x') then
-           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
                if (aice(i,j,iblk) > puny) then
                   worka(i,j) = meltb(i,j,iblk)*rhoi/dt
-               ! if (aice_init(i,j,iblk) > puny) then
-         !         worka(i,j) = aice(i,j,iblk)*meltb(i,j,iblk)*rhoi / &
-         !   (dt * aice_init(i,j,iblk))
+            ! arguably corrected to aice_init
+            ! if (aice_init(i,j,iblk) > puny) then
+            !       worka(i,j) = aice(i,j,iblk)*meltb(i,j,iblk)*rhoi / &
+            !       (dt * aice_init(i,j,iblk))
               endif
            enddo
            enddo
@@ -2562,15 +2567,15 @@
          endif
 
        if (f_sidmasslat(1:1) /= 'x' .or. f_sidmassmeltlat(1:1) /= 'x') then
-           !To-do: revisit to see if still needs aice/aice_init weighting
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
                  worka(i,j) = meltl(i,j,iblk)*rhoi/dt
+            ! arguably corrected to aice_init
             !   if (aice_init(i,j,iblk) > puny) then
-            !      worka(i,j) = aice(i,j,iblk)*meltl(i,j,iblk)*rhoi / &
-            ! (dt * aice_init(i,j,iblk))
+            !       worka(i,j) = aice(i,j,iblk)*meltl(i,j,iblk)*rhoi / &
+            !       (dt * aice_init(i,j,iblk))
               endif
            enddo
            enddo

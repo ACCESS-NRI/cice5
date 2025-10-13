@@ -746,7 +746,9 @@
 
          enddo                  ! ncat
 
-         Ti_bot(:,:,iblk) = Tbot(:,:) * aice(:,:,iblk)
+         ! Tsnice is diagnostic only, it aggregated over ice thickness cats in thermo_vertical, 
+         ! return to temperature over ice only
+         Tsnice(:,:,iblk) = Tsnice(:,:,iblk)/aice(:,:,iblk)
 
       !-----------------------------------------------------------------
       ! Calculate ponds from the topographic scheme
