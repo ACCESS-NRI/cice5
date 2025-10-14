@@ -451,7 +451,7 @@
             "ice volume per unit grid cell area", c1, c0,         &
             ns1, f_hi)
 
-         call define_hist_field(n_hi,"hi","m",tstr2D, tcstr,        & 
+         call define_hist_field(n_hi,"sivol","m",tstr2D, tcstr,        & 
             "grid cell mean ice thickness",                       &
             "ice volume per unit grid cell area", c1, c0,         &
             ns1, f_sivol)
@@ -2150,8 +2150,12 @@
            worka(:,:) = c0 
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) &
-                worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_Tsfc,iblk)
+            ! trcr(:,:,nt_Tsfc,:) includes Tfrz where open-water
+            ! we want ice-are temperature only, so calculate from each thickness cat
+                do n = 1, ncat_hist
+                    if (aicen(i,j,n,iblk) > puny) &
+                        worka(i,j) = worka(i,j) + aicen(i,j,n,iblk)*trcrn(i,j,nt_Tsfc,n,iblk)
+                enddo
            enddo
            enddo
            call accum_hist_field(n_sitemptop, iblk, worka(:,:), a2D)
@@ -2173,7 +2177,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                worka(i,j) = aice(i,j,iblk)*Ti_bot(i,j,iblk)
+                worka(i,j) = Ti_bot(i,j,iblk)
+                !nb Ti_bot already aice weighted https://github.com/ACCESS-NRI/cice5/blob/62dcb7ee19f6e0a71d4b8e3e548b8cece0b930cf/source/ice_step_mod.F90#L754
            enddo
            enddo
            call accum_hist_field(n_sitempbot, iblk, worka(:,:), a2D)
@@ -2513,7 +2518,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                worka(i,j) = aice(i,j,iblk)*evap_ice(i,j,iblk)
+                worka(i,j) = evap_ice(i,j,iblk)
               endif
            enddo
            enddo
