@@ -212,6 +212,15 @@
       if (f_Tinz (1:1) /= 'x' .or. f_Sinz (1:1) /= 'x') f_VGRDi = .true.
       if (f_Tsnz (1:1) /= 'x')                          f_VGRDs = .true.
 
+#ifdef ACCESS
+      if ( f_siflsenstop /= 'x' ) call abort_ice("f_siflsenstop not available, set to 'x'")
+      if ( f_sifllattop /= 'x' ) call abort_ice("f_sifllattop not available, set to 'x'")
+      if ( f_sifllwdtop /= 'x' ) call abort_ice("f_sifllwdtop not available, set to 'x'")
+      if ( f_sifllwutop /= 'x' ) call abort_ice("f_sifllwutop not available, set to 'x'")
+      if ( f_siflswdtop /= 'x' ) call abort_ice("f_siflswdtop not available, set to 'x'")
+      if ( f_siflswutop /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
+#endif
+
       call broadcast_scalar (f_tmask, master_task)
       call broadcast_scalar (f_blkmask, master_task)
       call broadcast_scalar (f_tarea, master_task)
@@ -2150,13 +2159,15 @@
            worka(:,:) = c0 
            do j = jlo, jhi
            do i = ilo, ihi
-            ! trcr(:,:,nt_Tsfc,:) includes Tfrz where open-water
-            ! we want ice-are temperature only, so calculate from each thickness cat
-                do n = 1, ncat_hist
-                    if (aicen(i,j,n,iblk) > puny) &
-                        worka(i,j) = worka(i,j) + aicen(i,j,n,iblk)*trcrn(i,j,nt_Tsfc,n,iblk)
-                enddo
-           enddo
+                if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
+                ! trcr(:,:,nt_Tsfc,:) includes Tfrz where open-water
+                ! we want ice-are temperature only, so calculate from each thickness cat
+                    do n = 1, ncat_hist
+                        if (aicen(i,j,n,iblk) > puny) &
+                            worka(i,j) = worka(i,j) + aicen(i,j,n,iblk)*trcrn(i,j,nt_Tsfc,n,iblk)
+                    enddo
+                endif
+            enddo
            enddo
            call accum_hist_field(n_sitemptop, iblk, worka(:,:), a2D)
          endif
@@ -2165,7 +2176,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-            if (aice(i,j,iblk) > puny) &
+            if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) &
                 worka(i,j) = aice(i,j,iblk)*Tsnice(i,j,iblk)
            enddo
            enddo
@@ -2176,7 +2187,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) &
+              if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) &
                 worka(i,j) = Ti_bot(i,j,iblk)
                 !nb Ti_bot already aice weighted https://github.com/ACCESS-NRI/cice5/blob/62dcb7ee19f6e0a71d4b8e3e548b8cece0b930cf/source/ice_step_mod.F90#L754
            enddo
