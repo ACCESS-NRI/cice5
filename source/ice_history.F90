@@ -214,7 +214,7 @@
 
 #ifdef ACCESS
       if ( f_siflsenstop /= 'x' ) call abort_ice("f_siflsenstop not available, set to 'x'")
-      if ( f_sifllattop /= 'x' ) call abort_ice("f_sifllattop not available, set to 'x'")
+    !   if ( f_sifllattop /= 'x' ) call abort_ice("f_sifllattop not available, set to 'x'")
       if ( f_sifllwdtop /= 'x' ) call abort_ice("f_sifllwdtop not available, set to 'x'")
       if ( f_sifllwutop /= 'x' ) call abort_ice("f_sifllwutop not available, set to 'x'")
       if ( f_siflswdtop /= 'x' ) call abort_ice("f_siflswdtop not available, set to 'x'")
