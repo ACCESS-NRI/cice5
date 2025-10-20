@@ -197,8 +197,12 @@
       ! (if using multilayers with UM-style coupling)
       if (calc_Tsfc .or. .not. heat_capacity) then
         !to-do: abort here if trying to use these
-        f_Tn_top     = 'x'
-        f_keffn_top  = 'x'
+        if (f_Tn_top /= 'x') call abort_ice("f_Tn_top not available, set to 'x'")
+        if (f_keffn_top  /= 'x') call abort_ice("f_Tn_top not available, set to 'x' ")
+      endif
+
+      if ( .not. calc_Tsfc) then
+        if (f_Tair /= 'x') call abort_ice ("f_Tn_top not available with calc_Tsfc = .false., set to 'x'")
       endif
 
 #ifndef ncdf
@@ -2156,16 +2160,11 @@
         endif
 
         if (f_sitemptop(1:1) /= 'x') then
-           worka(:,:) = c0 
+           worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
                 if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-                ! trcr(:,:,nt_Tsfc,:) includes Tfrz where open-water
-                ! we want ice-are temperature only, so calculate from each thickness cat
-                    do n = 1, ncat_hist
-                        if (aicen(i,j,n,iblk) > puny) &
-                            worka(i,j) = worka(i,j) + aicen(i,j,n,iblk)*trcrn(i,j,nt_Tsfc,n,iblk)
-                    enddo
+                    worka(i,j) = aice(i,j,iblk) * trcr(:,:,nt_Tsfc,iblk)
                 endif
             enddo
            enddo
@@ -2187,9 +2186,8 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) &
-                worka(i,j) = Ti_bot(i,j,iblk)
-                !nb Ti_bot already aice weighted https://github.com/ACCESS-NRI/cice5/blob/62dcb7ee19f6e0a71d4b8e3e548b8cece0b930cf/source/ice_step_mod.F90#L754
+              if (aice(i,j,iblk) > puny) &
+                worka(i,j) = aice(i,j,iblk)*Ti_bot(i,j,iblk)
            enddo
            enddo
            call accum_hist_field(n_sitempbot, iblk, worka(:,:), a2D)

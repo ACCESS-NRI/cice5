@@ -391,6 +391,7 @@
          endif 
 
          Tsnice(:,:,iblk) = c0
+         Ti_bot(:,:,iblk) = c0
 
          do n = 1, ncat
 
@@ -751,7 +752,7 @@
          do j = 1, ny_block
          do i = 1, nx_block
             if (tmask(i,j,iblk) .and. aice(i,j,iblk) > c0) then
-               Ti_bot(i,j,iblk) = Tbot(i,j) * aice(i,j,iblk)
+               Ti_bot(i,j,iblk) = Tbot(i,j)
                Tsnice(i,j,iblk) = Tsnice(i,j,iblk)/aice(i,j,iblk)
             endif
          enddo
