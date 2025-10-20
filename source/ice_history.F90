@@ -159,71 +159,73 @@
          enddo
       enddo
 
-      if (.not. tr_iage) then
-        !todo: abort here if trying to use these diagnostics and the tracer (and its restart) are not available
-         f_iage = 'x'
-         f_siage = 'x'
-         f_dagedtt = 'x'
-         f_dagedtd = 'x'
-      endif
-      if (.not. tr_FY)   f_FY   = 'x'
+      if ( my_task = master_task ) then !check history configuration
+        if (.not. tr_iage) then
+            !todo: abort here if trying to use these diagnostics and the tracer (and its restart) are not available
+            f_iage = 'x'
+            f_siage = 'x'
+            f_dagedtt = 'x'
+            f_dagedtd = 'x'
+        endif
+        if (.not. tr_FY)   f_FY   = 'x'
 
-      if (kdyn /= 2) then
-           f_a11       = 'x'
-           f_a12       = 'x'
-           f_e11       = 'x'
-           f_e12       = 'x'
-           f_e22       = 'x'
-           f_s11       = 'x'
-           f_s12       = 'x'
-           f_s22       = 'x'
-           f_yieldstress11 = 'x'
-           f_yieldstress12 = 'x'
-           f_yieldstress22 = 'x'
-      endif
+        if (kdyn /= 2) then
+            f_a11       = 'x'
+            f_a12       = 'x'
+            f_e11       = 'x'
+            f_e12       = 'x'
+            f_e22       = 'x'
+            f_s11       = 'x'
+            f_s12       = 'x'
+            f_s22       = 'x'
+            f_yieldstress11 = 'x'
+            f_yieldstress12 = 'x'
+            f_yieldstress22 = 'x'
+        endif
 
-      ! these must be output at the same frequency because of 
-      ! cos(zenith angle) averaging
-      if (f_albice(1:1) /= 'x' .and. f_albsni(1:1) /= 'x') f_albice = f_albsni
-      if (f_albsno(1:1) /= 'x') f_albsno = f_albice
-      if (f_albpnd(1:1) /= 'x') f_albpnd = f_albice
-      if (f_coszen(1:1) /= 'x' .and. f_albice(1:1) /= 'x') f_coszen = f_albice
-      if (f_coszen(1:1) /= 'x' .and. f_albsni(1:1) /= 'x') f_coszen = f_albsni
+        ! these must be output at the same frequency because of 
+        ! cos(zenith angle) averaging
+        if (f_albice(1:1) /= 'x' .and. f_albsni(1:1) /= 'x') f_albice = f_albsni
+        if (f_albsno(1:1) /= 'x') f_albsno = f_albice
+        if (f_albpnd(1:1) /= 'x') f_albpnd = f_albice
+        if (f_coszen(1:1) /= 'x' .and. f_albice(1:1) /= 'x') f_coszen = f_albice
+        if (f_coszen(1:1) /= 'x' .and. f_albsni(1:1) /= 'x') f_coszen = f_albsni
 
-      ! to prevent array-out-of-bounds when aggregating
-      if (f_fmeltt_ai(1:1) /= 'x') f_fmelttn_ai = f_fmeltt_ai
+        ! to prevent array-out-of-bounds when aggregating
+        if (f_fmeltt_ai(1:1) /= 'x') f_fmelttn_ai = f_fmeltt_ai
 
-      ! AEW: These are only calculated under certain circumstances
-      ! (if using multilayers with UM-style coupling)
-      if (calc_Tsfc .or. .not. heat_capacity) then
-        !to-do: abort here if trying to use these
-        if (f_Tn_top /= 'x') call abort_ice("f_Tn_top not available, set to 'x'")
-        if (f_keffn_top  /= 'x') call abort_ice("f_keffn_top not available, set to 'x' ")
-      endif
+        ! AEW: These are only calculated under certain circumstances
+        ! (if using multilayers with UM-style coupling)
+        if (calc_Tsfc .or. .not. heat_capacity) then
+            !to-do: abort here if trying to use these
+            if (f_Tn_top /= 'x') call abort_ice("f_Tn_top not available, set to 'x'")
+            if (f_keffn_top  /= 'x') call abort_ice("f_keffn_top not available, set to 'x' ")
+        endif
 
-      if ( .not. calc_Tsfc) then
-        if (f_Tair /= 'x') call abort_ice ("f_Tair not available with calc_Tsfc = .false., set to 'x'")
-      endif
+        if ( .not. calc_Tsfc) then
+            if (f_Tair /= 'x') call abort_ice ("f_Tair not available with calc_Tsfc = .false., set to 'x'")
+        endif
 
 #ifndef ncdf
-      f_bounds = .false.
+        f_bounds = .false.
 #endif
 
-      ! write dimensions for 3D or 4D history variables
-      ! note: list of variables checked here is incomplete
-      if (f_aicen(1:1) /= 'x' .or. f_vicen(1:1) /= 'x' .or. &
-          f_Tinz (1:1) /= 'x' .or. f_Sinz (1:1) /= 'x') f_NCAT  = .true.
-      if (f_Tinz (1:1) /= 'x' .or. f_Sinz (1:1) /= 'x') f_VGRDi = .true.
-      if (f_Tsnz (1:1) /= 'x')                          f_VGRDs = .true.
+        ! write dimensions for 3D or 4D history variables
+        ! note: list of variables checked here is incomplete
+        if (f_aicen(1:1) /= 'x' .or. f_vicen(1:1) /= 'x' .or. &
+            f_Tinz (1:1) /= 'x' .or. f_Sinz (1:1) /= 'x') f_NCAT  = .true.
+        if (f_Tinz (1:1) /= 'x' .or. f_Sinz (1:1) /= 'x') f_VGRDi = .true.
+        if (f_Tsnz (1:1) /= 'x')                          f_VGRDs = .true.
 
 #ifdef ACCESS
-      if ( f_siflsenstop /= 'x' ) call abort_ice("f_siflsenstop not available, set to 'x'")
-    !   if ( f_sifllattop /= 'x' ) call abort_ice("f_sifllattop not available, set to 'x'")
-      if ( f_sifllwdtop /= 'x' ) call abort_ice("f_sifllwdtop not available, set to 'x'")
-      if ( f_sifllwutop /= 'x' ) call abort_ice("f_sifllwutop not available, set to 'x'")
-      if ( f_siflswdtop /= 'x' ) call abort_ice("f_siflswdtop not available, set to 'x'")
-      if ( f_siflswutop /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
+        if ( f_siflsenstop /= 'x' ) call abort_ice("f_siflsenstop not available, set to 'x'")
+        !   if ( f_sifllattop /= 'x' ) call abort_ice("f_sifllattop not available, set to 'x'")
+        if ( f_sifllwdtop /= 'x' ) call abort_ice("f_sifllwdtop not available, set to 'x'")
+        if ( f_sifllwutop /= 'x' ) call abort_ice("f_sifllwutop not available, set to 'x'")
+        if ( f_siflswdtop /= 'x' ) call abort_ice("f_siflswdtop not available, set to 'x'")
+        if ( f_siflswutop /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
 #endif
+    endif ! end check history config
 
       call broadcast_scalar (f_tmask, master_task)
       call broadcast_scalar (f_blkmask, master_task)
@@ -2169,6 +2171,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
                 if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
+                    ! Tsfc is a tracer, so we shouldn't need aice_init here !
                     worka(i,j) = aice(i,j,iblk) * trcr(i,j,nt_Tsfc,iblk)
                 endif
             enddo
