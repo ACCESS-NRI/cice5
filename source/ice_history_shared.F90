@@ -306,7 +306,7 @@
            f_fmelttn_ai= 'x', f_flatn_ai   = 'x', &
            f_fsensn_ai = 'x',                     &
 !          f_field3dz  = 'x',                     &
-           f_Tn_top    = 'm', f_keffn_top  = 'm', &
+           f_Tn_top    = 'x', f_keffn_top  = 'x', &
            f_Tinz      = 'x', f_Sinz       = 'x', &
            f_Tsnz      = 'x', &
            f_a11       = 'x', f_a12        = 'x', & 

@@ -198,11 +198,11 @@
       if (calc_Tsfc .or. .not. heat_capacity) then
         !to-do: abort here if trying to use these
         if (f_Tn_top /= 'x') call abort_ice("f_Tn_top not available, set to 'x'")
-        if (f_keffn_top  /= 'x') call abort_ice("f_Tn_top not available, set to 'x' ")
+        if (f_keffn_top  /= 'x') call abort_ice("f_keffn_top not available, set to 'x' ")
       endif
 
       if ( .not. calc_Tsfc) then
-        if (f_Tair /= 'x') call abort_ice ("f_Tn_top not available with calc_Tsfc = .false., set to 'x'")
+        if (f_Tair /= 'x') call abort_ice ("f_Tair not available with calc_Tsfc = .false., set to 'x'")
       endif
 
 #ifndef ncdf
@@ -2100,6 +2100,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
+                ! sithick is intensive, vice is already aice*thickness
               if (aice(i,j,iblk) > puny) worka(i,j) = vice(i,j,iblk)
            enddo
            enddo
@@ -2110,6 +2111,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
+                ! simass is extensive, -> grid cell average
               if (aice(i,j,iblk) > puny) worka(i,j) = rhoi*vice(i,j,iblk)
            enddo
            enddo
@@ -2120,6 +2122,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
+                ! siage is intensive, weight each timestep by aice
               if (aice(i,j,iblk) > puny) worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_iage,iblk)
            enddo
            enddo
@@ -2130,6 +2133,7 @@
            worka(:,:) = c0
             do j = jlo, jhi
             do i = ilo, ihi 
+                ! siage is intensive, weight each timestep by aice
                 if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) & 
                     worka(i,j) = aice(i,j,iblk) * snowfrac(i,j,iblk)
             enddo
@@ -2141,6 +2145,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi 
+            ! sisnthick is intensive, vsno is already aice*thickness
              if (aice(i,j,iblk) > puny .and.  vsno(i,j,iblk) > puny) &
                  worka(i,j) = vsno(i,j,iblk)
            enddo
