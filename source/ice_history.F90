@@ -2164,7 +2164,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
                 if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-                    worka(i,j) = aice(i,j,iblk) * trcr(:,:,nt_Tsfc,iblk)
+                    worka(i,j) = aice(i,j,iblk) * trcr(i,j,nt_Tsfc,iblk)
                 endif
             enddo
            enddo
