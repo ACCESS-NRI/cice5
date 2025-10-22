@@ -159,7 +159,7 @@
          enddo
       enddo
 
-      if ( my_task = master_task ) then !check history configuration
+      if ( my_task == master_task ) then !check history configuration
         if (.not. tr_iage) then
             !todo: abort here if trying to use these diagnostics and the tracer (and its restart) are not available
             f_iage = 'x'
@@ -197,13 +197,20 @@
         ! AEW: These are only calculated under certain circumstances
         ! (if using multilayers with UM-style coupling)
         if (calc_Tsfc .or. .not. heat_capacity) then
-            !to-do: abort here if trying to use these
             if (f_Tn_top /= 'x') call abort_ice("f_Tn_top not available, set to 'x'")
             if (f_keffn_top  /= 'x') call abort_ice("f_keffn_top not available, set to 'x' ")
         endif
 
-        if ( .not. calc_Tsfc) then
+        if ( .not. calc_Tsfc ) then
             if (f_Tair /= 'x') call abort_ice ("f_Tair not available with calc_Tsfc = .false., set to 'x'")
+        endif
+
+        if ( .not. calc_Tsfc .and. .not. heat_capacity) then ! access-esm1.6
+            ! surface temperature is neither coupled or calculated within cice
+            ! prognostic in the UM only
+            if (f_Tsfc /= 'x') call abort_ice ("f_Tsfc not available, set to 'x'")
+            if (f_sitemptop /= 'x') call abort_ice ("f_sitemptop not available, set to 'x'")
+            if (f_sitempsnic /= 'x') call abort_ice ("f_sitempsnic not available, set to 'x'")
         endif
 
 #ifndef ncdf
@@ -2170,8 +2177,8 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-                if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-                    ! Tsfc is a tracer, so we shouldn't need aice_init here !
+                if (aice(i,j,iblk) > puny) then
+                    ! Tsfc is a tracer, so was advected during dynamics, so we shouldn't need aice_init here !
                     worka(i,j) = aice(i,j,iblk) * trcr(i,j,nt_Tsfc,iblk)
                 endif
             enddo
@@ -2183,7 +2190,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-            if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) &
+            if (aice(i,j,iblk) > puny) &
                 worka(i,j) = aice(i,j,iblk)*Tsnice(i,j,iblk)
            enddo
            enddo
@@ -2264,7 +2271,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-            !to-do: scale by aice/aice_init as its a calculated based on initial state ?
+            !to-do: scale by aice/aice_init as its a calculated based on coupled state ?
               if (aice(i,j,iblk) > puny) &
                  worka(i,j) = aice(i,j,iblk)*strairx(i,j,iblk)
            enddo
@@ -3090,6 +3097,13 @@
            do n = 1, num_avail_hist_fields_2D
               if (avail_hist_fields(n)%vhistfreq == histfreq(ns)) then 
 
+              ! Only average for timesteps when ice present
+              if (avail_hist_fields(n)%avg_ice_present) then
+                a2D(:,:,n,iblk) = a2D(:,:,n,iblk)*ravgip(:,:)
+              else
+                a2D(:,:,n,iblk) = a2D(:,:,n,iblk)*ravgct
+              endif
+
               do j = jlo, jhi
               do i = ilo, ihi
 #ifdef AusCOM
@@ -3098,14 +3112,14 @@
                      a2D(i,j,n,iblk) = spval_dbl
                   else                            ! convert units
                      a2D(i,j,n,iblk) = avail_hist_fields(n)%cona*a2D(i,j,n,iblk) &
-                           * ravgct + avail_hist_fields(n)%conb
+                           + avail_hist_fields(n)%conb
                   endif
                else
                   if (.not. tmask(i,j,iblk)) then ! mask out land points
                      a2D(i,j,n,iblk) = spval_dbl
                   else                            ! convert units
                      a2D(i,j,n,iblk) = avail_hist_fields(n)%cona*a2D(i,j,n,iblk) &
-                                    * ravgct + avail_hist_fields(n)%conb
+                            + avail_hist_fields(n)%conb
                   endif
                endif
 #else
@@ -3113,26 +3127,15 @@
                   a2D(i,j,n,iblk) = spval_dbl
                else                            ! convert units
                   a2D(i,j,n,iblk) = avail_hist_fields(n)%cona*a2D(i,j,n,iblk) &
-                                 * ravgct + avail_hist_fields(n)%conb
+                            + avail_hist_fields(n)%conb
                endif
 #endif
               enddo             ! i
               enddo             ! j
 
-              ! Only average for timesteps when ice present
-              if (avail_hist_fields(n)%avg_ice_present) then
-                 do j = jlo, jhi
-                 do i = ilo, ihi
-                    if (tmask(i,j,iblk)) then
-                          a2D(i,j,n,iblk) = &
-                          a2D(i,j,n,iblk)*avgct(ns)*ravgip(i,j)
-                    endif
-                    ! Mask ice-free points
-                    if (avail_hist_fields(n)%mask_ice_free_points) then
-                       if (ravgip(i,j) == c0) a2D(i,j,n,iblk) = spval_dbl
-                    endif
-                 enddo             ! i
-                 enddo             ! j
+              ! Mask ice-free points
+              if (avail_hist_fields(n)%mask_ice_free_points) then
+                  where(ravgip(:,:) == c0) a2D(:,:,n,iblk) = spval_dbl
               endif
 
               ! CMIP albedo: also mask points below horizon
