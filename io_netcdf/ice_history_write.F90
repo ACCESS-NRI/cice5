@@ -1136,9 +1136,9 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
         call check(nf90_put_att(ncid,nf90_global,'comment2',title), &
                    'global attribute comment2')
 
-        title = 'CF-1.0'
-        call check(nf90_put_att(ncid,nf90_global,'conventions',title), &
-                   'global attribute conventions')
+        ! title = 'CF-1.0'
+        ! call check(nf90_put_att(ncid,nf90_global,'conventions',title), &
+        !            'global attribute conventions')
 
         call date_and_time(date=current_date, time=current_time)
         write(start_time,1000) current_date(1:4), current_date(5:6), &
