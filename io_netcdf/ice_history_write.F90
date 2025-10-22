@@ -668,6 +668,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                 call check(nf90_put_att(ncid,varid,'cell_measures', &
                             avail_hist_fields(n)%vcellmeas), &
                            'put att cell_measures '//avail_hist_fields(n)%vname)
+                if (avail_hist_fields(n)%vcomment /= "none") then
+                  call check(nf90_put_att(ncid,varid,'comment', &
+                            avail_hist_fields(n)%vcomment), &
+                            'put att comment '//avail_hist_fields(n)%vname)
+                endif
                 call check(nf90_put_att(ncid,varid,'missing_value',spval), &
                            'put att missing_value '//avail_hist_fields(n)%vname)
                 call check(nf90_put_att(ncid,varid,'_FillValue',spval), &
@@ -680,8 +685,15 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                 if (TRIM(avail_hist_fields(n)%vname)/='sig1' .or. &
                     TRIM(avail_hist_fields(n)%vname)/='sig2') then
 
-                    call check(nf90_put_att(ncid,varid,'cell_methods','time: mean'), &
+                    if (avail_hist_fields(n)%avg_ice_present) then
+                       call check(nf90_put_att(ncid,varid,'cell_methods',&
+                          'area: time: mean where sea_ice (mask=siconc)'), &
                           'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                    else
+                      call check(nf90_put_att(ncid,varid,'cell_methods', &
+                            'area: mean where sea time: mean'), &
+                            'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                    endif
                 endif
             endif
 
@@ -739,6 +751,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                         avail_hist_fields(n)%vcellmeas)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining cell measures for '//avail_hist_fields(n)%vname)
+            if (avail_hist_fields(n)%vcomment /= "none") then
+              call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+            endif
             status = nf90_put_att(ncid,varid,'missing_value',spval)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -750,7 +767,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             ! Add cell_methods attribute to variables if averaged
             !---------------------------------------------------------------
             if (hist_avg) then
-                status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
+                status = nf90_put_att(ncid,varid,'cell_methods','area: mean where sea time: mean')
                 if (status /= nf90_noerr) call abort_ice( &
                  'Error defining cell methods for '//avail_hist_fields(n)%vname)
             endif
@@ -802,6 +819,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                         avail_hist_fields(n)%vcellmeas)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining cell measures for '//avail_hist_fields(n)%vname)
+            if (avail_hist_fields(n)%vcomment /= "none") then
+              call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+            endif
             status = nf90_put_att(ncid,varid,'missing_value',spval)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -851,6 +873,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                         avail_hist_fields(n)%vcellmeas)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining cell measures for '//avail_hist_fields(n)%vname)
+            if (avail_hist_fields(n)%vcomment /= "none") then
+              call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+            endif
             status = nf90_put_att(ncid,varid,'missing_value',spval)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -901,6 +928,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                         avail_hist_fields(n)%vcellmeas)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining cell measures for '//avail_hist_fields(n)%vname)
+            if (avail_hist_fields(n)%vcomment /= "none") then
+              call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+            endif
             status = nf90_put_att(ncid,varid,'missing_value',spval)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -912,7 +944,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             ! Add cell_methods attribute to variables if averaged
             !---------------------------------------------------------------
             if (hist_avg) then
-                status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
+                status = nf90_put_att(ncid,varid,'cell_methods','area: mean where sea time: mean')
                 if (status /= nf90_noerr) call abort_ice( &
                  'Error defining cell methods for '//avail_hist_fields(n)%vname)
             endif
@@ -966,6 +998,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                         avail_hist_fields(n)%vcellmeas)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining cell measures for '//avail_hist_fields(n)%vname)
+            if (avail_hist_fields(n)%vcomment /= "none") then
+              call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+            endif
             status = nf90_put_att(ncid,varid,'missing_value',spval)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -977,7 +1014,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             ! Add cell_methods attribute to variables if averaged
             !---------------------------------------------------------------
             if (hist_avg) then
-                status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
+                status = nf90_put_att(ncid,varid,'cell_methods','area: mean where sea time: mean')
                 if (status /= nf90_noerr) call abort_ice( &
                  'Error defining cell methods for '//avail_hist_fields(n)%vname)
             endif
@@ -1031,6 +1068,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                         avail_hist_fields(n)%vcellmeas)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining cell measures for '//avail_hist_fields(n)%vname)
+            if (avail_hist_fields(n)%vcomment /= "none") then
+              call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+            endif
             status = nf90_put_att(ncid,varid,'missing_value',spval)
             if (status /= nf90_noerr) call abort_ice( &
                'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -1042,7 +1084,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             ! Add cell_methods attribute to variables if averaged
             !---------------------------------------------------------------
             if (hist_avg) then
-                status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
+                status = nf90_put_att(ncid,varid,'cell_methods','area: mean where sea time: mean')
                 if (status /= nf90_noerr) call abort_ice( &
                  'Error defining cell methods for '//avail_hist_fields(n)%vname)
             endif
