@@ -1322,57 +1322,57 @@
              "none", c1, c0,         &
              ns1, f_sisndmassdyn, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflswdtop,"siflswdtop","W/m2",tstr2D, tcstr, &
+         call define_hist_field(n_siflswdtop,"siflswdtop","W m^-2",tstr2D, tcstr, &
              "Downwelling Shortwave Flux over Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_siflswdtop, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflswutop,"siflswutop","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_siflswutop,"siflswutop","W m^-2",tstr2D, tcstr, &
              "Upwelling Shortwave Flux over Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_siflswutop, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflswdbot,"siflswdbot","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_siflswdbot,"siflswdbot","W m^-2",tstr2D, tcstr, &
              "Downwelling Shortwave Flux under Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_siflswdbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_sifllwdtop,"sifllwdtop","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_sifllwdtop,"sifllwdtop","W m^-2",tstr2D, tcstr, &
              "Downwelling Longwave Flux over Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_sifllwdtop, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_sifllwutop,"sifllwutop","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_sifllwutop,"sifllwutop","W m^-2",tstr2D, tcstr, &
              "Upwelling Longwave Flux over Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_sifllwutop, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflsenstop,"siflsenstop","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_siflsenstop,"siflsenstop","W m^-2",tstr2D, tcstr, &
              "Net Downward Sensible Heat Flux over Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_siflsenstop, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflsensupbot,"siflsensupbot","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_siflsensupbot,"siflsensupbot","W m^-2",tstr2D, tcstr, &
              "Net Upward Sensible Heat Flux under Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_siflsensupbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflsensupbot,"siflsensbot","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_siflsensupbot,"siflsensbot","W m^-2",tstr2D, tcstr, &
              "Net Upward Sensible Heat Flux under Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_siflsensbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_sifllatstop,"sifllatstop","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_sifllatstop,"sifllatstop","W m^-2",tstr2D, tcstr, &
              "Net Latent Heat Flux over Sea Ice", &
              "positive downward", c1, c0,                            &
              ns1, f_sifllatstop, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflcondtop,"siflcondtop","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_siflcondtop,"siflcondtop","W m^-2",tstr2D, tcstr, &
              "Net Conductive Heat Flux in Sea Ice at the Surface", &
              "positive downward", c1, c0,                            &
              ns1, f_siflcondtop, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_siflcondbot,"siflcondbot","W/m^2",tstr2D, tcstr, &
+         call define_hist_field(n_siflcondbot,"siflcondbot","W m^-2",tstr2D, tcstr, &
              "Net Conductive Heat Flux in Sea Ice at the Base", &
              "positive downward", c1, c0,                            &
              ns1, f_siflcondbot, avg_ice_present=.true., mask_ice_free_points=.true.)
