@@ -214,6 +214,9 @@
             if (f_sitempsnic /= 'x') call abort_ice ("f_sitempsnic not available, set to 'x'")
         endif
 
+        ! rain goes straight to ocean
+        if ( (.not. tr_pond) .and. f_sipr /= 'x') call abort_ice ("f_sipr not available, set to 'x'")
+
 #ifndef ncdf
         f_bounds = .false.
 #endif
@@ -731,7 +734,7 @@
 
          call define_hist_field(n_congel,"congel","cm/day",tstr2D, tcstr, &
              "congelation ice growth",                                  &
-             "none", mps_to_cmpdy/dt, c0,                               &
+             "ice area average", mps_to_cmpdy/dt, c0,                               &
              ns1, f_congel)
 
          call define_hist_field(n_frazil,"frazil","cm/day",tstr2D, tcstr, &
@@ -741,8 +744,8 @@
 
          call define_hist_field(n_snoice,"snoice","cm/day",tstr2D, tcstr, &
              "snow-ice formation",                                      &
-             "none", mps_to_cmpdy/dt, c0,                               &
-             ns1, f_snoice)
+             "ice area average", mps_to_cmpdy/dt, c0,                               &
+             ns1, f_snoice) !rename to snoice_ai ?
 
          call define_hist_field(n_dsnow,"dsnow","cm/day",tstr2D, tcstr, &
              "snow formation",                                      &
@@ -1687,7 +1690,7 @@
       use ice_fileunits, only: nu_diag
 
       use ice_constants, only: c0, c1, p25, puny, secday, depressT, &
-          awtvdr, awtidr, awtvdf, awtidf, Lfresh, rhoi, rhos, rhow, cp_ice, &
+          awtvdr, awtidr, awtvdf, awtidf, Lfresh, rhoi, rhos, rhow, rhofresh, cp_ice, &
           spval_dbl, Tffresh, ice_ref_salinity, c1000
       use ice_domain, only: blocks_ice, nblocks
       use ice_grid, only: tmask, lmask_n, lmask_s, tarea, HTE, HTN
@@ -2009,7 +2012,7 @@
              call accum_hist_field(n_dsnow, iblk, dsnow(:,:,iblk), a2D)
          if (f_meltt  (1:1) /= 'x') &
              call accum_hist_field(n_meltt,  iblk, meltt(:,:,iblk), a2D)
-         if (f_melts  (1:1) /= 'x') &
+         if (f_melts  (1:1) /= 'x') & ! is this actually melts_ai, its a grid cell average (https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L857-L862)
               call accum_hist_field(n_melts,  iblk, melts(:,:,iblk), a2D)
          if (f_meltb  (1:1) /= 'x') &
              call accum_hist_field(n_meltb,  iblk, meltb(:,:,iblk), a2D)
@@ -2145,9 +2148,9 @@
            worka(:,:) = c0
             do j = jlo, jhi
             do i = ilo, ihi 
-                ! siage is intensive, weight each timestep by aice
+                ! siage is intensive, snowfrac is grid cell average already
                 if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) & 
-                    worka(i,j) = aice(i,j,iblk) * snowfrac(i,j,iblk)
+                    worka(i,j) = snowfrac(i,j,iblk)
             enddo
             enddo
             call accum_hist_field(n_sisnconc, iblk, worka(:,:), a2D)
@@ -2518,8 +2521,10 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice_init(i,j,iblk) > puny) then
-               worka(i,j) = snoice(i,j,iblk)*rhoi/dt
+              if (aice(i,j,iblk) > puny) then
+                ! snoice is grid area average - see https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L861-L862
+                ! sidmasssi is extensive
+                worka(i,j) = snoice(i,j,iblk)*rhoi/dt
               endif
            enddo
            enddo
@@ -2533,7 +2538,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                worka(i,j) = aice(i,j,iblk)*snoice(i,j,iblk)*rhoi/dt
+                ! sisndmasssi is intensive
+                worka(i,j) = snoice(i,j,iblk)*rhoi/dt
               endif
            enddo
            enddo
@@ -2545,7 +2551,9 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                worka(i,j) = evap_ice(i,j,iblk)
+                ! sidmassevapsubl is extensive
+                ! evap_ice is ice area average -> convert to grid cell area
+                worka(i,j) = aice(i,j,iblk) * evap_ice(i,j,iblk)
               endif
            enddo
            enddo
@@ -2557,6 +2565,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
+                ! sisndmasssubl is intensive
+                ! evap_snow is ice area average, see evap_snow_ai -> weight by aice
                 worka(i,j) = aice(i,j,iblk)*evap_snow(i,j,iblk)
               endif
            enddo
@@ -2569,7 +2579,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                  worka(i,j) = meltt(i,j,iblk)*rhoi/dt
+                ! sidmassmelttop is extensive, meltt is grid cell average
+                worka(i,j) = meltt(i,j,iblk)*rhoi/dt
             ! arguably meltt is calculated by thermodynamics only, and is not 
             ! advected during dynamics, and so should be corrected for aice_init
             ! e.g.:
@@ -2587,7 +2598,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
                if (aice(i,j,iblk) > puny) then
-                  worka(i,j) = meltb(i,j,iblk)*rhoi/dt
+                ! sidmassmeltbot is extensive, meltb is grid cell average
+                worka(i,j) = meltb(i,j,iblk)*rhoi/dt
             ! arguably corrected to aice_init
             ! if (aice_init(i,j,iblk) > puny) then
             !       worka(i,j) = aice(i,j,iblk)*meltb(i,j,iblk)*rhoi / &
@@ -2603,7 +2615,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = meltl(i,j,iblk)*rhoi/dt
+                ! sidmasslat is extensive, meltl is grid cell average
+                worka(i,j) = meltl(i,j,iblk)*rhoi/dt
             ! arguably corrected to aice_init
             !   if (aice_init(i,j,iblk) > puny) then
             !       worka(i,j) = aice(i,j,iblk)*meltl(i,j,iblk)*rhoi / &
@@ -2621,6 +2634,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
+                ! sisndmassmelt is intensive
                  worka(i,j) = aice(i,j,iblk)*fsnow(i,j,iblk)
               endif
            enddo
@@ -2633,7 +2647,9 @@
            do j = jlo, jhi
            do i = ilo, ihi
             if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*melts(i,j,iblk)*rhos/dt
+                 ! sisndmassmelt is intensive
+                 ! melts is grid cell average - see https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L861-L862
+                 worka(i,j) = melts(i,j,iblk)*rhos/dt
               endif
            enddo
            enddo
@@ -2645,7 +2661,9 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = dvsdtd(i,j,iblk)*rhos
+                ! dvsdtd is change in snow volumne per grid cell area, 
+                ! sisndmassdyn is intensive, therefore multiply by aice
+                 worka(i,j) = aice(i,j,iblk)*dvsdtd(i,j,iblk)*rhos
               endif
            enddo
            enddo
@@ -2766,8 +2784,10 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice(i,j,iblk) > puny .and. aice_init(i,j,iblk) > puny) then
-                worka(i,j) = aice(i,j,iblk)*fcondbot(i,j,iblk)
+              if (aice(i,j,iblk) > puny) then
+                ! siflcondbot is intensive, fcondbot is grid cell average
+                ! https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L833-L834
+                worka(i,j) = fcondbot(i,j,iblk)
                 ! CICE6 has this weighting, presumably an incorrent attempt to adjust 
                 ! fcondbot so its consistent with aice ?
                 ! for ACCESS, fcondbot was caluclated in the UM, using aice from the timestep
@@ -2780,12 +2800,13 @@
          endif
 
          if (f_sipr(1:1) /= 'x') then
-            !to-do: check scaling ?
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*frain(i,j,iblk) 
+                !it looks like frain is ice_area average https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_step_mod.F90#L334-L335
+                !sipr is intensive, so weight by aice
+                 worka(i,j) = aice(i,j,iblk)*frain(i,j,iblk)*rhofresh
               endif
            enddo
            enddo
@@ -2849,27 +2870,17 @@
          endif
 
          if (f_siflfwbot(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*fresh(i,j,iblk)
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_siflfwbot, iblk, worka(:,:), a2D)
-         endif
-
-         if (f_siflsaltbot(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*fsalt(i,j,iblk)
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_siflsaltbot, iblk, worka(:,:), a2D)
+        !    worka(:,:) = c0
+        !    do j = jlo, jhi
+        !    do i = ilo, ihi
+        !       if (aice(i,j,iblk) > puny) then
+        !         ! siflfwbot is intensive, fresh_ai is a grid cell average already
+        !          worka(i,j) = fresh_ai(i,j,iblk)
+        !       endif
+        !    enddo
+        !    enddo
+            ! we seem to loose a lot of water if masking by aice ( i guess when cell totally melts out )
+           call accum_hist_field(n_siflfwbot, iblk, fresh_ai(:,:,iblk), a2D)
          endif
 
          if (f_siflfwdrain(1:1) /= 'x') then
@@ -2877,7 +2888,10 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*(frain(i,j,iblk) + melts(i,j,iblk)+meltt(i,j,iblk))
+                 worka(i,j) = aice(i,j,iblk)*(&
+                    frain(i,j,iblk) * rhofresh &
+                    + melts(i,j,iblk) * rhos/dt &
+                    + meltt(i,j,iblk) * rhoi/dt)
               endif
            enddo
            enddo
