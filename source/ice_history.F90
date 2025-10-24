@@ -2112,25 +2112,25 @@
          !2D CMIP6 fields
 
          if (f_sithick(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-                ! sithick is intensive, vice is already aice*thickness
-              if (aice(i,j,iblk) > puny) worka(i,j) = vice(i,j,iblk)
-           enddo
-           enddo
-           call accum_hist_field(n_sithick, iblk, worka(:,:), a2D)
+        !    worka(:,:) = c0
+        !    do j = jlo, jhi
+        !    do i = ilo, ihi
+        !         ! sithick is intensive, vice is already aice*thickness
+        !       if (aice(i,j,iblk) > puny) worka(i,j) = vice(i,j,iblk)
+        !    enddo
+        !    enddo
+           call accum_hist_field(n_sithick, iblk, vice(:,:,iblk), a2D)
          endif
 
          if (f_simass(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-                ! simass is extensive, -> grid cell average
-              if (aice(i,j,iblk) > puny) worka(i,j) = rhoi*vice(i,j,iblk)
-           enddo
-           enddo
-           call accum_hist_field(n_simass, iblk, worka(:,:), a2D)
+        !    worka(:,:) = c0
+        !    do j = jlo, jhi
+        !    do i = ilo, ihi
+        !         ! simass is extensive, -> grid cell average
+        !       if (aice(i,j,iblk) > puny) worka(i,j) = rhoi*vice(i,j,iblk)
+        !    enddo
+        !    enddo
+           call accum_hist_field(n_simass, iblk, rhoi*vice(:,:,iblk), a2D)
          endif
 
          if (f_siage(1:1) /= 'x') then
@@ -2138,45 +2138,46 @@
            do j = jlo, jhi
            do i = ilo, ihi
                 ! siage is intensive, weight each timestep by aice
-              if (aice(i,j,iblk) > puny) worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_iage,iblk)
+              if (aice(i,j,iblk) > puny) &
+                worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_iage,iblk)
            enddo
            enddo
            call accum_hist_field(n_siage, iblk, worka(:,:), a2D)
          endif
 
         if (f_sisnconc(1:1) /= 'x') then
-           worka(:,:) = c0
-            do j = jlo, jhi
-            do i = ilo, ihi 
-                ! siage is intensive, snowfrac is grid cell average already
-                if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) & 
-                    worka(i,j) = snowfrac(i,j,iblk)
-            enddo
-            enddo
-            call accum_hist_field(n_sisnconc, iblk, worka(:,:), a2D)
+        !    worka(:,:) = c0
+        !     do j = jlo, jhi
+        !     do i = ilo, ihi 
+        !         ! siage is intensive, snowfrac is grid cell average already
+        !         if (aice(i,j,iblk) > puny .and.  snowfrac(i,j,iblk) > puny) & 
+        !             worka(i,j) = snowfrac(i,j,iblk)
+        !     enddo
+        !     enddo
+            call accum_hist_field(n_sisnconc, iblk, snowfrac(:,:,iblk), a2D)
          endif
 
         if (f_sisnthick(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi 
-            ! sisnthick is intensive, vsno is already aice*thickness
-             if (aice(i,j,iblk) > puny .and.  vsno(i,j,iblk) > puny) &
-                 worka(i,j) = vsno(i,j,iblk)
-           enddo
-           enddo
-           call accum_hist_field(n_sisnthick, iblk, worka(:,:), a2D)
+        !    worka(:,:) = c0
+        !    do j = jlo, jhi
+        !    do i = ilo, ihi 
+        !     ! sisnthick is intensive, vsno is already aice*thickness
+        !      if (aice(i,j,iblk) > puny .and.  vsno(i,j,iblk) > puny) &
+        !          worka(i,j) = vsno(i,j,iblk)
+        !    enddo
+        !    enddo
+           call accum_hist_field(n_sisnthick, iblk, vsno(:,:,iblk), a2D)
         endif
 
         if (f_sisnmass(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi 
-             if (aice(i,j,iblk) > puny .and.  vsno(i,j,iblk) > puny) &
-                 worka(i,j) = vsno(i,j,iblk) * rhos
-           enddo
-           enddo
-           call accum_hist_field(n_sisnmass, iblk, worka(:,:), a2D)
+        !    worka(:,:) = c0
+        !    do j = jlo, jhi
+        !    do i = ilo, ihi 
+        !      if (aice(i,j,iblk) > puny .and.  vsno(i,j,iblk) > puny) &
+        !          worka(i,j) = vsno(i,j,iblk) * rhos
+        !    enddo
+        !    enddo
+           call accum_hist_field(n_sisnmass, iblk, vsno(:,:,iblk) * rhos, a2D)
         endif
 
         if (f_sitemptop(1:1) /= 'x') then
@@ -2184,7 +2185,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
                 if (aice(i,j,iblk) > puny) then
-                    ! Tsfc is a tracer, so was advected during dynamics, so we shouldn't need aice_init here !
+                    ! Tsfc is a tracer, so was advected during dynamics
+                    ! sitemptop is intensive, weight by aice
                     worka(i,j) = aice(i,j,iblk) * trcr(i,j,nt_Tsfc,iblk)
                 endif
             enddo
@@ -2197,6 +2199,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
             if (aice(i,j,iblk) > puny) &
+                ! nb Tsnice is approximate, not a tracer
+                ! sitempsnic is intensive, weight by aice
                 worka(i,j) = aice(i,j,iblk)*Tsnice(i,j,iblk)
            enddo
            enddo
@@ -2208,6 +2212,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
+                ! nb Tsnice is approximate, not a tracer
+                ! sitempbot is intensive, weight by aice
                 worka(i,j) = aice(i,j,iblk)*Ti_bot(i,j,iblk)
            enddo
            enddo
@@ -2218,6 +2224,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
+                ! intensive, weight by aice
               if (aice(i,j,iblk) > puny) worka(i,j) = aice(i,j,iblk)*uvel(i,j,iblk)
            enddo
            enddo
@@ -2228,6 +2235,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
+               ! intensive, weight by aice
               if (aice(i,j,iblk) > puny) worka(i,j) = aice(i,j,iblk)*vvel(i,j,iblk)
            enddo
            enddo
@@ -2238,6 +2246,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
+              ! intensive, weight by aice
               if (aice(i,j,iblk) > puny) worka(i,j) = aice(i,j,iblk) &
                  * sqrt(uvel(i,j,iblk)*uvel(i,j,iblk)+vvel(i,j,iblk)*vvel(i,j,iblk))
            enddo
@@ -2250,6 +2259,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
+                ! extensive,  vice and vsno are grid cell averages
                 worka(i,j) = p25*HTE(i,j,iblk)*( &
                                     rhoi*(vice(i,j,iblk)+vice(i+1,j,iblk)) &
                                     + rhos*(vsno(i,j,iblk)+vsno(i+1,j,iblk)) &
@@ -2264,6 +2274,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
+                ! extensive,  vice and vsno are grid cell averages
                  worka(i,j) = p25*HTN(i,j,iblk)*( &
                                 rhoi*(vice(i,j,iblk)+vice(i,j+1,iblk)) &
                                 + rhos*(vsno(i,j,iblk)+vsno(i,j+1,iblk)) &
@@ -2277,8 +2288,9 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-            !to-do: scale by aice/aice_init as its a calculated based on coupled state ?
+            !to-do: scale by aice/aice_init as its calculated based on coupled state ?
               if (aice(i,j,iblk) > puny) &
+                  ! intensive, weight by aice
                  worka(i,j) = aice(i,j,iblk)*strairx(i,j,iblk)
            enddo
            enddo
@@ -2291,6 +2303,7 @@
            do i = ilo, ihi
             !to-do: scale by aice/aice_init ?
               if (aice(i,j,iblk) > puny) &
+                  ! intensive, weight by aice
                  worka(i,j) = aice(i,j,iblk)*strairy(i,j,iblk)
            enddo
            enddo
@@ -2302,6 +2315,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
+                  ! intensive, weight by aice
                  worka(i,j) = aice(i,j,iblk)*strocnx(i,j,iblk)
            enddo
            enddo
@@ -2313,6 +2327,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
+                ! intensive, weight by aice
                  worka(i,j) = aice(i,j,iblk)*strocny(i,j,iblk)
            enddo
            enddo
@@ -2446,104 +2461,104 @@
          endif
 
          if (f_sidconcth(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = daidtt(i,j,iblk)
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidconcth, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !        worka(i,j) = daidtt(i,j,iblk)
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidconcth, iblk, daidtt(:,:,iblk), a2D)
          endif
 
         if (f_sidconcdyn(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = daidtd(i,j,iblk)
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidconcdyn, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !        worka(i,j) = daidtd(i,j,iblk)
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidconcdyn, iblk, daidtd(:,:,iblk), a2D)
          endif
 
          if (f_sidmassth(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = dvidtt(i,j,iblk) * rhoi
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidmassth, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !        worka(i,j) = dvidtt(i,j,iblk) * rhoi
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidmassth, iblk, dvidtt(:,:,iblk) * rhoi, a2D)
          endif
 
          if (f_sidmassdyn(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = dvidtd(i,j,iblk) * rhoi
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidmassdyn, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !        worka(i,j) = dvidtd(i,j,iblk) * rhoi
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidmassdyn, iblk, dvidtd(:,:,iblk) * rhoi, a2D)
          endif
 
          if (f_sidmassgrowthwat(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice_init(i,j,iblk) > puny) then
-                  worka(i,j) = frazil(i,j,iblk)*rhoi/dt
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidmassgrowthwat, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice_init(i,j,iblk) > puny) then
+          !         worka(i,j) = frazil(i,j,iblk)*rhoi/dt
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidmassgrowthwat, iblk, frazil(:,:,iblk)*rhoi/dt, a2D)
          endif
 
          if (f_sidmassgrowthbot(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice_init(i,j,iblk) > puny) then
-                  worka(i,j) = congel(i,j,iblk)*rhoi/dt
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidmassgrowthbot, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice_init(i,j,iblk) > puny) then
+          !         worka(i,j) = congel(i,j,iblk)*rhoi/dt
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidmassgrowthbot, iblk, congel(:,:,iblk)*rhoi/dt, a2D)
          endif
 
          if (f_sidmasssi(1:1) /= 'x' .or. f_sidmassgrowthsi(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                ! snoice is grid area average - see https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L861-L862
-                ! sidmasssi is extensive
-                worka(i,j) = snoice(i,j,iblk)*rhoi/dt
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidmasssi, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !       ! snoice is grid area average - see https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L861-L862
+          !       ! sidmasssi is extensive
+          !       worka(i,j) = snoice(i,j,iblk)*rhoi/dt
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidmasssi, iblk, snoice(:,:,iblk)*rhoi/dt, a2D)
          endif
 
          if (f_sisndmasssi(1:1) /= 'x') then
            !To-do: calculate a seperate icesno diag for change in snow thickness in ice_therm_vertical ?
            ! Its equivalent though, so fairly moot
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                ! sisndmasssi is intensive
-                worka(i,j) = snoice(i,j,iblk)*rhoi/dt
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sisndmasssi, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !       ! sisndmasssi is intensive
+          !       worka(i,j) = snoice(i,j,iblk)*rhoi/dt
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sisndmasssi, iblk, snoice(:,:,iblk)*rhoi/dt, a2D)
          endif
 
          if (f_sidmassevapsubl(1:1) /= 'x') then
@@ -2575,56 +2590,56 @@
           endif
 
          if (f_sidmassmelttop(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                ! sidmassmelttop is extensive, meltt is grid cell average
-                worka(i,j) = meltt(i,j,iblk)*rhoi/dt
-            ! arguably meltt is calculated by thermodynamics only, and is not 
-            ! advected during dynamics, and so should be corrected for aice_init
-            ! e.g.:
-            !   if (aice_init(i,j,iblk) > puny) then
-            !       worka(i,j) = aice(i,j,iblk)*meltt(i,j,iblk)*rhoi /&
-            !       (dt * aice_init(i,j,iblk))
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidmassmelttop, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !       ! sidmassmelttop is extensive, meltt is grid cell average
+          !       worka(i,j) = meltt(i,j,iblk)*rhoi/dt
+          !   ! arguably meltt is calculated by thermodynamics only, and is not 
+          !   ! advected during dynamics, and so should be corrected for aice_init
+          !   ! e.g.:
+          !   !   if (aice_init(i,j,iblk) > puny) then
+          !   !       worka(i,j) = aice(i,j,iblk)*meltt(i,j,iblk)*rhoi /&
+          !   !       (dt * aice_init(i,j,iblk))
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidmassmelttop, iblk, meltt(:,:,iblk)*rhoi/dt, a2D)
          endif
 
          if (f_sidmassmeltbot(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-               if (aice(i,j,iblk) > puny) then
-                ! sidmassmeltbot is extensive, meltb is grid cell average
-                worka(i,j) = meltb(i,j,iblk)*rhoi/dt
-            ! arguably corrected to aice_init
-            ! if (aice_init(i,j,iblk) > puny) then
-            !       worka(i,j) = aice(i,j,iblk)*meltb(i,j,iblk)*rhoi / &
-            !       (dt * aice_init(i,j,iblk))
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidmassmeltbot, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !      if (aice(i,j,iblk) > puny) then
+          !       ! sidmassmeltbot is extensive, meltb is grid cell average
+          !       worka(i,j) = meltb(i,j,iblk)*rhoi/dt
+          !   ! arguably corrected to aice_init
+          !   ! if (aice_init(i,j,iblk) > puny) then
+          !   !       worka(i,j) = aice(i,j,iblk)*meltb(i,j,iblk)*rhoi / &
+          !   !       (dt * aice_init(i,j,iblk))
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidmassmeltbot, iblk, meltb(:,:,iblk)*rhoi/dt, a2D)
          endif
 
        if (f_sidmasslat(1:1) /= 'x' .or. f_sidmassmeltlat(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                ! sidmasslat is extensive, meltl is grid cell average
-                worka(i,j) = meltl(i,j,iblk)*rhoi/dt
-            ! arguably corrected to aice_init
-            !   if (aice_init(i,j,iblk) > puny) then
-            !       worka(i,j) = aice(i,j,iblk)*meltl(i,j,iblk)*rhoi / &
-            !       (dt * aice_init(i,j,iblk))
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sidmasslat, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !       ! sidmasslat is extensive, meltl is grid cell average
+          !       worka(i,j) = meltl(i,j,iblk)*rhoi/dt
+          !   ! arguably corrected to aice_init
+          !   !   if (aice_init(i,j,iblk) > puny) then
+          !   !       worka(i,j) = aice(i,j,iblk)*meltl(i,j,iblk)*rhoi / &
+          !   !       (dt * aice_init(i,j,iblk))
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sidmasslat, iblk, meltl(:,:,iblk)*rhoi/dt, a2D)
          endif
 
        if (f_sndmasssnf(1:1) /= 'x' .or. f_sisndmasssnf(1:1) /= 'x') then
@@ -2643,17 +2658,17 @@
          endif
 
          if (f_sndmassmelt(1:1) /= 'x' .or. f_sisndmassmelt(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-            if (aice(i,j,iblk) > puny) then
-                 ! sisndmassmelt is intensive
-                 ! melts is grid cell average - see https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L861-L862
-                 worka(i,j) = melts(i,j,iblk)*rhos/dt
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sndmassmelt, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !   if (aice(i,j,iblk) > puny) then
+          !        ! sisndmassmelt is intensive
+          !        ! melts is grid cell average - see https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L861-L862
+          !        worka(i,j) = melts(i,j,iblk)*rhos/dt
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sndmassmelt, iblk, melts(:,:,iblk)*rhos/dt, a2D)
          endif
 
          if (f_sndmassdyn(1:1) /= 'x' .or. f_sisndmassdyn(1:1) /= 'x') then
@@ -2661,7 +2676,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                ! dvsdtd is change in snow volumne per grid cell area, 
+                ! dvsdtd is change in snow volume per grid cell area, 
                 ! sisndmassdyn is intensive, therefore multiply by aice
                  worka(i,j) = aice(i,j,iblk)*dvsdtd(i,j,iblk)*rhos
               endif
@@ -2772,6 +2787,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
+                ! to-do remove divide by aice step ?
+                ! see https://github.com/ACCESS-NRI/cice5/blob/d083b62ed977fdaec0892c1838a55868ba5818eb/source/ice_flux.F90#L1030-L1031
                  worka(i,j) = aice(i,j,iblk)*fcondtop(i,j,iblk)
               endif
            enddo
@@ -2781,22 +2798,22 @@
 
          if (f_siflcondbot(1:1) /= 'x') then
            !to-do: check about aice_init, still in CICE6 but different to siflcondtop
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                ! siflcondbot is intensive, fcondbot is grid cell average
-                ! https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L833-L834
-                worka(i,j) = fcondbot(i,j,iblk)
-                ! CICE6 has this weighting, presumably an incorrent attempt to adjust 
-                ! fcondbot so its consistent with aice ?
-                ! for ACCESS, fcondbot was caluclated in the UM, using aice from the timestep
-                ! before aice_init, so it doesn't really help
-                ! worka(i,j) = (aice(i,j,iblk)/aice_init(i,j,iblk))*fcondbot(i,j,iblk)
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_siflcondbot, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !       ! siflcondbot is intensive, fcondbot is grid cell average
+          !       ! https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_flux.F90#L833-L834
+          !       worka(i,j) = fcondbot(i,j,iblk)
+          !       ! CICE6 has this weighting, presumably an incorrent attempt to adjust 
+          !       ! fcondbot so its consistent with aice ?
+          !       ! for ACCESS, fcondbot was caluclated in the UM, using aice from the timestep
+          !       ! before aice_init, so it doesn't really help
+          !       ! worka(i,j) = (aice(i,j,iblk)/aice_init(i,j,iblk))*fcondbot(i,j,iblk)
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_siflcondbot, iblk, fcondbot(:,:,iblk), a2D)
          endif
 
          if (f_sipr(1:1) /= 'x') then
@@ -2846,27 +2863,28 @@
          endif
 
          if (f_siflsaltbot(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = aice(i,j,iblk)*fsalt(i,j,iblk)
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_siflsaltbot, iblk, worka(:,:), a2D)
+        !    worka(:,:) = c0
+        !    do j = jlo, jhi
+        !    do i = ilo, ihi
+        !       if (aice(i,j,iblk) > puny) then
+        !          worka(i,j) = aice(i,j,iblk)*fsalt(i,j,iblk)
+        !       endif
+        !    enddo
+        !    enddo
+           call accum_hist_field(n_siflsaltbot, iblk, fsalt_ai(:,:,iblk), a2D)
          endif
 
          if (f_sisaltmass(1:1) /= 'x') then
-           worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-                 worka(i,j) = ice_ref_salinity * rhoi * vice(i,j,iblk) / c1000
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sisaltmass, iblk, worka(:,:), a2D)
+          !  worka(:,:) = c0
+          !  do j = jlo, jhi
+          !  do i = ilo, ihi
+          !     if (aice(i,j,iblk) > puny) then
+          !        worka(i,j) = ice_ref_salinity * rhoi * vice(i,j,iblk) / c1000
+          !     endif
+          !  enddo
+          !  enddo
+           call accum_hist_field(n_sisaltmass, iblk, &
+              ice_ref_salinity * rhoi * vice(:,:,iblk) / c1000 , a2D)
          endif
 
          if (f_siflfwbot(1:1) /= 'x') then
@@ -2888,6 +2906,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
+                ! to-do : remove frain ? - goes straight to ocean (or into melt pond)
                  worka(i,j) = aice(i,j,iblk)*(&
                     frain(i,j,iblk) * rhofresh &
                     + melts(i,j,iblk) * rhos/dt &
