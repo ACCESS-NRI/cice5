@@ -684,15 +684,19 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             if (hist_avg) then
                 if (TRIM(avail_hist_fields(n)%vname)/='sig1' .or. &
                     TRIM(avail_hist_fields(n)%vname)/='sig2') then
-
                     if (avail_hist_fields(n)%avg_ice_present) then
-                       call check(nf90_put_att(ncid,varid,'cell_methods',&
-                          'area: time: mean where sea_ice (mask=siconc)'), &
-                          'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                      call check(nf90_put_att(ncid,varid,'cell_methods',&
+                        'area: time: mean where sea_ice (mask=siconc)'), &
+                        'put att cell methods time mean '//avail_hist_fields(n)%vname)
                     else
-                      call check(nf90_put_att(ncid,varid,'cell_methods', &
-                            'area: mean where sea time: mean'), &
-                            'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                      if (TRIM(avail_hist_fields(n)%vname(1:2))/='si') then !native diags
+                        call check(nf90_put_att(ncid,varid,'cell_methods','time: mean'), &
+                          'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                      else !cmip diags
+                        call check(nf90_put_att(ncid,varid,'cell_methods', &
+                          'area: mean where sea time: mean'), &
+                          'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                      endif
                     endif
                 endif
             endif
@@ -767,7 +771,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             ! Add cell_methods attribute to variables if averaged
             !---------------------------------------------------------------
             if (hist_avg) then
-                status = nf90_put_att(ncid,varid,'cell_methods','area: mean where sea time: mean')
+                status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
                 if (status /= nf90_noerr) call abort_ice( &
                  'Error defining cell methods for '//avail_hist_fields(n)%vname)
             endif
@@ -944,7 +948,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             ! Add cell_methods attribute to variables if averaged
             !---------------------------------------------------------------
             if (hist_avg) then
-                status = nf90_put_att(ncid,varid,'cell_methods','area: mean where sea time: mean')
+                status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
                 if (status /= nf90_noerr) call abort_ice( &
                  'Error defining cell methods for '//avail_hist_fields(n)%vname)
             endif
@@ -1014,7 +1018,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             ! Add cell_methods attribute to variables if averaged
             !---------------------------------------------------------------
             if (hist_avg) then
-                status = nf90_put_att(ncid,varid,'cell_methods','area: mean where sea time: mean')
+                status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
                 if (status /= nf90_noerr) call abort_ice( &
                  'Error defining cell methods for '//avail_hist_fields(n)%vname)
             endif
@@ -1084,7 +1088,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
             ! Add cell_methods attribute to variables if averaged
             !---------------------------------------------------------------
             if (hist_avg) then
-                status = nf90_put_att(ncid,varid,'cell_methods','area: mean where sea time: mean')
+                status = nf90_put_att(ncid,varid,'cell_methods','time: mean')
                 if (status /= nf90_noerr) call abort_ice( &
                  'Error defining cell methods for '//avail_hist_fields(n)%vname)
             endif

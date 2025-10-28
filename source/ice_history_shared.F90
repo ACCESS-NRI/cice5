@@ -599,13 +599,13 @@
            n_keffn_top   , &
            n_Tinz        , n_Sinz      , &
            n_Tsnz, &
-           n_a11	 , n_a12	, &
-           n_e11	 , n_e12 	, &
-           n_e22	 , &
-           n_s11	 , n_s12	, &
-           n_s22	 , &
-           n_yieldstress11, n_yieldstress12,  &
-           n_yieldstress22
+	   n_a11	 , n_a12	, &
+	   n_e11	 , n_e12 	, &
+	   n_e22	 , &
+	   n_s11	 , n_s12	, &
+	   n_s22	 , &
+	   n_yieldstress11, n_yieldstress12,  &
+	   n_yieldstress22
 
       interface accum_hist_field ! generic interface
            module procedure accum_hist_field_2D, &

@@ -144,7 +144,7 @@
           if (dump_last .and. (itap == num_ice_ai) .and. (icpl_ai == num_cpl_ai)) then
             write_restart = 1
           endif
-
+ 
           !*** ice "update" ***!
           call ice_step
 
@@ -156,7 +156,7 @@
           call time_average_fields_4_i2a        !time averaging over ia cpl interval
 
           tmp_time = time_sec + dt
-          if ( mod(tmp_time, dt_cpl_ai) == 0 ) then  !this happens at itap = num_ice_ai 
+          if ( mod(tmp_time, dt_cpl_ai) == 0  ) then  !this happens at itap = num_ice_ai 
             !call ice_timer_start(timer_into_atm)  
             !i2a fields ready to be sent for next IA cpl int in atm.
             call get_i2a_fields
