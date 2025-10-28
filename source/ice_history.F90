@@ -32,7 +32,6 @@
       module ice_history
 
       use ice_kinds_mod
-      use ice_constants, only: p5
       use ice_exit, only: abort_ice
 
 
@@ -231,7 +230,6 @@
 
 #ifdef ACCESS
         if ( f_siflsenstop /= 'x' ) call abort_ice("f_siflsenstop not available, set to 'x'")
-        !   if ( f_sifllattop /= 'x' ) call abort_ice("f_sifllattop not available, set to 'x'")
         if ( f_sifllwdtop /= 'x' ) call abort_ice("f_sifllwdtop not available, set to 'x'")
         if ( f_sifllwutop /= 'x' ) call abort_ice("f_sifllwutop not available, set to 'x'")
         if ( f_siflswdtop /= 'x' ) call abort_ice("f_siflswdtop not available, set to 'x'")
@@ -959,11 +957,6 @@
              "ice extent flag", c1, c0,                                     &
              ns1, f_icepresent)
 
-         call define_hist_field(n_icepresent,"sitimefrac","1",tstr2D, tcstr, &
-             "fraction of time-avg interval that ice is present",           &
-             "ice extent flag", c1, c0,                                     &
-             ns1, f_sitimefrac)
-
          call define_hist_field(n_fsurf_ai,"fsurf_ai","W/m^2",tstr2D, tcstr, &
              "net surface heat flux",                                      &
              "positive downward, excludes conductive flux, weighted by ice area", &
@@ -1050,7 +1043,7 @@
               ns1, f_FY)
       ! CMIP6 2D variables
 
-        ! these definitions against the intensive/extensive/inst def 
+        ! these definitions follow the intensive/extensive/inst def in Notz 2016
         ! we use cell methods of "mean where sea" or "mean where sea_ice" per CMIP7 data request
         ! intensive means sea ice area weighted, and averaged only when sea ice is present
         ! extensive means a normal average (over all time and grid box area)
@@ -1067,6 +1060,11 @@
              "Sea-Ice Area Fraction (Ocean Grid)",                             &
              "none", c1, c0,                                      &
              ns1, f_siconc)
+
+         call define_hist_field(n_icepresent,"sitimefrac","1",tstr2D, tcstr, &
+             "fraction of time-avg interval that ice is present",           &
+             "ice extent flag", c1, c0,                                     &
+             ns1, f_sitimefrac)
 
          call define_hist_field(n_hi,"sivol","m",tstr2D, tcstr,        & 
             "Sea-Ice Volume per Area",                       &
