@@ -23,14 +23,11 @@
 
 !  This routine aborts the ice model and prints an error message.
 
-!ars599: 14042014: change ice_fileunits to ice_fileunits and ice_communicate
-!      use ice_fileunits, only: nu_diag, ice_stderr, flush_fileunit
-      use ice_fileunits
-      use ice_communicate
-#if (defined CCSM) || (defined SEQ_MCT)
+#if (defined CCSMCOUPLED)
       use shr_sys_mod
 #else
-      use ice_fileunits, only: nu_diag, ice_stderr, flush_fileunit
+      use ice_fileunits, only: nu_diag, ice_stderr, ice_stdout, &
+                               flush_fileunit
       include 'mpif.h'   ! MPI Fortran include file
 #endif
 
@@ -53,6 +50,8 @@
 #else
       call flush_fileunit(nu_diag)
 
+      write (ice_stdout,*) error_message
+      call flush_fileunit(ice_stdout)
       write (ice_stderr,*) error_message
       call flush_fileunit(ice_stderr)
 

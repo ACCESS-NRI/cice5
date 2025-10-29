@@ -11,8 +11,9 @@
 
       use ice_kinds_mod
       use ice_zbgc_shared ! everything
+#if defined(AusCOM) && !defined(ACCESS)
       use cpl_arrays_setup, only: ssn, ssalg
-
+#endif
       implicit none 
 
       private
@@ -613,7 +614,13 @@
          ! Define ocean tracer concentration
          do j = 1, ny_block
          do i = 1, nx_block
+#if defined(AusCOM) && !defined(ACCESS)
             if (tr_bgc_Nit_sk)   ocean_bio(i,j,nlt_bgc_NO   ,iblk) = ssn   (i,j,iblk)
+            if (tr_bgc_N_sk)     ocean_bio(i,j,nlt_bgc_N    ,iblk) = ssalg (i,j,iblk)
+#else
+            if (tr_bgc_Nit_sk)   ocean_bio(i,j,nlt_bgc_NO   ,iblk) = nit   (i,j,iblk)
+            if (tr_bgc_N_sk)     ocean_bio(i,j,nlt_bgc_N    ,iblk) = algalN(i,j,iblk)
+#endif
             if (tr_bgc_chl_sk)   ocean_bio(i,j,nlt_bgc_chl  ,iblk) = algalN(i,j,iblk)*R_chl2N
             if (tr_bgc_Am_sk)    ocean_bio(i,j,nlt_bgc_NH   ,iblk) = amm   (i,j,iblk)
             if (tr_bgc_C_sk)     ocean_bio(i,j,nlt_bgc_C    ,iblk) = algalN(i,j,iblk)*R_C2N
@@ -621,8 +628,6 @@
             if (tr_bgc_DMSPp_sk) ocean_bio(i,j,nlt_bgc_DMSPp,iblk) = dmsp  (i,j,iblk)
             if (tr_bgc_DMSPd_sk) ocean_bio(i,j,nlt_bgc_DMSPd,iblk) = dmsp  (i,j,iblk)
             if (tr_bgc_DMS_sk)   ocean_bio(i,j,nlt_bgc_DMS  ,iblk) = dms   (i,j,iblk)
-            !if (tr_bgc_N_sk)     ocean_bio(i,j,nlt_bgc_N    ,iblk) = algalN(i,j,iblk)
-            if (tr_bgc_N_sk)     ocean_bio(i,j,nlt_bgc_N    ,iblk) = ssalg (i,j,iblk)
          enddo
          enddo
 
