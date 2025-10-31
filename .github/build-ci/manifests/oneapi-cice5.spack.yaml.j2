@@ -1,0 +1,12 @@
+spack:
+  specs:
+  - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@4'
+  - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@5'
+  packages:
+    all:
+      require:
+      - '%{{ oneapi_compiler }}'
+      - 'target={{ target }}'
+  concretizer:
+    unify: false
+  view: false

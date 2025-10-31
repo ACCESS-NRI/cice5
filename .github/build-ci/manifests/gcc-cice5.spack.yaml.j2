@@ -4,7 +4,7 @@ spack:
   packages:
     all:
       require:
-      - '%{{ intel_compiler }}'
+      - '%{{ gcc_compiler }}'
       - 'target={{ target }}'
   concretizer:
     unify: false
