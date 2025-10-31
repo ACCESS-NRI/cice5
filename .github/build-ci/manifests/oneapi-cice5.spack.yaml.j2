@@ -4,8 +4,8 @@ spack:
   - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@5'
   packages:
     gcc-runtime:
-    require:
-      '%gcc'
+      require:
+        '%gcc'
     all:
       require:
       - '%{{ oneapi_compiler }}'
