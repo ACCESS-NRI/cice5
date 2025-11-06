@@ -1563,7 +1563,7 @@
 
           if (status /= nf90_noerr) then
            call abort_ice ( & 
-               'ice_read_nc: Cannot get variable '//trim(varname) )
+               'ice_read_nc_z: Cannot get variable '//trim(varname) )
          endif
 
       endif                     ! my_task = master_task
@@ -1797,7 +1797,7 @@
 
          if (status /= nf90_noerr) then
            call abort_ice ( & 
-               'ice_write_nc_xy: Cannot put variable '//trim(nf90_strerror(status)) )
+               'ice_write_nc_xyz: Cannot put variable '//trim(nf90_strerror(status)) )
          endif
 
       endif                     ! my_task = master_task

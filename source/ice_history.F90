@@ -1078,7 +1078,7 @@
 
          call define_hist_field(n_simass,"simass","kg m^-2",tstr2D, tcstr, &
              "Sea-Ice Mass",                             &
-             "mass divided by area", c1, c0, &
+             "ice mass per unit grid cell area", c1, c0, &
              ns1, f_simass)
 
          call define_hist_field(n_siage,"siage","s",tstr2D, tcstr,    &
@@ -1098,12 +1098,12 @@
 
          call define_hist_field(n_sisnthick,"sisnthick","m",tstr2D, tcstr,    &
              "Snow Thickness",                            &
-             "snow volume divided by area", c1, c0, &
+             "snow volume divided by ice area", c1, c0, &
              ns1, f_sisnthick, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sisnmass,"sisnmass","kg m^-2",tstr2D, tcstr,    &
              "Snow Mass per Area",                            &
-             "snow mass divided by grid cell area", c1, c0, &
+             "snow mass volume per unit grid cell area", c1, c0, &
              ns1, f_sisnmass, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sitemptop,"sitemptop","K",tstr2D, tcstr,    &
@@ -1162,7 +1162,7 @@
              ns1, f_sistryubot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_siforcetiltx,"siforcetiltx","N m^-2",ustr2D, ucstr,  &
-             "xSea-Surface Tilt Term in Force Balance (X-Component)", &
+             "Sea-Surface Tilt Term in Force Balance (X-Component)", &
              "none", c1, c0,         &
              ns1, f_siforcetiltx, avg_ice_present=.true., mask_ice_free_points=.true.)
 
@@ -1719,7 +1719,6 @@
       use ice_flux, only: fsw, flw, fsnow, frain, sst, sss, uocn, vocn, &
           frzmlt_init, fswfac, fswabs, fswthru, alvdr, alvdf, alidr, alidf, &
           albice, albsno, albpnd, coszen, flat, fsens, flwout, evap, &
-          evap_ice,evap_snow, &
           Tair, Tref, Qref, congel, frazil, snoice, dsnow, &
           melts, meltb, meltt, meltl, fresh, fsalt, fresh_ai, fsalt_ai, &
           fhocn, fhocn_ai, uatm, vatm, &
@@ -2177,7 +2176,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                ! nb Tsnice is approximate, not a tracer
+                ! nb Ti_bot is approximate, not a tracer
                 ! sitempbot is intensive, weight by aice
                 worka(i,j) = aice(i,j,iblk)*Ti_bot(i,j,iblk)
            enddo

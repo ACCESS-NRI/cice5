@@ -480,18 +480,18 @@
          ! Tsnice from https://github.com/CICE-Consortium/Icepack/blob/e9d626f0e5b743e143a2e87248a1aa22ee4f3751/columnphysics/icepack_therm_vertical.F90#L378C1-L385C12
          ! Tsnice is :
                ! - the average of temperature of bottom snow layer and top ice layer,
-               ! - weighted by aicen across all thicknii categories
-         if ((hslyr(ij)+hilyr(ij)) > puny) then
-            if (hslyr(ij) > puny) then
-               Tsnice(ij) = Tsnice(ij) + aicen(i,j)*(&
-                  (hslyr(ij)*zTsn(ij,nslyr) + hilyr(ij)*zTin(ij,1)) &
-                  / (hslyr(ij)+hilyr(ij)) &
-                  )
-            else
-               Tsnice(ij) = Tsnice(ij) + aicen(i,j)*Tsf(ij)
-            endif
-         endif
-      enddo
+               ! - weighted by aicen across all thickness categories
+          if (hslyr(ij) > puny) then
+            ! interface temperature is average of top ice layer & bottom snow layer temperatures,
+            ! weighted by the thickness of each layer (https://github.com/CICE-Consortium/Icepack/pull/542#issuecomment-3464152061) 
+             Tsnice(ij) = Tsnice(ij) + aicen(i,j)*(&
+                (hilyr(ij)*zTsn(ij,nslyr) + hslyr(ij)*zTin(ij,1)) &
+                / (hslyr(ij)+hilyr(ij)) &
+                )
+          else
+             Tsnice(ij) = Tsnice(ij) + aicen(i,j)*Tsf(ij)
+          endif
+       enddo
 
       if (l_stop) return
 
