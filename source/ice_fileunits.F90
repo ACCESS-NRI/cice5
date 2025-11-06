@@ -293,7 +293,7 @@
       end subroutine flush_fileunit
 
 !=======================================================================
-
+! Namelist error handling ported from https://github.com/CICE-Consortium/CICE/blob/8e3ef7c4cb657705ceff5bfec3e12b49dec4973e/cicecore/shared/ice_fileunits.F90#L328
       subroutine goto_nml(iunit, nml, status)
         ! Search to namelist group within ice_in file.
         ! for compilers that do not allow optional namelists
@@ -306,7 +306,7 @@
              nml ! namelist to search for
 
         integer(kind=int_kind), intent(out) :: &
-             status ! status of subrouine
+             status ! status of subroutine
 
         ! local variables
         character(len=char_len) :: &

@@ -1140,6 +1140,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
         call check(nf90_put_att(ncid,nf90_global,'comment2',title), &
                    'global attribute comment2')
 
+        ! TO-DO: Update output for CF compliance !
         ! title = 'CF-1.0'
         ! call check(nf90_put_att(ncid,nf90_global,'conventions',title), &
         !            'global attribute conventions')
