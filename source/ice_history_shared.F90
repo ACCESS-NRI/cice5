@@ -200,7 +200,7 @@
            f_hs        = 'm', &
            f_snowfrac  = 'x', f_snowfracn  = 'x', &
            f_Tsfc      = 'm', & 
-           f_aice      = 'm', f_siconc    = 'x' , & !same var, two names, 
+           f_aice      = 'm', f_siconc    = 'x' , &
            f_uvel      = 'm', f_vvel       = 'm', &
            f_uatm      = 'm', f_vatm       = 'm', &
            f_fswdn     = 'm', f_flwdn      = 'm', &
@@ -269,16 +269,16 @@
            f_sidmassth = 'x', f_sidmassdyn = 'x', &
            f_sidmassgrowthwat = 'x', &
            f_sidmassgrowthbot = 'x', &
-           f_sidmasssi = 'x', f_sidmassgrowthsi = 'x', & !same var, two names
+           f_sidmasssi = 'x', f_sidmassgrowthsi = 'x', &
            f_sidmassevapsubl = 'x', &
            f_sidmassmelttop = 'x', &
            f_sidmassmeltbot = 'x', &
-           f_sidmasslat = 'x', f_sidmassmeltlat = 'x', & !same var, two names
-           f_sndmasssnf = 'x', f_sisndmasssnf   = 'x', & !same var, two names
-           f_sndmassmelt = 'x', f_sisndmassmelt = 'x', & !same var, two names
-           f_sndmassdyn = 'x', f_sisndmassdyn = 'x', &   !same var, two names
+           f_sidmasslat = 'x', f_sidmassmeltlat = 'x', &
+           f_sndmasssnf = 'x', f_sisndmasssnf   = 'x', &
+           f_sndmassmelt = 'x', f_sisndmassmelt = 'x', &
+           f_sndmassdyn = 'x', f_sisndmassdyn = 'x', &
            f_sisndmasssi = 'x', &
-           f_sndmasssubl = 'x', f_sisndmasssubl = 'x', & !same var, two names
+           f_sndmasssubl = 'x', f_sisndmasssubl = 'x', &
            f_sidivvel = 'x', &
            f_siflswdtop = 'x', &
            f_siflswutop = 'x', &
@@ -286,7 +286,7 @@
            f_sifllwdtop = 'x', &
            f_sifllwutop = 'x', &
            f_siflsenstop = 'x', &
-           f_siflsensupbot = 'x', f_siflsensbot = 'x', & !same var, two names
+           f_siflsensupbot = 'x', f_siflsensbot = 'x', &
            f_sifllatstop = 'x', &
            f_siflcondtop = 'x', &
            f_siflcondbot = 'x', &
@@ -295,7 +295,7 @@
            f_siflfwbot = 'x', &
            f_siflfwdrain = 'x', &
            f_sisaltmass = 'x', &
-           f_aicen     = 'x' , f_siitdconc = 'x', & !same var, two names
+           f_aicen     = 'x' , f_siitdconc = 'x', &
            f_vicen      = 'x', &
            f_vsnon     = 'x',  &
            f_trsig     = 'm', &

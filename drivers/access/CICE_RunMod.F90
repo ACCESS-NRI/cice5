@@ -572,6 +572,15 @@
             fsalt_ai  (i,j,iblk) = fsalt  (i,j,iblk)
             fhocn_ai  (i,j,iblk) = fhocn  (i,j,iblk)
             fswthru_ai(i,j,iblk) = fswthru(i,j,iblk)
+            fsens_ai  (i,j,iblk) = fsens(i,j,iblk)
+            flat_ai   (i,j,iblk) = flat(i,j,iblk)
+            fswabs_ai (i,j,iblk) = fswabs(i,j,iblk)
+            flwout_ai (i,j,iblk) = flwout(i,j,iblk)
+            evap_ai   (i,j,iblk) = evap(i,j,iblk) 
+            evap_ice_ai(i,j,iblk) = evap_ice(i,j,iblk) 
+            evap_snow_ai(i,j,iblk) = evap_snow(i,j,iblk) 
+            fcondtop_ai(i,j,iblk) = fcondtop(i,j,iblk) 
+            fsurf_ai(i,j,iblk) = fsurf(i,j,iblk) 
 
             if (nbtrcr > 0) then
             do k = 1, nbtrcr

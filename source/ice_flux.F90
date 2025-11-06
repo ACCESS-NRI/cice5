@@ -308,12 +308,21 @@
       ! ice diagnostics and history files as these are more accurate. 
       ! (The others suffer from problem of incorrect values at grid boxes
       !  that change from an ice free state to an icy state.)
-    
+
       real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
          fresh_ai, & ! fresh water flux to ocean (kg/m^2/s)
          fsalt_ai, & ! salt flux to ocean (kg/m^2/s)
          fhocn_ai, & ! net heat flux to ocean (W/m^2)
-         fswthru_ai  ! shortwave penetrating to ocean (W/m^2)
+         fswthru_ai, &  ! shortwave penetrating to ocean (W/m^2)
+         fsens_ai, & ! sensible heat flux (W/m^2)
+         flat_ai, &  ! latent heat flux (W/m^2)
+         fswabs_ai, & ! shortwave absorbed heat flx     (W/m^2)
+         flwout_ai, & ! upwd lw emitted heat flx 
+         evap_ai, &  ! & evaporation                     (kg/m2/s)
+         evap_ice_ai, & ! & evaporation                     (kg/m2/s)
+         evap_snow_ai, & ! & evaporation                     (kg/m2/s)
+         fcondtop_ai, &  ! downward cond flux at top surface (W m-2)
+         fsurf_ai     ! net flux to top surface, excluding fcondtop
 
       ! Used with data assimilation in hadgem drivers
       real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks) :: &
@@ -613,11 +622,20 @@
       fsalt_ai  (:,:,:) = c0
       fhocn_ai  (:,:,:) = c0
       fswthru_ai(:,:,:) = c0
-      albice (:,:,:) = c0
-      albsno (:,:,:) = c0
-      albpnd (:,:,:) = c0
+      fsens_ai  (:,:,:) = c0
+      flat_ai   (:,:,:) = c0
+      fswabs_ai (:,:,:) = c0
+      flwout_ai (:,:,:) = c0
+      evap_ai   (:,:,:) = c0
+      evap_ice_ai(:,:,:) = c0
+      evap_snow_ai(:,:,:) = c0
+      fcondtop_ai(:,:,:) = c0
+      fsurf_ai  (:,:,:) = c0
+      albice    (:,:,:) = c0
+      albsno    (:,:,:) = c0
+      albpnd    (:,:,:) = c0
       snowfracn (:,:,:,:) = c0
-      snowfrac (:,:,:) = c0
+      snowfrac  (:,:,:) = c0
 
       ! drag coefficients are computed prior to the atmo_boundary call, 
       ! during the thermodynamics section 
