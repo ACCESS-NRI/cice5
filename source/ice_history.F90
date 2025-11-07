@@ -213,7 +213,7 @@
             ! surface temperature is neither coupled or calculated within cice
             ! prognostic in the UM only
             if (f_Tsfc /= 'x') call abort_ice ("f_Tsfc not available, set to 'x'")
-            if (f_snowfracn /= 'x') call abort_ice ("f_Tsfc not available, set to 'x'")
+            if (f_snowfracn /= 'x') call abort_ice ("f_snowfracn not available, set to 'x'")
             if (f_sitemptop /= 'x') call abort_ice ("f_sitemptop not available, set to 'x'")
             if (f_sitempsnic /= 'x') call abort_ice ("f_sitempsnic not available, set to 'x'")
         endif
@@ -1083,9 +1083,9 @@
       ! or based on thermodynamics only (would be averaged using aice_mid)
       ! It would require new history variables for aice_init and aice_mid
 
-         call define_hist_field(n_aice,"siconc","1",tstr2D, tcstr,    &
-             "Sea-Ice Area Fraction (Ocean Grid)",                             &
-             "none", c1, c0,                                      &
+         call define_hist_field(n_aice,"siconc","%",tstr2D, tcstr,    &
+             "Sea-Ice Area Percentage (Ocean Grid)",                             &
+             "none", c100, c0,                                      &
              ns1, f_siconc)
 
          call define_hist_field(n_icepresent,"sitimefrac","1",tstr2D, tcstr, &
@@ -1118,14 +1118,14 @@
              "height of sea ice above ocean surface", c1, c0, &
              ns1, f_sifb, avg_ice_present=.true., mask_ice_free_points=.true.)
 
-         call define_hist_field(n_sisnconc,"sisnconc","1",tstr2D, tcstr, &
-             "Snow Area Fraction",                             &
-             "fraction of grid cell with snow over sea ice", c1, c0,                                    &
+         call define_hist_field(n_sisnconc,"sisnconc","%",tstr2D, tcstr, &
+             "Snow Area Percentage",                             &
+             "Percentage of the sea-ice surface that is covered by snow", c100, c0,                                    &
              ns1, f_sisnconc, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sisnthick,"sisnthick","m",tstr2D, tcstr,    &
              "Snow Thickness",                            &
-             "snow volume divided by ice area", c1, c0, &
+             "Actual thickness of snow over the snow-covered part of the sea ice", c1, c0, &
              ns1, f_sisnthick, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sisnmass,"sisnmass","kg m^-2",tstr2D, tcstr,    &
@@ -1330,7 +1330,7 @@
 
          call define_hist_field(n_sndmasssnf,"sisndmasssnf","kg m^-2 s^-1",tstr2D, tcstr,  & 
              "Snow Mass Change Through Snowfall", &
-             "none", c1, c0,         &
+             "Always positive or zero.", c1, c0,         &
              ns1, f_sisndmasssnf, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmassmelt,"sndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
@@ -1340,12 +1340,12 @@
 
         call define_hist_field(n_sndmassmelt,"sisndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Melt",                      &
-             "none", rhos/dt, c0,         &
+             "Always negative or zero.", -c1*rhos/dt, c0,         &
              ns1, f_sisndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
 
         call define_hist_field(n_sisndmasssi,"sisndmasssi","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Snow-to-Ice Conversion",                      &
-             "none", rhoi/dt, c0,         &
+             "Always negative or zero.", -c1*rhoi/dt, c0,         &
              ns1, f_sisndmasssi, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmassdyn,"sndmassdyn","kg m-2 s-1",tstr2D, tcstr,  &
@@ -1509,9 +1509,9 @@
               ns1, f_keffn_top)
 
             ! CMIP 3D
-            call define_hist_field(n_aicen,"siitdconc","1",tstr3Dc, tcstr, &
-              "Sea-Ice Area Fractions in Ice Thickness Categories", &
-              "none", c1, c0,                  &
+            call define_hist_field(n_aicen,"siitdconc","%",tstr3Dc, tcstr, &
+              "Sea-Ice Area Percentage in Ice Thickness Categories", &
+              "none", c100, c0,                  &
               ns1, f_siitdconc)
 
             ! siitdthick, siitdsnconc, siitdsnthick are not implemented because it's not clear how to 
@@ -2142,9 +2142,11 @@
          endif
 
          if (f_sisnconc(1:1) /= 'x') &
+            !  sisnconc is percentage of ice area only and intensive, weight each timestep by aice
             call accum_hist_field(n_sisnconc, iblk, snowfrac(:,:,iblk), a2D)
 
          if (f_sisnthick(1:1) /= 'x') &
+            ! to-do: divide by snowfrac
             call accum_hist_field(n_sisnthick, iblk, vsno(:,:,iblk), a2D)
 
         if (f_sisnmass(1:1) /= 'x') &
