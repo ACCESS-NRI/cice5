@@ -239,6 +239,9 @@
         if ( f_sifllwutop /= 'x' ) call abort_ice("f_sifllwutop not available, set to 'x'")
         if ( f_siflswdtop /= 'x' ) call abort_ice("f_siflswdtop not available, set to 'x'")
         if ( f_siflswutop /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
+        if ( f_sisnconc /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
+         ! there is a calculation of a sisnconc based on snow volume, but it doesn't represent a process
+        if ( f_sisnthick /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
 #endif
 
 #ifdef AusCOM
@@ -1071,9 +1074,11 @@
       ! CMIP6 2D variables
 
       ! these definitions follow the intensive/extensive/inst def in Notz 2016
-      ! we use cell methods of "mean where sea" or "mean where sea_ice" per CMIP7 data request
-      ! intensive means sea ice area weighted, and averaged only when sea ice is present
+      ! we interpret cell methods of "mean where sea" equivalent to "extensive"
       ! extensive means a normal average (over all time and grid box area)
+      ! and "mean where sea_ice" as intensive
+      ! intensive vars can be grid box or ice area means, and are then calulated as
+      ! an ice as aweighted mean in time
       ! extensive vars tend to zero when aice is zero, intensive vars do not
 
       ! In general, this implementation is limited by only weighting intensive 
@@ -1105,7 +1110,7 @@
 
          call define_hist_field(n_simass,"simass","kg m^-2",tstr2D, tcstr, &
              "Sea-Ice Mass",                             &
-             "ice mass per unit grid cell area", c1, c0, &
+             "ice mass per unit grid cell area", rhoi, c0, &
              ns1, f_simass)
 
          call define_hist_field(n_siage,"siage","s",tstr2D, tcstr,    &
@@ -1130,7 +1135,7 @@
 
          call define_hist_field(n_sisnmass,"sisnmass","kg m^-2",tstr2D, tcstr,    &
              "Snow Mass per Area",                            &
-             "snow mass volume per unit grid cell area", c1, c0, &
+             "snow mass volume per unit grid cell area", rhos, c0, &
              ns1, f_sisnmass, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sitemptop,"sitemptop","K",tstr2D, tcstr,    &
@@ -1340,12 +1345,12 @@
 
         call define_hist_field(n_sndmassmelt,"sisndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Melt",                      &
-             "Always negative or zero.", -c1*rhos/dt, c0,         &
+             "Always negative or zero.", rhos/dt, c0,         &
              ns1, f_sisndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
 
         call define_hist_field(n_sisndmasssi,"sisndmasssi","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Snow-to-Ice Conversion",                      &
-             "Always negative or zero.", -c1*rhoi/dt, c0,         &
+             "Always negative or zero.", rhoi/dt, c0,         &
              ns1, f_sisndmasssi, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmassdyn,"sndmassdyn","kg m-2 s-1",tstr2D, tcstr,  &
@@ -2123,18 +2128,29 @@
 
          !2D CMIP6 fields
 
+         ! for "extensive" vars, simply accumulate grid box mean values
+         ! for "intensive" vars, either:
+         ! - for grid box means, weight grid box means by aice (again)
+         ! - for ice area means, use grid box mean (to give the effect of ice area mean weighte by aice)
+         ! - for non spatial values (e.g. age), -> weight by aice
+         ! as intensive vars are divided by the sum of aice over time when written to file
+
+
          if (f_sithick(1:1) /= 'x') &
+            ! intensive - ice area mean -> use vice (grid box mean)
             call accum_hist_field(n_sithick, iblk, vice(:,:,iblk), a2D)
 
          if (f_simass(1:1) /= 'x') &
-            call accum_hist_field(n_simass, iblk, vice(:,:,iblk), a2D) ! *rhoi in define_hist_field
+            ! extensive -> use vice (grid box mean)
+            ! converted to mass when writing ( *rhoi in define_hist_field )
+            call accum_hist_field(n_simass, iblk, vice(:,:,iblk), a2D) 
 
          if (f_siage(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-                ! siage is intensive, weight each timestep by aice
               if (aice(i,j,iblk) > puny) &
+                ! intensive, weight by aice
                 worka(i,j) = aice(i,j,iblk)*trcr(i,j,nt_iage,iblk)
            enddo
            enddo
@@ -2142,16 +2158,26 @@
          endif
 
          if (f_sisnconc(1:1) /= 'x') &
-            !  sisnconc is percentage of ice area only and intensive, weight each timestep by aice
+            ! intensive + ice area mean -> use snowfrac (grid box mean)
             call accum_hist_field(n_sisnconc, iblk, snowfrac(:,:,iblk), a2D)
 
-         if (f_sisnthick(1:1) /= 'x') &
-            ! to-do: divide by snowfrac
-            call accum_hist_field(n_sisnthick, iblk, vsno(:,:,iblk), a2D)
+         if (f_sisnthick(1:1) /= 'x') then
+           worka(:,:) = c0
+           do j = jlo, jhi
+           do i = ilo, ihi
+               if (snowfrac(i,j,iblk) > puny) then
+                  ! intensive + ice area mean -> calculate grid box mean
+                  worka(i,j) = vsno(i,j,iblk) / snowfrac(i,j,iblk)
+               endif
+           enddo
+           enddo
+           call accum_hist_field(n_sisnthick, iblk, worka(:,:), a2D)
+         endif
 
         if (f_sisnmass(1:1) /= 'x') &
-            ! sisnmass is intensive, vsno already grid cell average
-            call accum_hist_field(n_sisnmass, iblk, vsno(:,:,iblk) , a2D) ! * rhos in define_hist_field
+            ! intensive + grid box mean -> weight by aice again
+            ! converted to mass when writing ( *rhos in define_hist_field )
+            call accum_hist_field(n_sisnmass, iblk, aice(:,:,iblk)*vsno(:,:,iblk) , a2D) ! * rhos in define_hist_field
 
         if (f_sitemptop(1:1) /= 'x') then
            worka(:,:) = c0
@@ -2159,7 +2185,7 @@
            do i = ilo, ihi
                 if (aice(i,j,iblk) > puny) then
                     ! Tsfc is a tracer, so was advected during dynamics
-                    ! sitemptop is intensive, weight by aice
+                    ! intensive + ice area mean -> weight by aice
                     worka(i,j) = aice(i,j,iblk) * trcr(i,j,nt_Tsfc,iblk)
                 endif
            enddo
@@ -2173,7 +2199,8 @@
            do i = ilo, ihi
             if (aice(i,j,iblk) > puny) &
                 ! nb Tsnice is approximate, not a tracer
-                ! sitempsnic is intensive, weight by aice
+                ! intensive + ice area mean -> weight by aice
+                ! (we don't save Tsnice_ai as aice changes between calculating Tsnice and writing diagnostics)
                 worka(i,j) = aice(i,j,iblk)*Tsnice(i,j,iblk)
            enddo
            enddo
@@ -2186,7 +2213,7 @@
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
                 ! nb Ti_bot is approximate, not a tracer
-                ! sitempbot is intensive, weight by aice
+                ! intensive + ice area mean -> weight by aice
                 worka(i,j) = aice(i,j,iblk)*Ti_bot(i,j,iblk)
            enddo
            enddo
@@ -2197,7 +2224,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-                ! intensive, weight by aice
+                ! intensive -> weight by aice
               if (aice(i,j,iblk) > puny) &
                worka(i,j) = aice(i,j,iblk)*uvel(i,j,iblk)
            enddo
@@ -2209,7 +2236,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-               ! intensive, weight by aice
+               ! intensive -> weight by aice
               if (aice(i,j,iblk) > puny) &
                worka(i,j) = aice(i,j,iblk)*vvel(i,j,iblk)
            enddo
@@ -2221,7 +2248,7 @@
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              ! intensive, weight by aice
+              ! intensive -> weight by aice
               if (aice(i,j,iblk) > puny) &
                   worka(i,j) = aice(i,j,iblk) &
                      * sqrt(uvel(i,j,iblk)*uvel(i,j,iblk) &
@@ -2267,7 +2294,7 @@
            do i = ilo, ihi
             !to-do: scale by aice/aice_init as its calculated based on coupled state ?
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strairx(i,j,iblk)
            enddo
            enddo
@@ -2280,7 +2307,7 @@
            do i = ilo, ihi
             !to-do: surface stress is from coupling, should use aice_init weighting
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strairy(i,j,iblk)
            enddo
            enddo
@@ -2292,7 +2319,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strocnx(i,j,iblk)
            enddo
            enddo
@@ -2304,7 +2331,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strocny(i,j,iblk)
            enddo
            enddo
@@ -2316,7 +2343,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strtltx(i,j,iblk)
            enddo
            enddo
@@ -2328,7 +2355,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strtlty(i,j,iblk)
            enddo
            enddo
@@ -2351,7 +2378,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = -aice(i,j,iblk)*fm(i,j,iblk)*uvel(i,j,iblk)
            enddo
            enddo
@@ -2363,7 +2390,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strintx(i,j,iblk)
            enddo
            enddo
@@ -2375,7 +2402,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strinty(i,j,iblk)
            enddo
            enddo
@@ -2387,7 +2414,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) &
-                  ! intensive, weight by aice
+                 ! intensive + grid box mean -> weight by aice again
                  worka(i,j) = aice(i,j,iblk)*strength(i,j,iblk)
            enddo
            enddo
@@ -2426,6 +2453,7 @@
            do k = 1,nilyr
            do j = jlo, jhi
            do i = ilo, ihi
+              ! extensive,  vice is grid cell average
               worka(i,j) = worka(i,j) & 
                 + trcr(i,j,nt_qice+k-1,iblk)*vice(i,j,iblk)/real(nilyr,kind=dbl_kind)
            enddo
@@ -2439,7 +2467,9 @@
            do k = 1,nslyr
            do j = jlo, jhi
            do i = ilo, ihi
-              worka(i,j) = worka(i,j) + trcr(i,j,nt_qsno+k-1,iblk)*vsno(i,j,iblk)/real(nslyr,kind=dbl_kind)
+               ! extensive,  vice is grid cell average
+              worka(i,j) = worka(i,j) + &
+                  trcr(i,j,nt_qsno+k-1,iblk)*vsno(i,j,iblk)/real(nslyr,kind=dbl_kind)
            enddo
            enddo
            enddo
@@ -2470,15 +2500,16 @@
          if (f_sisndmasssi(1:1) /= 'x') &
             !To-do: calculate a seperate icesno diag for change in snow thickness in ice_therm_vertical ?
             ! Its equivalent though, so fairly moot
-            call accum_hist_field(n_sisndmasssi, iblk, snoice(:,:,iblk), a2D) ! *rhoi/dt in define_hist_field
+            ! intensive + grid box mean -> weight by aice again
+            call accum_hist_field(n_sisndmasssi, iblk, aice(:,:,iblk)*snoice(:,:,iblk), a2D) ! *rhoi/dt in define_hist_field
 
          if (f_sidmassevapsubl(1:1) /= 'x') & 
-            ! sidmassevapsubl is extensive, evap_snow_ai is grid cell average
+            ! extensive -> use grid cell average
             call accum_hist_field(n_sidmassevapsubl, iblk, evap_ice_ai(:,:,iblk), a2D)
 
          if (f_sndmasssubl(1:1) /= 'x' .or. f_sisndmasssubl(1:1) /= 'x') then
-            ! sisndmasssubl is intensive, evap_snow_ai is grid cell average
-            call accum_hist_field(n_sndmasssubl, iblk, evap_snow_ai(:,:,iblk), a2D)
+            ! intensive + grid box mean -> weight by aice again
+            call accum_hist_field(n_sndmasssubl, iblk, aice(:,:,iblk)*evap_snow_ai(:,:,iblk), a2D)
           endif
 
          if (f_sidmassmelttop(1:1) /= 'x') &
@@ -2497,15 +2528,8 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-                ! sisndmasssnf is intensive
-#ifdef ACCESS
-               !fsnow seems to already be multiplied by aice - https://github.com/ACCESS-NRI/cice5/blob/77622b30cd68ee4f74fc835559a922cd64ee7fca/drivers/access/cpl_forcing_handler.F90#L702-L703
-               !and then unweighted again - https://github.com/ACCESS-NRI/cice5/blob/77622b30cd68ee4f74fc835559a922cd64ee7fca/source/ice_step_mod.F90#L331-L332
-               !therefore i will weight again.
-               worka(i,j) = aice(i,j,iblk)*fsnow(i,j,iblk)
-#else
-               worka(i,j) = fsnow(i,j,iblk)
-#endif
+               ! intensive + grid box mean -> weight fsnow by aice twice (see f_snow_ai)
+               worka(i,j) = aice(i,j,iblk)*aice_init(i,j,iblk)*fsnow(i,j,iblk)
               endif
            enddo
            enddo
@@ -2513,13 +2537,15 @@
          endif
 
          if (f_sndmassmelt(1:1) /= 'x' .or. f_sisndmassmelt(1:1) /= 'x') &
-            ! sisndmassmelt is intensive, melts is grid cell average
-            call accum_hist_field(n_sndmassmelt, iblk, melts(:,:,iblk), a2D) ! *rhos/dt in define_hist_field
+            ! intensive + grid box mean -> weight by aice again
+            call accum_hist_field(n_sndmassmelt, iblk, aice(:,:,iblk)*melts(:,:,iblk), a2D) ! *rhos/dt in define_hist_field
 
          if (f_sndmassdyn(1:1) /= 'x' .or. f_sisndmassdyn(1:1) /= 'x') &
-            call accum_hist_field(n_sndmassdyn, iblk, dvsdtd(:,:,iblk), a2D)  ! rhos in define_hist_field
+            ! intensive + grid box mean -> weight by aice again
+            call accum_hist_field(n_sndmassdyn, iblk, aice(:,:,iblk)*dvsdtd(:,:,iblk), a2D)  ! rhos in define_hist_field
 
          if (f_siflswdtop(1:1) /= 'x') then
+            ! intensive + ice area mean -> weight by aice
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2532,6 +2558,7 @@
          endif
 
          if (f_siflswutop(1:1) /= 'x') then
+            ! intensive + ice area mean -> weight by aice
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
@@ -2545,6 +2572,7 @@
          endif
 
          if (f_siflswdbot(1:1) /= 'x') &
+            ! intensive + ice area mean -> use weighted form
            call accum_hist_field(n_siflswdbot, iblk, fswthru_ai(:,:,iblk), a2D)
 
          if (f_sifllwdtop(1:1) /= 'x') then
@@ -2552,6 +2580,7 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
+                  ! intensive + ice area mean -> weight by aice
                  worka(i,j) = aice(i,j,iblk)*flw(i,j,iblk)
               endif
            enddo
@@ -2560,23 +2589,27 @@
          endif
 
          if (f_sifllwutop(1:1) /= 'x') &
+            ! intensive + ice area mean -> use weighted form
             call accum_hist_field(n_sifllwutop, iblk, flwout_ai(:,:,iblk), a2D)
 
          if (f_siflsenstop(1:1) /= 'x') &
+            ! intensive + ice area mean -> use weighted form
             call accum_hist_field(n_siflsenstop, iblk, fsens_ai(:,:,iblk), a2D)
 
          if (f_siflsensupbot(1:1) /= 'x' .or. f_siflsensbot(1:1) /= 'x') &
+            ! intensive + ice area mean -> use weighted form
             call accum_hist_field(n_siflsensupbot, iblk, fhocn_ai(:,:,iblk), a2D)
 
          if (f_sifllatstop(1:1) /= 'x') &
+            ! intensive + ice area mean -> use weighted form
             call accum_hist_field(n_sifllatstop, iblk, flat_ai(:,:,iblk), a2D)
 
          if (f_siflcondtop(1:1) /= 'x') &
-            ! siflcondtop is intensive, use grid cell average
+            ! intensive + ice area mean -> use weighted form
             call accum_hist_field(n_siflcondtop, iblk, fcondtop_ai(:,:,iblk), a2D)
 
          if (f_siflcondbot(1:1) /= 'x') &
-            ! siflcondbot is intensive, fcondbot is grid cell average
+            ! intensive + ice area mean -> use weighted form
             call accum_hist_field(n_siflcondbot, iblk, fcondbot(:,:,iblk), a2D)
 
          if (f_sipr(1:1) /= 'x') then
@@ -2584,14 +2617,9 @@
            do j = jlo, jhi
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
-#ifdef ACCESS
-                !it looks like frain is ice_area average https://github.com/ACCESS-NRI/cice5/blob/3f0f38141cf5f87ac9b6f7b401f10b4b5fc15218/source/ice_step_mod.F90#L334-L335
-                !sipr is intensive, so weight by aice
-                 worka(i,j) = aice(i,j,iblk)*frain(i,j,iblk)
-#else
-                 worka(i,j) = frain(i,j,iblk)
-#endif
-            endif
+               ! intensive + grid box mean -> weight frain by aice twice (see f_frain_ai)
+                  worka(i,j) = aice(i,j,iblk)*aice_init(i,j,iblk)*frain(i,j,iblk)
+              endif
            enddo
            enddo
            call accum_hist_field(n_sipr, iblk, worka(:,:), a2D)
@@ -2630,14 +2658,17 @@
          endif
 
          if (f_siflsaltbot(1:1) /= 'x') &
-            call accum_hist_field(n_siflsaltbot, iblk, fsalt_ai(:,:,iblk), a2D)
+            ! intensive + grid box mean -> weight by aice again
+            call accum_hist_field(n_siflsaltbot, iblk, aice(:,:,iblk)*fsalt_ai(:,:,iblk), a2D)
 
          if (f_sisaltmass(1:1) /= 'x') &
-           call accum_hist_field(n_sisaltmass, iblk, vice(:,:,iblk), a2D) ! *ice_ref_salinity*rhoi/c1000 in define_hist_field
+            ! extensive -> grid box mean
+            ! *ice_ref_salinity*rhoi/c1000 in define_hist_field
+           call accum_hist_field(n_sisaltmass, iblk, vice(:,:,iblk), a2D) ! 
 
          if (f_siflfwbot(1:1) /= 'x') &
-            ! siflfwbot is intensive, fresh_ai is a grid cell average already
-            call accum_hist_field(n_siflfwbot, iblk, fresh_ai(:,:,iblk), a2D) 
+            ! intensive + grid box mean -> weight by aice again
+            call accum_hist_field(n_siflfwbot, iblk, aice(:,:,iblk)*fresh_ai(:,:,iblk), a2D) 
 
          if (f_siflfwdrain(1:1) /= 'x') then
            worka(:,:) = c0
@@ -2645,8 +2676,8 @@
            do i = ilo, ihi
               if (aice(i,j,iblk) > puny) then
                 ! to-do : drainage from meltpond
-                ! siflfwdrain is intensive, melts/t are grid cell average already
-                 worka(i,j) = (melts(i,j,iblk) * rhos &
+                  ! intensive + grid box mean -> weight by aice again
+                 worka(i,j) = aice(i,j,iblk)*(melts(i,j,iblk) * rhos &
                              + meltt(i,j,iblk) * rhoi)/dt
               endif
            enddo
