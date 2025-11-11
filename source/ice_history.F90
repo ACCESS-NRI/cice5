@@ -1326,22 +1326,22 @@
 
          call define_hist_field(n_sidmassmelttop,"sidmassmelttop","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Sea-Ice Mass Change Through Surface Melting",                      &
-             "per unit grid cell area", rhoi/dt, c0,         &
+             "per unit grid cell area", -c1*rhoi/dt, c0,         &
              ns1, f_sidmassmelttop)
 
          call define_hist_field(n_sidmassmeltbot,"sidmassmeltbot","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Sea-Ice Mass Change Through Bottom Melting",                      &
-             "per unit grid cell area", rhoi/dt, c0,         &
+             "per unit grid cell area", -c1*rhoi/dt, c0,         &
              ns1, f_sidmassmeltbot)
 
          call define_hist_field(n_sidmasslat,"sidmasslat","kg m^-2 s^-1",tstr2D, tcstr,  & 
              "Sea-Ice Mass Change Through Lateral Melting",                      &
-             "per unit grid cell area", rhoi/dt, c0,         &
+             "per unit grid cell area", -c1*rhoi/dt, c0,         &
              ns1, f_sidmasslat)
 
          call define_hist_field(n_sidmasslat,"sidmassmeltlat","kg m^-2 s^-1",tstr2D, tcstr,  & 
              "Sea-Ice Mass Change Through Lateral Melting",                      &
-             "per unit grid cell area", rhoi/dt, c0,         &
+             "per unit grid cell area", -c1*rhoi/dt, c0,         &
              ns1, f_sidmassmeltlat)
 
          call define_hist_field(n_snow_ai,"sndmasssnf","kg m^-2 s^-1",tstr2D, tcstr,  & 
@@ -1369,7 +1369,7 @@
              "Always negative or zero, per unit grid cell area", -c1*rhos/dt, c0,         &
              ns1, f_sisndmassmelt)
 
-         call define_hist_field(n_sisndmassmelt_intensive,"sisndmassmelt","kg m^-2 s^-1",tstr2D, tcstr,  &
+         call define_hist_field(n_sisndmassmelt_intensive,"sisndmassmelt_intensive","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Melt",                      &
              "area weighted average, always negative or zero, per unit grid cell area", -c1*rhos/dt, c0,         &
              ns1, f_sisndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
@@ -1394,7 +1394,7 @@
              "per unit grid cell area", rhos, c0,         &
              ns1, f_sisndmassdyn)
 
-         call define_hist_field(n_sisndmassdyn_intensive,"sisndmassdyn","kg m-2 s-1",tstr2D, tcstr,  &
+         call define_hist_field(n_sisndmassdyn_intensive,"sisndmassdyn_intensive","kg m-2 s-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Advection by Sea-Ice Dynamics",           &
              "area weighted average, per unit grid cell area", rhos, c0,         &
              ns1, f_sisndmassdyn, avg_ice_present=.true., mask_ice_free_points=.true.)
@@ -2538,6 +2538,9 @@
          if (f_sidmasssi(1:1) /= 'x' .or. f_sidmassgrowthsi(1:1) /= 'x') &
             call accum_hist_field(n_sidmasssi, iblk, snoice(:,:,iblk), a2D) ! *rhoi/dt in define_hist_field
 
+         if (f_sisndmasssi(1:1) /= 'x') &
+            call accum_hist_field(n_sisndmasssi, iblk, snoice(:,:,iblk), a2D) ! *rhoi/dt in define_hist_field
+
          if (f_sisndmasssi_intensive(1:1) /= 'x') &
             !To-do: calculate a seperate icesno diag for change in snow thickness in ice_therm_vertical ?
             ! Its equivalent though, so fairly moot
@@ -2584,7 +2587,7 @@
          endif
 
          if (f_sndmassmelt(1:1) /= 'x' .or. f_sisndmassmelt(1:1) /= 'x') & 
-            call accum_hist_field(n_melts,  iblk, melts(:,:,iblk), a2D)
+            call accum_hist_field(n_sndmassmelt,  iblk, melts(:,:,iblk), a2D)
 
          if (f_sisndmassmelt_intensive(1:1) /= 'x') &
             ! intensive + grid box mean -> weight by aice again
