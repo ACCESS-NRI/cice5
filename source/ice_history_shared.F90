@@ -250,7 +250,7 @@
            f_iage      = 'm', f_FY         = 'm', &
            f_hisnap    = 'm', f_aisnap     = 'm', &
            f_sithick   = 'x', f_sisnthick  = 'x', &
-           f_simass    = 'x', f_sisnmass   = 'x', &
+           f_simass    = 'x', f_sisnmass   = 'x', f_sisnmass_intensive   = 'x',&
            f_sisnconc  = 'x', f_siage      = 'x', &
            f_sitemptop = 'x', f_sitempsnic = 'x', &
            f_sitempbot = 'x', f_sispeed    = 'x', &
@@ -274,11 +274,11 @@
            f_sidmassmelttop = 'x', &
            f_sidmassmeltbot = 'x', &
            f_sidmasslat = 'x', f_sidmassmeltlat = 'x', &
-           f_sndmasssnf = 'x', f_sisndmasssnf   = 'x', &
-           f_sndmassmelt = 'x', f_sisndmassmelt = 'x', &
-           f_sndmassdyn = 'x', f_sisndmassdyn = 'x', &
-           f_sisndmasssi = 'x', &
-           f_sndmasssubl = 'x', f_sisndmasssubl = 'x', &
+           f_sndmasssnf = 'x', f_sisndmasssnf   = 'x', f_sisndmasssnf_intensive   = 'x', &
+           f_sndmassmelt = 'x', f_sisndmassmelt = 'x', f_sisndmassmelt_intensive = 'x', &
+           f_sndmassdyn = 'x', f_sisndmassdyn = 'x', f_sisndmassdyn_intensive = 'x', &
+           f_sisndmasssi = 'x', f_sisndmasssi_intensive = 'x', &
+           f_sndmasssubl = 'x', f_sisndmasssubl = 'x', f_sisndmasssubl_intensive = 'x', &
            f_sidivvel = 'x', &
            f_siflswdtop = 'x', &
            f_siflswutop = 'x', &
@@ -387,7 +387,7 @@
            f_iage,      f_FY       , &
            f_hisnap,    f_aisnap   , &
            f_sithick,   f_sisnthick, &
-           f_simass,    f_sisnmass, &
+           f_simass,    f_sisnmass, f_sisnmass_intensive, &
            f_sisnconc,  f_siage,     &
            f_sifb,                   &
            f_sitemptop, f_sitempsnic,&
@@ -409,14 +409,14 @@
            f_sidmassgrowthbot, &
            f_sidmasssi, f_sidmassgrowthsi , &
            f_sidmassevapsubl, &
-           f_sndmasssubl, f_sisndmasssubl, &
            f_sidmassmelttop, &
            f_sidmassmeltbot, &
            f_sidmasslat, f_sidmassmeltlat,&
-           f_sndmasssnf, f_sisndmasssnf, &
-           f_sndmassmelt, f_sisndmassmelt, &
-           f_sndmassdyn, f_sisndmassdyn, &
-           f_sisndmasssi, &
+           f_sndmasssubl, f_sisndmasssubl, f_sisndmasssubl_intensive, &
+           f_sndmasssnf, f_sisndmasssnf, f_sisndmasssnf_intensive, &
+           f_sndmassmelt, f_sisndmassmelt, f_sisndmassmelt_intensive, &
+           f_sndmassdyn, f_sisndmassdyn, f_sisndmassdyn_intensive, &
+           f_sisndmasssi, f_sisndmasssi_intensive,  &
            f_siflswdtop, &
            f_siflswutop, &
            f_siflswdbot, &
@@ -522,7 +522,7 @@
            n_fsalt      , n_fsalt_ai   , &
            n_sidivvel,                   &
            n_sithick    , n_sisnthick  , &
-           n_simass     , n_sisnmass   , &
+           n_simass     , n_sisnmass, n_sisnmass_intensive, &
            n_sisnconc,    n_siage,       &
            n_sifb,                       &
            n_sitemptop  , n_sitempsnic , &
@@ -544,14 +544,19 @@
            n_sidmasssi,  &
            n_sidmasssubl, &
            n_sidmassevapsubl,  &
-           n_sndmasssubl,  &
            n_sidmassmelttop,  &
            n_sidmassmeltbot,  &
            n_sidmasslat, &
            n_sndmasssnf,  &
+           n_sisndmasssnf_intensive,  &
            n_sndmassmelt,  &
+           n_sisndmassmelt_intensive,  &
            n_sndmassdyn,  &
+           n_sisndmassdyn_intensive,  &
            n_sisndmasssi, &
+           n_sisndmasssi_intensive, &
+           n_sisndmasssubl,  &
+           n_sisndmasssubl_intensive,  &
            n_siflswdtop,  &
            n_siflswutop,  &
            n_siflswdbot,  &
