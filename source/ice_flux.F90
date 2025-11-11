@@ -317,12 +317,12 @@
          fsens_ai, & ! sensible heat flux (W/m^2)
          flat_ai, &  ! latent heat flux (W/m^2)
          fswabs_ai, & ! shortwave absorbed heat flx     (W/m^2)
-         flwout_ai, & ! upwd lw emitted heat flx 
+         flwout_ai, & ! upwd lw emitted heat flx (W/m^2)
          evap_ai, &  ! & evaporation                     (kg/m2/s)
          evap_ice_ai, & ! & evaporation                     (kg/m2/s)
          evap_snow_ai, & ! & evaporation                     (kg/m2/s)
          fcondtop_ai, &  ! downward cond flux at top surface (W m-2)
-         fsurf_ai     ! net flux to top surface, excluding fcondtop
+         fsurf_ai     ! net flux to top surface, excluding fcondtop (W/m^2)
 
       ! Used with data assimilation in hadgem drivers
       real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks) :: &

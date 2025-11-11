@@ -239,26 +239,26 @@
         if ( f_sifllwutop /= 'x' ) call abort_ice("f_sifllwutop not available, set to 'x'")
         if ( f_siflswdtop /= 'x' ) call abort_ice("f_siflswdtop not available, set to 'x'")
         if ( f_siflswutop /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
-        if ( f_sisnconc /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
+        if ( f_sisnconc /= 'x' ) call abort_ice("f_sisnconc not available, set to 'x'")
          ! there is a calculation of a sisnconc based on snow volume, but it doesn't represent a process
-        if ( f_sisnthick /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
+        if ( f_sisnthick /= 'x' ) call abort_ice("f_sisnthick not available, set to 'x'")
 #endif
 
 #ifdef AusCOM
         if ( .not. do_scale_fluxes ) then
-            ! normal case is these are scaled in place to grid cell average, 
-            ! however without do_scale_fluxes, these are ice area averages
-            if ( f_fsens /= 'x' ) call abort_ice("f_alidf not available, use f_fsens_ai")
-            if ( f_flat /= 'x' ) call abort_ice("f_alidf not available, use f_flat_ai")
-            if ( f_fswabs /= 'x' ) call abort_ice("f_alidf not available, use f_fswabs_ai")
-            if ( f_flwup /= 'x' ) call abort_ice("f_alidf not available, use f_flwup_ai")
-            if ( f_evap /= 'x' ) call abort_ice("f_alidf not available, use f_evap_ai")
+            ! normal case is these are scaled in place to ice area average, 
+            ! however without do_scale_fluxes, these are grid cell averages
+            if ( f_fsens /= 'x' ) call abort_ice("f_fsens not available, use f_fsens_ai")
+            if ( f_flat /= 'x' ) call abort_ice("f_flat not available, use f_flat_ai")
+            if ( f_fswabs /= 'x' ) call abort_ice("f_fswabs not available, use f_fswabs_ai")
+            if ( f_flwup /= 'x' ) call abort_ice("f_flwup not available, use f_flwup_ai")
+            if ( f_evap /= 'x' ) call abort_ice("f_evap not available, use f_evap_ai")
             if ( f_Tref /= 'x' ) call abort_ice("f_Tref not available, set to 'x'")
             if ( f_Qref /= 'x' ) call abort_ice("f_Qref not available, set to 'x'")
-            if ( f_fresh /= 'x' ) call abort_ice("f_alidf not available, use f_fresh_ai")
-            if ( f_fsalt /= 'x' ) call abort_ice("f_alidf not available, use f_fsalt_ai")
-            if ( f_fhocn /= 'x' ) call abort_ice("f_alidf not available, use f_fhocn_ai")
-            if ( f_fswthru /= 'x' ) call abort_ice("f_alidf not available, use f_fswthru_ai")
+            if ( f_fresh /= 'x' ) call abort_ice("f_fresh not available, use f_fresh_ai")
+            if ( f_fsalt /= 'x' ) call abort_ice("f_fsalt not available, use f_fsalt_ai")
+            if ( f_fhocn /= 'x' ) call abort_ice("f_fhocn not available, use f_fhocn_ai")
+            if ( f_fswthru /= 'x' ) call abort_ice("f_fswthru not available, use f_fswthru_ai")
             if ( f_alvdr /= 'x' ) call abort_ice("f_alvdr not available, use f_alvdr_ai")
             if ( f_alidr /= 'x' ) call abort_ice("f_alidr not available, use f_alidr_ai")
             if ( f_alvdf /= 'x' ) call abort_ice("f_alvdf not available, use f_alvdf_ai")
@@ -1084,7 +1084,7 @@
       ! extensive means a normal average (over all time and grid box area)
       ! and "mean where sea_ice" as intensive
       ! intensive vars can be grid box or ice area means, and are then calulated as
-      ! an ice as aweighted mean in time
+      ! an ice-fraction weighted mean in time
       ! extensive vars tend to zero when aice is zero, intensive vars do not
 
       ! In general, this implementation is limited by only weighting intensive 
@@ -1372,7 +1372,7 @@
          call define_hist_field(n_sisndmassmelt_intensive,"sisndmassmelt_intensive","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Melt",                      &
              "area weighted average, always negative or zero, per unit grid cell area", -c1*rhos/dt, c0,         &
-             ns1, f_sisndmassmelt, avg_ice_present=.true., mask_ice_free_points=.true.)
+             ns1, f_sisndmassmelt_intensive, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sisndmasssi,"sisndmasssi","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Snow-to-Ice Conversion",                      &
@@ -1381,7 +1381,7 @@
 
          call define_hist_field(n_sisndmasssi_intensive,"sisndmasssi_intensive","kg m^-2 s^-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Snow-to-Ice Conversion",                      &
-             "Always negative or zero, per unit grid cell area", -c1*rhoi/dt, c0,         &
+             "area weighted average, always negative or zero, per unit grid cell area", -c1*rhoi/dt, c0,         &
              ns1, f_sisndmasssi_intensive, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sndmassdyn,"sndmassdyn","kg m-2 s-1",tstr2D, tcstr,  &
@@ -1397,7 +1397,7 @@
          call define_hist_field(n_sisndmassdyn_intensive,"sisndmassdyn_intensive","kg m-2 s-1",tstr2D, tcstr,  &
              "Snow Mass Rate of Change Through Advection by Sea-Ice Dynamics",           &
              "area weighted average, per unit grid cell area", rhos, c0,         &
-             ns1, f_sisndmassdyn, avg_ice_present=.true., mask_ice_free_points=.true.)
+             ns1, f_sisndmassdyn_intensive, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_siflswdtop,"siflswdtop","W m^-2",tstr2D, tcstr, &
              "Downwelling Shortwave Flux over Sea Ice", &
@@ -2168,7 +2168,7 @@
          ! for "extensive" vars, simply accumulate grid box mean values
          ! for "intensive" vars, either:
          ! - for grid box means, weight grid box means by aice (again)
-         ! - for ice area means, use grid box mean (to give the effect of ice area mean weighte by aice)
+         ! - for ice area means, use grid box mean (to give the effect of ice area mean weighted by aice)
          ! - for non spatial values (e.g. age), -> weight by aice
          ! as intensive vars are divided by the sum of aice over time when written to file
 
@@ -2508,7 +2508,7 @@
            do k = 1,nslyr
            do j = jlo, jhi
            do i = ilo, ihi
-               ! extensive,  vice is grid cell average
+               ! extensive,  vsno is grid cell average
               worka(i,j) = worka(i,j) + &
                   trcr(i,j,nt_qsno+k-1,iblk)*vsno(i,j,iblk)/real(nslyr,kind=dbl_kind)
            enddo
