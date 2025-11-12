@@ -479,8 +479,6 @@
 
          ! Tsnice from https://github.com/CICE-Consortium/Icepack/blob/e9d626f0e5b743e143a2e87248a1aa22ee4f3751/columnphysics/icepack_therm_vertical.F90#L378C1-L385C12
          ! Tsnice is :
-               ! - the average of temperature of bottom snow layer and top ice layer,
-               ! - weighted by aicen across all thickness categories
           if (hslyr(ij) > puny) then
             ! interface temperature is taken by assumming a linear temperature gradient between temperature at
             ! middle of top ice layer & middle of bottom snow layer temperatures,
