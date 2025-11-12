@@ -1344,7 +1344,7 @@
              "per unit grid cell area", -c1*rhoi/dt, c0,         &
              ns1, f_sidmassmeltlat)
 
-         call define_hist_field(n_snow_ai,"sndmasssnf","kg m^-2 s^-1",tstr2D, tcstr,  & 
+         call define_hist_field(n_sndmasssnf,"sndmasssnf","kg m^-2 s^-1",tstr2D, tcstr,  & 
              "Snow Mass Change Through Snowfall", &
              "per unit grid cell area", c1, c0,         &
              ns1, f_sndmasssnf)
