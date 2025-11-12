@@ -241,6 +241,8 @@
         if ( f_siflswutop /= 'x' ) call abort_ice("f_siflswutop not available, set to 'x'")
         if ( f_sisnconc /= 'x' ) call abort_ice("f_sisnconc not available, set to 'x'")
          ! there is a calculation of a sisnconc based on snow volume, but it doesn't represent a process
+         
+        if ( f_snowfrac /= 'x' ) call abort_ice("f_snowfrac not available, set to 'x'")
         if ( f_sisnthick /= 'x' ) call abort_ice("f_sisnthick not available, set to 'x'")
 #endif
 
