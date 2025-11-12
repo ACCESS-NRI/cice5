@@ -1256,12 +1256,12 @@
 
          call define_hist_field(n_sihc,"sihc","J m^-2",tstr2D, tcstr,  &
              "Sea-Ice Heat Content",                                  &
-             "area weighted average per unit grid cell area", c1, c0,         &
+             "per unit grid cell area", c1, c0,         &
              ns1, f_sihc)
 
          call define_hist_field(n_sisnhc,"sisnhc","J m^-2",tstr2D, tcstr,  &
              "Snow Heat Content",                                  &
-             "area weighted average per unit grid cell area", c1, c0,         &
+             "per unit grid cell area", c1, c0,         &
              ns1, f_sisnhc)
 
          call define_hist_field(n_sidconcth,"sidconcth","1/s",tstr2D, tcstr,  &
