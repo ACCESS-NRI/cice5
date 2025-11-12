@@ -2579,7 +2579,7 @@
            call accum_hist_field(n_sidmasslat, iblk, meltl(:,:,iblk), a2D) ! *rhoi/dt in define_hist_field
 
          if (f_sndmasssnf(1:1) /= 'x' .or. f_sisndmasssnf(1:1) /= 'x') &
-            call accum_hist_field(n_snow_ai,iblk, fsnow(:,:,iblk)*aice_init(:,:,iblk), a2D)
+            call accum_hist_field(n_sndmasssnf,iblk, fsnow(:,:,iblk)*aice_init(:,:,iblk), a2D)
 
          if (f_sisndmasssnf_intensive(1:1) /= 'x') then
             do j = jlo, jhi
