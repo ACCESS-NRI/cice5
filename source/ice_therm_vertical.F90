@@ -482,8 +482,9 @@
                ! - the average of temperature of bottom snow layer and top ice layer,
                ! - weighted by aicen across all thickness categories
           if (hslyr(ij) > puny) then
-            ! interface temperature is average of top ice layer & bottom snow layer temperatures,
-            ! weighted by the thickness of each layer (https://github.com/CICE-Consortium/Icepack/pull/542#issuecomment-3464152061) 
+            ! interface temperature is taken by assumming a linear temperature gradient between temperature at
+            ! middle of top ice layer & middle of bottom snow layer temperatures,
+            ! weighted by the thickness of each layer (https://github.com/CICE-Consortium/Icepack/pull/542) 
              Tsnice(ij) = Tsnice(ij) + aicen(i,j)*(&
                 (hilyr(ij)*zTsn(ij,nslyr) + hslyr(ij)*zTin(ij,1)) &
                 / (hslyr(ij)+hilyr(ij)) &

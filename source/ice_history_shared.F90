@@ -537,6 +537,7 @@
            n_sicompstren, &
            n_sialb, &
            n_sihc       , n_sisnhc,      &
+           n_siconc, n_sivol, &
            n_sidconcth  , n_sidconcdyn,  &
            n_sidmassth  , n_sidmassdyn,  &
            n_sidmassgrowthwat, &
@@ -572,6 +573,7 @@
            n_siflfwbot,  &
            n_siflfwdrain, &
            n_sisaltmass, &
+           n_siitdconc, &
            n_vsnon,                        &
            n_fhocn      , n_fhocn_ai   , &
            n_fswthru    , n_fswthru_ai , &

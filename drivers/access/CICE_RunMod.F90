@@ -434,15 +434,7 @@
       use ice_constants, only: c0, c1, puny, rhofresh
       use ice_coupling, only: top_layer_Tandk_run, sfcflux_to_ocn
       use ice_domain_size, only: ncat
-      use ice_flux, only: alvdf, alidf, alvdr, alidr, albice, albsno, &
-          albpnd, albcnt, apeff_ai, coszen, fpond, fresh, &
-          alvdf_ai, alidf_ai, alvdr_ai, alidr_ai, fhocn_ai, &
-          fresh_ai, fsalt_ai, fsalt, &
-          fswthru_ai, fhocn, fswthru, scale_factor, &
-          swvdr, swidr, swvdf, swidf, Tf, Tair, Qa, strairxT, strairyt, &
-          fsens, flat, fswabs, flwout, evap, Tref, Qref, faero_ocn, &
-          fsurfn_f, flatn_f, scale_fluxes, frzmlt_init, frzmlt, &
-          snowfrac, snowfracn, evap_ice, evap_snow
+      use ice_flux
       use ice_grid, only: tmask
       use ice_ocean, only: oceanmixed_ice, ocean_mixed_layer
       use ice_shortwave, only: alvdfn, alidfn, alvdrn, alidrn, &
