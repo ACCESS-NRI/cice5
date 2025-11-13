@@ -44,7 +44,8 @@
       real (kind=dbl_kind), &
          dimension(nx_block,ny_block,max_blocks), &
          public :: &
-           Tsnic, Ti_bot
+           Tsnice, & ! snow ice interface temperature (deg C), (diagnostic)
+           Ti_bot
 
       logical (kind=log_kind), public :: &
          l_brine         ! if true, treat brine pocket effects

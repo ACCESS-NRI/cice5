@@ -74,10 +74,7 @@
          dardg1dt, & ! rate of area loss by ridging ice (1/s)
          dardg2dt, & ! rate of area gain by new ridges (1/s)
          dvirdgdt, & ! rate of ice volume ridged (m/s)
-         opening , & ! rate of opening due to divergence/shear (1/s)
-         ice_freeboard ! height of ice surface (i.e. not snow surface)
-                       ! above sea level (m)
-
+         opening     ! rate of opening due to divergence/shear (1/s)
 
       real (kind=dbl_kind), & 
          dimension (nx_block,ny_block,ncat,max_blocks), public :: &
@@ -92,10 +89,7 @@
          araftn,    & ! rafting ice area
          vraftn,    & ! rafting ice volume 
          aredistn,  & ! redistribution function: fraction of new ridge area
-         vredistn , & ! redistribution function: fraction of new ridge volume
-         ice_freeboardn ! category height of ice surface (i.e. not snow
-                        ! surface) above sea level (m)
-
+         vredistn     ! redistribution function: fraction of new ridge volume
 
        ! restart
 
@@ -314,12 +308,21 @@
       ! ice diagnostics and history files as these are more accurate. 
       ! (The others suffer from problem of incorrect values at grid boxes
       !  that change from an ice free state to an icy state.)
-    
+
       real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
          fresh_ai, & ! fresh water flux to ocean (kg/m^2/s)
          fsalt_ai, & ! salt flux to ocean (kg/m^2/s)
          fhocn_ai, & ! net heat flux to ocean (W/m^2)
-         fswthru_ai  ! shortwave penetrating to ocean (W/m^2)
+         fswthru_ai, &  ! shortwave penetrating to ocean (W/m^2)
+         fsens_ai, & ! sensible heat flux (W/m^2)
+         flat_ai, &  ! latent heat flux (W/m^2)
+         fswabs_ai, & ! shortwave absorbed heat flx     (W/m^2)
+         flwout_ai, & ! upwd lw emitted heat flx (W/m^2)
+         evap_ai, &  ! & evaporation                     (kg/m2/s)
+         evap_ice_ai, & ! & evaporation                     (kg/m2/s)
+         evap_snow_ai, & ! & evaporation                     (kg/m2/s)
+         fcondtop_ai, &  ! downward cond flux at top surface (W m-2)
+         fsurf_ai     ! net flux to top surface, excluding fcondtop (W/m^2)
 
       ! Used with data assimilation in hadgem drivers
       real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks) :: &
@@ -475,6 +478,8 @@
       flwout  (:,:,:) = -stefan_boltzmann*Tffresh**4   
                         ! in case atm model diagnoses Tsfc from flwout
       evap    (:,:,:) = c0
+      evap_ice (:,:,:) = c0
+      evap_snow (:,:,:) = c0
       Tref    (:,:,:) = c0
       Qref    (:,:,:) = c0
       Uref    (:,:,:) = c0
@@ -535,6 +540,8 @@
       fswabs  (:,:,:) = c0
       flwout  (:,:,:) = c0
       evap    (:,:,:) = c0
+      evap_ice(:,:,:) = c0
+      evap_snow(:,:,:) = c0
       Tref    (:,:,:) = c0
       Qref    (:,:,:) = c0
       Uref    (:,:,:) = c0
@@ -597,7 +604,6 @@
       melts  (:,:,:) = c0
       meltb  (:,:,:) = c0
       meltl  (:,:,:) = c0
-      ice_freeboard (:,:,:) = c0
       daidtt (:,:,:) = aice(:,:,:) ! temporary initial area
       dvidtt (:,:,:) = vice(:,:,:) ! temporary initial volume
       dvsdtt (:,:,:) = vsno(:,:,:) ! temporary initial volume
@@ -616,11 +622,20 @@
       fsalt_ai  (:,:,:) = c0
       fhocn_ai  (:,:,:) = c0
       fswthru_ai(:,:,:) = c0
-      albice (:,:,:) = c0
-      albsno (:,:,:) = c0
-      albpnd (:,:,:) = c0
+      fsens_ai  (:,:,:) = c0
+      flat_ai   (:,:,:) = c0
+      fswabs_ai (:,:,:) = c0
+      flwout_ai (:,:,:) = c0
+      evap_ai   (:,:,:) = c0
+      evap_ice_ai(:,:,:) = c0
+      evap_snow_ai(:,:,:) = c0
+      fcondtop_ai(:,:,:) = c0
+      fsurf_ai  (:,:,:) = c0
+      albice    (:,:,:) = c0
+      albsno    (:,:,:) = c0
+      albpnd    (:,:,:) = c0
       snowfracn (:,:,:,:) = c0
-      snowfrac (:,:,:) = c0
+      snowfrac  (:,:,:) = c0
 
       ! drag coefficients are computed prior to the atmo_boundary call, 
       ! during the thermodynamics section 
@@ -712,7 +727,6 @@
                                fswabsn,  flwoutn,    &
                                evapn,                &
                                evapn_ice,evapn_snow, &
-                               ice_freeboardn,       &
                                Trefn,    Qrefn,      &
                                freshn,   fsaltn,     &
                                fhocnn,   fswthrun,   &
@@ -724,7 +738,6 @@
                                fswabs,   flwout,     &
                                evap,                 & 
                                evap_ice, evap_snow,  &
-                               ice_freeboard,        &
                                Tref,     Qref,       &
                                fresh,    fsalt,      & 
                                fhocn,    fswthru,    &
@@ -769,7 +782,6 @@
           meltsn  , & ! snow melt                       (m)
           congeln , & ! congelation ice growth          (m)
           snoicen , & ! snow-ice growth                 (m)
-          ice_freeboardn , & ! ice freeboard                (m)
           evapn_ice, & ! evaporation over ice only (kg/m2/s)
           evapn_snow   ! evaporation over snow only (kg/m2/s)
 
@@ -803,7 +815,6 @@
           melts   , & ! snow melt                       (m)
           congel  , & ! congelation ice growth          (m)
           snoice  , & ! snow-ice growth                 (m)
-          ice_freeboard, & ! ice freeboard
           evap_ice, & ! evaporation over ice only
           evap_snow   ! evaporation over snow only
 
@@ -846,8 +857,6 @@
          evap     (i,j)  = evap    (i,j) + evapn   (i,j)*aicen(i,j)
          evap_ice  (i,j)  = evap_ice(i,j) + evapn_ice(i,j)*aicen(i,j)
          evap_snow (i,j)  = evap_snow(i,j) + evapn_snow(i,j)*aicen(i,j)
-         ice_freeboard (i,j)  = ice_freeboard(i,j) + &
-                                ice_freeboardn(i,j)*aicen(i,j)
          Tref     (i,j)  = Tref    (i,j) + Trefn   (i,j)*aicen(i,j)
          Qref     (i,j)  = Qref    (i,j) + Qrefn   (i,j)*aicen(i,j)
          if (present(Urefn) .and. present(Uref)) then

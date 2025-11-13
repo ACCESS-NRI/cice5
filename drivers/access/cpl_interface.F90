@@ -92,24 +92,23 @@
   ! Initialise MPI
   mpiflag = .FALSE.
   call MPI_Initialized (mpiflag, ierror)
-  print *,'CICE: (prism_init) BF MPI_INIT, mpiflag = ',mpiflag
+  ! print *,'CICE: (prism_init) BF MPI_INIT, mpiflag = ',mpiflag
 
   if ( .not. mpiflag ) then
     call MPI_INIT(ierror)
   endif
 
   call MPI_Initialized (mpiflag, ierror)
-  print *, 'CICE: (prism_init) AF MPI_INIT, mpiflag = ',mpiflag
+  ! print *, 'CICE: (prism_init) AF MPI_INIT, mpiflag = ',mpiflag
 
-  print *
-  print *, 'CICE: (prism_init) calling prism_init_comp_proto...'
+  ! print *, 'CICE: (prism_init) calling prism_init_comp_proto...'
 
   call prism_init_comp_proto (il_comp_id, cp_modnam, ierror)
 
   if (ierror /= PRISM_Ok) then 
       call prism_abort_proto(il_comp_id, 'cice prism_init','STOP 1')
-  else
-      print *, 'CICE: (prism_init) called prism_init_comp_proto !'
+  ! else
+  !     if ( my_task == master_task ) print *, 'CICE: (prism_init) called prism_init_comp_proto !'
   endif
 
   !B: the following part may not be really needed(?)
@@ -132,8 +131,8 @@
   if (ierror /= PRISM_Ok) then
       print *, 'CICE: (prism_init) Error in MPI_Buffer_Attach.'
       call prism_abort_proto(il_comp_id, 'cice prism_init','STOP 2')
-  else
-      print *, 'CICE: (prism_init) MPI_Buffer_Attach ok!'
+  ! else
+  !     print *, 'CICE: (prism_init) MPI_Buffer_Attach ok!'
   endif
   !
   ! PSMILe attribution of local communicator.
@@ -147,7 +146,7 @@
       print *, 'CICE: Error in prism_get_localcomm_proto'
       call prism_abort_proto(il_comp_id, 'cice prism_init','STOP 3')
   else
-      print *, 'CICE: _get_localcomm_ OK! il_commlocal= ',il_commlocal
+      if ( my_task == master_task ) print *, 'CICE: _get_localcomm_ OK! il_commlocal= ',il_commlocal
   endif
 
   !
@@ -155,13 +154,13 @@
   !
  ! print *, '* CICE: Entering init_cpl.....'
 
-  print *, '* CICE (prism_init) calling MPI_Comm_Size ...'
+  !print *, '* CICE (prism_init) calling MPI_Comm_Size ...'
   call MPI_Comm_Size(il_commlocal, il_nbtotproc, ierror)
-  print *, '* CICE (prism_init) calling MPI_Comm_Rank ...'
+  !print *, '* CICE (prism_init) calling MPI_Comm_Rank ...'
   call MPI_Comm_Rank(il_commlocal, my_task, ierror)
 
-  print *, '* CICE (prism_init) il_commlocal, il_nbtotproc, my_task = '
-  print *, '* CICE (prism_init) ', il_commlocal, il_nbtotproc, my_task
+  if ( my_task == master_task ) print *, '* CICE (prism_init) il_commlocal, il_nbtotproc, my_task = '
+  if ( my_task == master_task ) print *, '* CICE (prism_init) ', il_commlocal, il_nbtotproc, my_task
   !
   il_nbcplproc = il_nbtotproc   !multi-process coupling (real parallel cpl)!
   !il_nbcplproc = 1               !mono process coupling
@@ -258,18 +257,18 @@
 !     end do
 
 !!debug
-  if (my_task == 0) then
-  write(il_out,*) "all block info:"
-  do iblk=1,nblocks_tot
-      this_block = get_block(iblk,iblk)
-      ilo = this_block%ilo
-      ihi = this_block%ihi
-      jlo = this_block%jlo
-      jhi = this_block%jhi
-      write(il_out,*) '   this block: cpu, iblock, jblock=', distrb_info%blockLocation(iblk)-1, this_block%iblock, this_block%jblock
-      write(il_out,*) '   block:', iblk, "gilo, gjlo, gihi, gjhi=", this_block%i_glob(ilo), this_block%j_glob(jlo), this_block%i_glob(ihi), this_block%j_glob(jhi)
-  end do
-  end if
+  ! if (my_task == 0) then
+  ! write(il_out,*) "all block info:"
+  ! do iblk=1,nblocks_tot
+  !     this_block = get_block(iblk,iblk)
+  !     ilo = this_block%ilo
+  !     ihi = this_block%ihi
+  !     jlo = this_block%jlo
+  !     jhi = this_block%jhi
+  !     write(il_out,*) '   this block: cpu, iblock, jblock=', distrb_info%blockLocation(iblk)-1, this_block%iblock, this_block%jblock
+  !     write(il_out,*) '   block:', iblk, "gilo, gjlo, gihi, gjhi=", this_block%i_glob(ilo), this_block%j_glob(jlo), this_block%i_glob(ihi), this_block%j_glob(jhi)
+  ! end do
+  ! end if
 
   do iblk=1,nblocks_tot
 
@@ -781,8 +780,8 @@
       call ncheck( nf_open('fields_a2i_in_ice.nc',nf_write,ncid) )
       call write_nc_1Dtime(real(isteps),currstep,'time',ncid)
     endif
-    write(il_out,*)
-    write(il_out,*) '(from_atm) Total number of fields to be rcvd: ', nrecv_a2i
+    ! write(il_out,*)
+    ! write(il_out,*) '(from_atm) Total number of fields to be rcvd: ', nrecv_a2i
   endif
   
   if (debug) write(il_out,*) "prism_get from_atm at sec: ", isteps

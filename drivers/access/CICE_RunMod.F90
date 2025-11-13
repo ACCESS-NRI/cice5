@@ -62,14 +62,13 @@
       use ice_timers, only: ice_timer_start, &
           ice_timer_stop, timer_couple, timer_step, &
           timer_from_atm, timer_into_atm, timer_from_ocn, timer_into_ocn
-      use ice_grid, only: t2ugrid_vector, u2tgrid_vector
+      use ice_grid, only: t2ugrid_vector
       integer (kind=int_kind) :: time_sec, itap, icpl_ai, tmp_time
       integer (kind=int_kind) :: rtimestamp_ai, stimestamp_ai
       integer (kind=int_kind) :: rtimestamp_io, stimestamp_io
       !receive and send timestamps (seconds)
       integer (kind=int_kind) :: imon 
 
-        logical ::  write_tmp_dump = .true.
 #endif
 
    !--------------------------------------------------------------------
@@ -83,9 +82,12 @@
    !--------------------------------------------------------------------
 
 #ifdef ACCESS
-      write(il_out,*)'A <==> I coupling num_cpl_ai =          ',num_cpl_ai
-      write(il_out,*)' ice steps per ai interval num_ice_ai = ',num_ice_ai
-      write(il_out,*)' runtime, runtime0 =                    ',runtime, runtime0
+
+      if (my_task == master_task) then
+         write(il_out,*)'A <==> I coupling num_cpl_ai =          ',num_cpl_ai
+         write(il_out,*)' ice steps per ai interval num_ice_ai = ',num_ice_ai
+         write(il_out,*)' runtime, runtime0 =                    ',runtime, runtime0
+      endif
 
       time_sec = 0
       
@@ -94,7 +96,7 @@
         !receive a2i fields 
         rtimestamp_ai = time_sec
         !call ice_timer_start(timer_from_atm)  ! atm/ice coupling
-        write(il_out,*)' calling from_atm at icpl_ai, time_sec = ', icpl_ai, time_sec
+      !   write(il_out,*)' calling from_atm at icpl_ai, time_sec = ', icpl_ai, time_sec
         !===========================
         call from_atm(rtimestamp_ai)
         !===========================
@@ -116,8 +118,8 @@
           call t2ugrid_vector(io_strsu)
           call t2ugrid_vector(io_strsv)
 
-          write(il_out,'(a,3i10)') &
-                ' calling into_ocn at icpl_ai, itap, time_sec = ', icpl_ai, itap, time_sec
+         !  write(il_out,'(a,3i10)') &
+               !  ' calling into_ocn at icpl_ai, itap, time_sec = ', icpl_ai, itap, time_sec
           !call ice_timer_start(timer_into_ocn)  ! atm/ocn coupling
           !===========================
           !call check_iceberg_fields('chk_iceberg_i2o.nc')
@@ -161,8 +163,8 @@
 
             stimestamp_ai = time_sec 
 
-            write(il_out,'(a,3i10)') &
-                ' calling into_atm at icpl_ai, itap, time_sec = ',icpl_ai, itap, time_sec
+            ! write(il_out,'(a,3i10)') &
+               !  ' calling into_atm at icpl_ai, itap, time_sec = ',icpl_ai, itap, time_sec
             !===========================
             call into_atm(stimestamp_ai)
             !===========================
@@ -292,6 +294,10 @@
       use ice_algae, only: bgc_diags, write_restart_bgc
       use ice_zbgc, only: init_history_bgc, biogeochemistry
       use ice_zbgc_shared, only: skl_bgc
+#ifdef ACCESS
+      use ice_state, only: vsno, aice, tr_pond
+      use ice_flux, only: snowfrac
+#endif
 
       integer (kind=int_kind) :: &
          iblk        , & ! block index 
@@ -428,20 +434,12 @@
       use ice_constants, only: c0, c1, puny, rhofresh
       use ice_coupling, only: top_layer_Tandk_run, sfcflux_to_ocn
       use ice_domain_size, only: ncat
-      use ice_flux, only: alvdf, alidf, alvdr, alidr, albice, albsno, &
-          albpnd, albcnt, apeff_ai, coszen, fpond, fresh, &
-          alvdf_ai, alidf_ai, alvdr_ai, alidr_ai, fhocn_ai, &
-          fresh_ai, fsalt_ai, fsalt, &
-          fswthru_ai, fhocn, fswthru, scale_factor, &
-          swvdr, swidr, swvdf, swidf, Tf, Tair, Qa, strairxT, strairyt, &
-          fsens, flat, fswabs, flwout, evap, Tref, Qref, faero_ocn, &
-          fsurfn_f, flatn_f, scale_fluxes, frzmlt_init, frzmlt, &
-          snowfrac, snowfracn, evap_ice, evap_snow
+      use ice_flux
       use ice_grid, only: tmask
       use ice_ocean, only: oceanmixed_ice, ocean_mixed_layer
       use ice_shortwave, only: alvdfn, alidfn, alvdrn, alidrn, &
                                albicen, albsnon, albpndn, apeffn
-      use ice_state, only: aicen, aice, aice_init, nbtrcr
+      use ice_state, only: aicen, aice, aice_init, nbtrcr, tr_pond, vsno
       use ice_therm_shared, only: calc_Tsfc, heat_capacity
       use ice_timers, only: timer_couple, ice_timer_start, ice_timer_stop
       use ice_zbgc_shared, only: flux_bio, flux_bio_ai
@@ -527,8 +525,19 @@
 
             apeff_ai(i,j,iblk) = apeff_ai(i,j,iblk) &       ! for history
                + apeffn(i,j,n,iblk)*aicen(i,j,n,iblk)
-            snowfrac(i,j,iblk) = snowfrac(i,j,iblk) &       ! for history
-               + snowfracn(i,j,n,iblk)*aicen(i,j,n,iblk)
+
+            if ( .not. tr_pond .and. .not. calc_Tsfc ) then
+               ! calculate a snowfrac diagnostic in the same way the UM does
+               ! set snow fraction using JULES empirical formula based
+               ! on snow volume
+               ! ref: https://github.com/ACCESS-NRI/UM7/blob/6602dadd15c190ee37c6644190f52d428bc66917/umbase_hg3/src/atmosphere/short_wave_radiation/ftsa.F90#L201-L202
+               if (aice(i,j,iblk) > 2e-4) & 
+                  snowfrac(i,j,iblk) = c1 - exp(-p2*rhos*(vsno(i,j,iblk) / aice(i,j,iblk)))
+            else
+               snowfrac(i,j,iblk) = snowfrac(i,j,iblk) &       ! for history
+                  + snowfracn(i,j,n,iblk)*aicen(i,j,n,iblk)
+            endif
+
          enddo
          enddo
          enddo
@@ -555,6 +564,15 @@
             fsalt_ai  (i,j,iblk) = fsalt  (i,j,iblk)
             fhocn_ai  (i,j,iblk) = fhocn  (i,j,iblk)
             fswthru_ai(i,j,iblk) = fswthru(i,j,iblk)
+            fsens_ai  (i,j,iblk) = fsens(i,j,iblk)
+            flat_ai   (i,j,iblk) = flat(i,j,iblk)
+            fswabs_ai (i,j,iblk) = fswabs(i,j,iblk)
+            flwout_ai (i,j,iblk) = flwout(i,j,iblk)
+            evap_ai   (i,j,iblk) = evap(i,j,iblk) 
+            evap_ice_ai(i,j,iblk) = evap_ice(i,j,iblk) 
+            evap_snow_ai(i,j,iblk) = evap_snow(i,j,iblk) 
+            fcondtop_ai(i,j,iblk) = fcondtop(i,j,iblk) 
+            fsurf_ai(i,j,iblk) = fsurf(i,j,iblk) 
 
             if (nbtrcr > 0) then
             do k = 1, nbtrcr
