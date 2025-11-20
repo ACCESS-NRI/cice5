@@ -215,7 +215,7 @@ if (ncstatus/=nf_noerr) then
   adate(3) = idate - (idate/100)*100
   adate(4:6) = 0  !OK for 'whole-day' runs               
   call ncheck(nf_redef(ncid))
-  call ncheck(nf_def_var(ncid,trim(vname),nf_real, 1, timeDimId, varid))
+  call ncheck(nf_def_var(ncid,trim(vname),nf_real, 1, (/ timeDimId /), varid))
   write(ctimeatt, &
       '("seconds since ",I4.4,"-",I2.2,"-",I2.2," ",I2.2,":",I2.2,":",I2.2)') adate(:)
   !ctimeatt="hours since 0000-01-01 00:00:00"
@@ -225,7 +225,7 @@ end if
 
 !write values into the 1D array
 !call ncheck(nf_put_vara_real(ncid,varid,nt,1,vin))
-call ncheck(nf_put_vara_real(ncid,varid,nt,1,vtmp))
+call ncheck(nf_put_vara_real(ncid,varid,nt,(/ 1 /),vtmp))
 !B: must indicate the start point and number of the record, ie., nt and 1!  
 
 return
