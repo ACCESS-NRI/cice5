@@ -87,7 +87,7 @@ set (NCI_DEBUG_FLAGS "-g3 -O0 -debug all -check all -no-vec -traceback -assume n
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   set(CMAKE_Fortran_FLAGS_RELEASE "-Wall -fdefault-real-8 -fdefault-double-8 -ffpe-trap=invalid,zero,overflow -fallow-argument-mismatch")
-else if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   set(CMAKE_Fortran_FLAGS_RELEASE "${NCI_INTEL_FLAGS} ${NCI_REPRO_FLAGS} ${NCI_OPTIM_FLAGS}")
   set(CMAKE_Fortran_FLAGS_DEBUG "${NCI_INTEL_FLAGS} ${NCI_REPRO_FLAGS} ${NCI_DEBUG_FLAGS}")
 else()
