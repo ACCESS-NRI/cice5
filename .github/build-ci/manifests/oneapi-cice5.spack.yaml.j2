@@ -2,7 +2,8 @@ spack:
   specs:
   - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@4'
   - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@5'
-  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=360 nyglob=300 blckx=15 blcky=300 mxblcks=1'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=360 nyglob=300 blckx=15 blcky=300 mxblcks=1 io_type=PIO'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=360 nyglob=300 blckx=15 blcky=300 mxblcks=1 io_type=NetCDF'
   - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=360 nyglob=300 blckx=15 blcky=300 mxblcks=1 ^openmpi@5'
   - 'cice5@git.{{ ref }}=stable build_type=Debug build_system=cmake model=access-om2 nxglob=360 nyglob=300 blckx=15 blcky=300 mxblcks=1'
   packages:
