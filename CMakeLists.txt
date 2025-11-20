@@ -17,11 +17,10 @@ project(CICE
 
 message(STATUS "Build options")
 
-if (CICE_DRIVER MATCHES "auscom")
-  option(CICE_IO "CICE IO Method" "PIO")
-else()
-  option(CICE_IO "CICE IO Method" "NetCDF")
-endif()
+# provide some default options from access "1degree" configurations
+# its intended the user will set these
+
+set(CICE_IO "PIO" CACHE STRING "CICE netcdf io method")
 
 if(NOT CICE_IO MATCHES "^(NetCDF|PIO)$")
   message(FATAL_ERROR " CICE_IO   ${CICE_IO} not valid, choose NetCDF|PIO")
@@ -29,14 +28,20 @@ else()
   message(STATUS "  - CICE_IO   ${CICE_IO}")
 endif()
 
-option(CICE_DRIVER "CICE driver code to use" "auscom")
+set(CICE_DRIVER "auscom" CACHE STRING "CICE driver code to use")
 message(STATUS "  - CICE_DRIVER   ${CICE_DRIVER}")
 
-set(NXGLOB 360)
-set(NYGLOB 300)
-set(BLCKX 24)
-set(BLCKY 24)
-set(MXBLCKS 1)
+set(CICE_NXGLOB "360" CACHE STRING "Size of grid in X-direction")
+set(CICE_NYGLOB "300" CACHE STRING "Size of grid in Y-direction")
+
+# defaults from https://github.com/ACCESS-NRI/access-spack-packages/blob/d8b48b18a1400cf2a6850af0bf038af55804d92f/packages/cice5/spack-build.sh#L89-L91
+# BLCKX = 360/24 = 15 , BLCKY = 300/1  = 300
+set(CICE_BLCKX   "15"  CACHE STRING "Size of computational blocks in X-direction")
+set(CICE_BLCKY   "300" CACHE STRING "Size of computational blocks in Y-direction")
+set(CICE_MXBLCKS "1"   CACHE STRING "Maximum number of blocks per task")
+
+# these are also configuration settings, but we hard code them
+# could be made options if users need them
 
 if (CICE_DRIVER MATCHES "access")
   set( NSNWLYR  1 )
@@ -87,18 +92,12 @@ else()
   message(WARNING "Fortran compiler with ID ${CMAKE_Fortran_COMPILER_ID} will be used with CMake default options")
 endif()
 
-
-# if(CMAKE_C_COMPILER_ID MATCHES "Intel")
-#   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -traceback -qno-opt-dynamic-align -fp-model precise -std=gnu99")
-#   set(CMAKE_C_FLAGS_RELEASE "-O2 -debug minimal")
-#   set(CMAKE_C_FLAGS_DEBUG "-O0 -g")
-# else()
-#   message(WARNING "C compiler with ID ${CMAKE_C_COMPILER_ID} will be used with CMake default options")
-# endif()
-
 add_compile_definitions(
-  NXGLOB=${NXGLOB}
-  NYGLOB=${NYGLOB}
+  NXGLOB=${CICE_NXGLOB}
+  NYGLOB=${CICE_NYGLOB}
+  BLCKX=${CICE_BLCKX}
+  BLCKY=${CICE_BLCKY}
+  MXBLCKS=${CICE_MXBLCKS}
   NUMIN=${NUMIN}
   NUMAX=${NUMAX}
   TRAGE=${TRAGE}
@@ -112,9 +111,6 @@ add_compile_definitions(
   NICECAT=${NICECAT}
   NICELYR=${NICELYR}
   NSNWLYR=${NSNWLYR}
-  BLCKX=${BLCKX}
-  BLCKY=${BLCKY}
-  MXBLCKS=${MXBLCKS}
 )
 
 add_compile_definitions(
@@ -323,7 +319,10 @@ set_target_properties(cicelib PROPERTIES
     EXPORT_NAME cicelib
 )
 
-set (CICE_EXE_NAME "cice_${CICE_DRIVER}_${NXGLOB}x${NYGLOB}_${BLCKX}x${BLCKY}.exe")
+set (
+  CICE_EXE_NAME 
+  "cice_${CICE_DRIVER}_${CICE_NXGLOB}x${CICE_NYGLOB}_${CICE_BLCKX}x${CICE_BLCKY}.exe"
+)
 add_executable(CICE    ${CICE_DRIVER_SOURCE}/CICE.F90)
 
 target_link_libraries(CICE PRIVATE cicelib MPI::MPI_Fortran)
@@ -336,4 +335,3 @@ install(TARGETS CICE
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT IO_${CICE_IO}
 )
-
