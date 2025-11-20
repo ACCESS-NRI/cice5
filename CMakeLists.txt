@@ -182,7 +182,7 @@ target_link_libraries(cicelib
   PRIVATE 
   MPI::MPI_Fortran 
   PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP 
-  # OASIS3MCT is a depedency of OASIS3PSMILE, so it needs to be after in this list
+  # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
   )
 
 if(CICE_IO MATCHES "^(NetCDF|PIO)$")
@@ -227,7 +227,7 @@ target_sources(cicelib PRIVATE
   ${CICE_SOURCE}/ice_diagnostics.F90
   ${CICE_SOURCE}/ice_forcing.F90
   ${CICE_SOURCE}/ice_kinds_mod.F90
-  ${CICE_SOURCE}/ice_restart_shared.mod
+  ${CICE_SOURCE}/ice_restart_shared.F90
   ${CICE_SOURCE}/ice_transport_driver.F90
   ${CICE_SOURCE}/ice_distribution.F90
   ${CICE_SOURCE}/ice_grid.F90
