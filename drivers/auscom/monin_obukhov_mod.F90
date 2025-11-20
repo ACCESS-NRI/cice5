@@ -32,7 +32,7 @@ private
  public monin_obukhov_end
  public mo_drag
  public mo_profile
- public mo_diff
+!  public mo_diff
  public stable_mix
 !=======================================================================
 
@@ -46,11 +46,11 @@ interface mo_profile
                       mo_profile_0d_n, mo_profile_1d_n, mo_profile_2d_n
 end interface
 
-interface mo_diff
-    module procedure  mo_diff_0d_n, mo_diff_0d_1, &
-                      mo_diff_1d_n, mo_diff_1d_1, &
-                      mo_diff_2d_n, mo_diff_2d_1
-end interface
+! interface mo_diff
+!     module procedure  mo_diff_0d_n, mo_diff_0d_1, &
+!                       mo_diff_1d_n, mo_diff_1d_1, &
+!                       mo_diff_2d_n, mo_diff_2d_1
+! end interface
 
 interface stable_mix
     module procedure  stable_mix_0d, stable_mix_1d, &
