@@ -83,7 +83,7 @@ include(FortranLib)
 set (NCI_INTEL_FLAGS "-r8 -i4 -w -fpe0 -ftz -convert big_endian -assume byterecl -check noarg_temp_created")
 set (NCI_REPRO_FLAGS "-fp-model precise -fp-model source -align all")
 set (NCI_OPTIM_FLAGS "-g3 -O2 -axCORE-AVX2 -debug all -check none -traceback -assume buffered_io")
-set (NCI_DEBUG_FLAGS "g3 -O0 -debug all -check all -no-vec -traceback -assume nobuffered_io")
+set (NCI_DEBUG_FLAGS "-g3 -O0 -debug all -check all -no-vec -traceback -assume nobuffered_io")
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   set(CMAKE_Fortran_FLAGS_RELEASE "${NCI_INTEL_FLAGS} ${NCI_REPRO_FLAGS} ${NCI_OPTIM_FLAGS}")

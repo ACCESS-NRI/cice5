@@ -886,48 +886,52 @@ end subroutine mo_diff_1d_n
 
 !=======================================================================
 
-subroutine mo_diff_0d_1(z, u_star, b_star, k_m, k_h)
+! These two subroutines are unused, the size of z below in them is wrong
+! see https://github.com/ACCESS-NRI/cice5/blob/ba86020a89fff307cfe7cbf436071a8471966e53/drivers/auscom/monin_obukhov_kernel.F90
+! commented out so compiler doesn't complain
 
-real, intent(in)  :: z, u_star, b_star
-real, intent(out) :: k_m, k_h
+! subroutine mo_diff_0d_1(z, u_star, b_star, k_m, k_h)
 
-integer            :: ni, nj, nk, ier
-real, parameter    :: ustar_min = 1.e-10
+! real, intent(in)  :: z, u_star, b_star
+! real, intent(out) :: k_m, k_h
 
-if(.not.module_is_initialized) call monin_obukhov_init
+! integer            :: ni, nj, nk, ier
+! real, parameter    :: ustar_min = 1.e-10
 
-ni = 1; nj = 1; nk = 1
-!!call monin_obukhov_diff(vonkarm,                           &
-call monin_obukhov_diff(vonkar,                           &
-          & ustar_min,                                     &
-          & neutral, stable_option, rich_crit, zeta_trans, &
-          & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
+! if(.not.module_is_initialized) call monin_obukhov_init
 
-end subroutine mo_diff_0d_1
+! ni = 1; nj = 1; nk = 1
+! !!call monin_obukhov_diff(vonkarm,                           &
+! call monin_obukhov_diff(vonkar,                           &
+!           & ustar_min,                                     &
+!           & neutral, stable_option, rich_crit, zeta_trans, &
+!           & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
 
-!=======================================================================
+! end subroutine mo_diff_0d_1
 
-subroutine mo_diff_0d_n(z, u_star, b_star, k_m, k_h)
+! !=======================================================================
 
-real, intent(in),  dimension(:) :: z
-real, intent(in)                :: u_star, b_star
-real, intent(out), dimension(:) :: k_m, k_h
+! subroutine mo_diff_0d_n(z, u_star, b_star, k_m, k_h)
 
-integer            :: ni, nj, nk, ier
-real, parameter    :: ustar_min = 1.e-10
+! real, intent(in),  dimension(:) :: z
+! real, intent(in)                :: u_star, b_star
+! real, intent(out), dimension(:) :: k_m, k_h
 
-if(.not.module_is_initialized) call monin_obukhov_init
+! integer            :: ni, nj, nk, ier
+! real, parameter    :: ustar_min = 1.e-10
 
-ni = 1; nj = 1; nk = size(z(:))
-!!call monin_obukhov_diff(vonkarm,                           &
-call monin_obukhov_diff(vonkar,                           &
-          & ustar_min,                                     &
-          & neutral, stable_option, rich_crit, zeta_trans, &
-          & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
+! if(.not.module_is_initialized) call monin_obukhov_init
 
-end subroutine mo_diff_0d_n
+! ni = 1; nj = 1; nk = size(z(:))
+! !!call monin_obukhov_diff(vonkarm,                           &
+! call monin_obukhov_diff(vonkar,                           &
+!           & ustar_min,                                     &
+!           & neutral, stable_option, rich_crit, zeta_trans, &
+!           & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
 
-!=======================================================================
+! end subroutine mo_diff_0d_n
+
+! !=======================================================================
 
 subroutine stable_mix_2d(rich, mix)
 
