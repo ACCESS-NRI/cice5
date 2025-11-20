@@ -289,7 +289,6 @@ elseif(CICE_DRIVER MATCHES "auscom")
     ${CICE_DRIVER_SOURCE}/ocean_rough_mod.F90
     ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
     ${CICE_DRIVER_SOURCE}/ice_constants.F90
-    ${CICE_DRIVER_SOURCE}/version_mod.F90
   )
 else()
   message(FATAL_ERROR "CICE_DRIVER: ${CICE_DRIVER} is currently not supported by the CMake build system")
