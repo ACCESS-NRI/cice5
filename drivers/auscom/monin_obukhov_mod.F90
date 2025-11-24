@@ -32,7 +32,7 @@ private
  public monin_obukhov_end
  public mo_drag
  public mo_profile
-!  public mo_diff
+ public mo_diff
  public stable_mix
 !=======================================================================
 
@@ -46,11 +46,11 @@ interface mo_profile
                       mo_profile_0d_n, mo_profile_1d_n, mo_profile_2d_n
 end interface
 
-! interface mo_diff
-!     module procedure  mo_diff_0d_n, mo_diff_0d_1, &
-!                       mo_diff_1d_n, mo_diff_1d_1, &
-!                       mo_diff_2d_n, mo_diff_2d_1
-! end interface
+interface mo_diff
+    module procedure  mo_diff_0d_n, mo_diff_0d_1, &
+                      mo_diff_1d_n, mo_diff_1d_1, &
+                      mo_diff_2d_n, mo_diff_2d_1
+end interface
 
 interface stable_mix
     module procedure  stable_mix_0d, stable_mix_1d, &
@@ -886,52 +886,48 @@ end subroutine mo_diff_1d_n
 
 !=======================================================================
 
-! These two subroutines are unused, the size of z below in them is wrong
-! see https://github.com/ACCESS-NRI/cice5/blob/ba86020a89fff307cfe7cbf436071a8471966e53/drivers/auscom/monin_obukhov_kernel.F90
-! commented out so compiler doesn't complain
+subroutine mo_diff_0d_1(z, u_star, b_star, k_m, k_h)
 
-! subroutine mo_diff_0d_1(z, u_star, b_star, k_m, k_h)
+real, intent(in)  :: z, u_star, b_star
+real, intent(out) :: k_m, k_h
 
-! real, intent(in)  :: z, u_star, b_star
-! real, intent(out) :: k_m, k_h
+integer            :: ni, nj, nk, ier
+real, parameter    :: ustar_min = 1.e-10
 
-! integer            :: ni, nj, nk, ier
-! real, parameter    :: ustar_min = 1.e-10
+if(.not.module_is_initialized) call monin_obukhov_init
 
-! if(.not.module_is_initialized) call monin_obukhov_init
+ni = 1; nj = 1; nk = 1
+!!call monin_obukhov_diff(vonkarm,                           &
+call monin_obukhov_diff(vonkar,                           &
+          & ustar_min,                                     &
+          & neutral, stable_option, rich_crit, zeta_trans, &
+          & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
 
-! ni = 1; nj = 1; nk = 1
-! !!call monin_obukhov_diff(vonkarm,                           &
-! call monin_obukhov_diff(vonkar,                           &
-!           & ustar_min,                                     &
-!           & neutral, stable_option, rich_crit, zeta_trans, &
-!           & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
+end subroutine mo_diff_0d_1
 
-! end subroutine mo_diff_0d_1
+!=======================================================================
 
-! !=======================================================================
+subroutine mo_diff_0d_n(z, u_star, b_star, k_m, k_h)
 
-! subroutine mo_diff_0d_n(z, u_star, b_star, k_m, k_h)
+real, intent(in),  dimension(:) :: z
+real, intent(in)                :: u_star, b_star
+real, intent(out), dimension(:) :: k_m, k_h
 
-! real, intent(in),  dimension(:) :: z
-! real, intent(in)                :: u_star, b_star
-! real, intent(out), dimension(:) :: k_m, k_h
+integer            :: ni, nj, nk, ier
+real, parameter    :: ustar_min = 1.e-10
 
-! integer            :: ni, nj, nk, ier
-! real, parameter    :: ustar_min = 1.e-10
+if(.not.module_is_initialized) call monin_obukhov_init
 
-! if(.not.module_is_initialized) call monin_obukhov_init
+ni = 1; nj = 1; nk = size(z(:))
+!!call monin_obukhov_diff(vonkarm,                           &
+call monin_obukhov_diff(vonkar,                           &
+          & ustar_min,                                     &
+          & neutral, stable_option, rich_crit, zeta_trans, &
+          & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
 
-! ni = 1; nj = 1; nk = size(z(:))
-! !!call monin_obukhov_diff(vonkarm,                           &
-! call monin_obukhov_diff(vonkar,                           &
-!           & ustar_min,                                     &
-!           & neutral, stable_option, rich_crit, zeta_trans, &
-!           & ni, nj, nk, z, u_star, b_star, k_m, k_h, ier)
+end subroutine mo_diff_0d_n
 
-! end subroutine mo_diff_0d_n
-
-! !=======================================================================
+!=======================================================================
 
 subroutine stable_mix_2d(rich, mix)
 

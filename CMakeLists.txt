@@ -40,7 +40,7 @@ set(CICE_BLCKX   "15"  CACHE STRING "Size of computational blocks in X-direction
 set(CICE_BLCKY   "300" CACHE STRING "Size of computational blocks in Y-direction")
 set(CICE_MXBLCKS "1"   CACHE STRING "Maximum number of blocks per task")
 
-# these are also configuration settings, but we hard code them
+# these are also configuration settings, but we leave them as internal only at this point
 # could be made options if users need them
 
 if (CICE_DRIVER MATCHES "access")
