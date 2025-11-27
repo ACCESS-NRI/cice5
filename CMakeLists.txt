@@ -75,8 +75,6 @@ set( NUMAX 99  )      # maximum file unit number
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(CMakePackageConfigHelpers)
-include(GNUInstallDirs)
-include(FortranLib)
 
 # https://github.com/ACCESS-NRI/access-spack-packages/blob/d8b48b18a1400cf2a6850af0bf038af55804d92f/packages/cice5/package.py#L197C1-L198C65
 # note: previous deterministic and optimisation report options not included
@@ -115,18 +113,11 @@ add_compile_definitions(
   NSNWLYR=${NSNWLYR}
 )
 
-add_compile_definitions(
-  gather_scatter_barrier
-  ncdf
-  OASIS3_MCT
-)
+add_compile_definitions( gather_scatter_barrier ncdf OASIS3_MCT )
 
 if (CICE_IO MATCHES PIO)
   add_compile_definitions(PIO)
 endif()
-
-# ???
-# setenv CHAN     MPI1	  # MPI1 or MPI2 (always MPI1!) 
 
 if(CICE_DRIVER MATCHES "auscom")
   add_compile_definitions(AusCOM coupled)
@@ -134,17 +125,9 @@ elseif(CICE_DRIVER MATCHES "access")
   add_compile_defitions(ACCESS AusCOM coupled)
 endif()
 
-
-## Fortran modules path; currently this is simply set to be the include dir
-set(CMAKE_INSTALL_MODULEDIR ${CMAKE_INSTALL_INCLUDEDIR}
-  CACHE STRING
-  "Fortran module installation path (Not a cmake native variable)"
-)
-
 #[==============================================================================[
 #                              External packages                                #
 #]==============================================================================]
-
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(OASIS3PSMILE REQUIRED IMPORTED_TARGET "oasis3-psmile.MPI1")
@@ -158,8 +141,8 @@ if(CICE_DRIVER MATCHES "auscom")
 endif()
 
 if(CICE_IO MATCHES "PIO" AND NOT TARGET PIO::PIO_Fortran)
-  # Code has not been tested with versions older than 2.5.3, but probably still works fine
   find_package(PIO 2.5.3 REQUIRED COMPONENTS Fortran)
+  # Code has not been tested with versions older than 2.5.3, but probably still works fine
 endif()
 if(CICE_IO MATCHES "^(NetCDF|PIO)$" AND NOT TARGET NetCDF::NetCDF_Fortran)
   # Code has not been tested with versions older than 4.7.3, but probably still works fine 
@@ -170,16 +153,13 @@ endif()
 #                             Main definitions                                  #
 #]==============================================================================]
 
-### Targets
-
-## CICE library
-
 set(CICE_SOURCE "${CMAKE_SOURCE_DIR}/source")
 set(CICE_MPI "${CMAKE_SOURCE_DIR}/mpi")
 set(CICE_DRIVER_SOURCE "${CMAKE_SOURCE_DIR}/drivers/${CICE_DRIVER}")
 
-add_fortran_library(cicelib mod STATIC)
-target_link_libraries(cicelib 
+add_executable(cice    ${CICE_DRIVER_SOURCE}/CICE.F90)
+
+target_link_libraries(cice 
   PUBLIC libaccessom2::accessom2
   PRIVATE 
   MPI::MPI_Fortran 
@@ -188,13 +168,13 @@ target_link_libraries(cicelib
   )
 
 if(CICE_IO MATCHES "^(NetCDF|PIO)$")
-  target_link_libraries(cicelib PRIVATE NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
+  target_link_libraries(cice PRIVATE NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
   if(CICE_IO MATCHES "PIO")
-    target_link_libraries(cicelib PRIVATE PIO::PIO_Fortran)
+    target_link_libraries(cice PRIVATE PIO::PIO_Fortran)
   endif()
 endif()
 
-target_sources(cicelib PRIVATE
+target_sources(cice PRIVATE
   ${CICE_SOURCE}/ice_aerosol.F90
   ${CICE_SOURCE}/ice_dyn_evp.F90
   ${CICE_SOURCE}/ice_meltpond_lvl.F90
@@ -252,7 +232,7 @@ target_sources(cicelib PRIVATE
   ${CMAKE_SOURCE_DIR}/csm_share/shr_orb_mod.F90
 )
 
-target_sources(cicelib PRIVATE
+target_sources(cice PRIVATE
   ${CICE_MPI}/ice_boundary.F90
   ${CICE_MPI}/ice_communicate.F90
   ${CICE_MPI}/ice_gather_scatter.F90
@@ -263,7 +243,7 @@ target_sources(cicelib PRIVATE
 )
 
 if(CICE_DRIVER MATCHES "access")
-  target_sources(cicelib PRIVATE
+  target_sources(cice PRIVATE
     ${CICE_DRIVER_SOURCE}/CICE_RunMod.F90
     ${CICE_DRIVER_SOURCE}/cpl_forcing_handler.F90
     ${CICE_DRIVER_SOURCE}/cpl_parameters.F90
@@ -275,7 +255,7 @@ if(CICE_DRIVER MATCHES "access")
     ${CICE_DRIVER_SOURCE}/cpl_netcdf_setup.F90
   )
 elseif(CICE_DRIVER MATCHES "auscom")
-  target_sources(cicelib PRIVATE
+  target_sources(cice PRIVATE
     ${CICE_DRIVER_SOURCE}/cpl_forcing_handler.F90
     ${CICE_DRIVER_SOURCE}/sat_vapor_pres_k_mod.F90
     ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
@@ -298,12 +278,12 @@ endif()
 
 # Select IO source files based on CICE_IO
 if(CICE_IO MATCHES "NetCDF")
-  target_sources(cicelib PRIVATE
+  target_sources(cice PRIVATE
     ${CMAKE_SOURCE_DIR}/io_netcdf/ice_history_write.F90
     ${CMAKE_SOURCE_DIR}/io_netcdf/ice_restart.F90
   )
 elseif(CICE_IO MATCHES "PIO")
-  target_sources(cicelib PRIVATE
+  target_sources(cice PRIVATE
     ${CMAKE_SOURCE_DIR}/io_pio/ice_history_write.F90
     ${CMAKE_SOURCE_DIR}/io_pio/ice_pio.F90
     ${CMAKE_SOURCE_DIR}/io_pio/ice_restart.F90
@@ -311,28 +291,15 @@ elseif(CICE_IO MATCHES "PIO")
 endif()
 
 #[==============================================================================[
-#                             Install or Export                                 #
+#                             Install                                           #
 #]==============================================================================]
 
-
-set_target_properties(cicelib PROPERTIES
-    OUTPUT_NAME cicelib-standalone
-    EXPORT_NAME cicelib
-)
-
-set (
-  CICE_EXE_NAME 
-  "cice_${CICE_DRIVER}_${CICE_NXGLOB}x${CICE_NYGLOB}_${CICE_BLCKX}x${CICE_BLCKY}.exe"
-)
-add_executable(CICE    ${CICE_DRIVER_SOURCE}/CICE.F90)
-
-target_link_libraries(CICE PRIVATE cicelib MPI::MPI_Fortran)
-
-set_target_properties(CICE PROPERTIES
+set_target_properties(cice PROPERTIES
   LINKER_LANGUAGE Fortran
-  OUTPUT_NAME ${CICE_EXE_NAME}
+  OUTPUT_NAME "cice_${CICE_DRIVER}_${CICE_NXGLOB}x${CICE_NYGLOB}_${CICE_BLCKX}x${CICE_BLCKY}.exe"
 )
-install(TARGETS CICE
+
+install(TARGETS cice
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT IO_${CICE_IO}
 )
