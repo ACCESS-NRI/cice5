@@ -27,6 +27,9 @@
 !      use ice_fileunits, only: nu_diag, ice_stderr, flush_fileunit
       use ice_fileunits
       use ice_communicate
+#if defined(__INTEL_COMPILER)
+      use ifcore
+#endif
 #if (defined CCSM) || (defined SEQ_MCT)
       use shr_sys_mod
 #else
