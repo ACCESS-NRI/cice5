@@ -158,8 +158,8 @@ if(CICE_DRIVER MATCHES "auscom")
 endif()
 
 if(CICE_IO MATCHES "PIO" AND NOT TARGET PIO::PIO_Fortran)
-  find_package(PIO 2.5.3 REQUIRED COMPONENTS Fortran)
   # Code has not been tested with versions older than 2.5.3, but probably still works fine
+  find_package(PIO 2.5.3 REQUIRED COMPONENTS Fortran)
 endif()
 if(CICE_IO MATCHES "^(NetCDF|PIO)$" AND NOT TARGET NetCDF::NetCDF_Fortran)
   # Code has not been tested with versions older than 4.7.3, but probably still works fine 
