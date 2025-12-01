@@ -75,8 +75,10 @@ subroutine tavg_i2o_fluxes
     iomelt (:,:,:) = iomelt (:,:,:) + tiomelt (:,:,:)*coef_ic
     ioform (:,:,:) = ioform (:,:,:) + tioform (:,:,:)*coef_ic
     iownd (:,:,:)  = iownd (:,:,:) + tiownd (:,:,:)*coef_ic
-    ionit (:,:,:)  = ionit (:,:,:) + tionit (:,:,:)*coef_ic
-    ioalg (:,:,:)  = ioalg (:,:,:) + tioalg (:,:,:)*coef_ic
+    if (skl_bgc) then
+      ionit (:,:,:)  = ionit (:,:,:) + tionit (:,:,:)*coef_ic
+      ioalg (:,:,:)  = ioalg (:,:,:) + tioalg (:,:,:)*coef_ic
+    endif
     iolicefw (:,:,:) = iolicefw (:,:,:) + tiolicefw (:,:,:)*coef_ic
     iolicefh (:,:,:) = iolicefh (:,:,:) + tiolicefh (:,:,:)*coef_ic
 
@@ -372,8 +374,10 @@ if (maxval(sst).gt.200) then
     sst = sst - 273.15
 endif
 sss(:,:,:)     = ssso(:,:,:)
-ocean_bio(:,:,nlt_bgc_NO,:)     = ssn(:,:,:)
-ocean_bio(:,:,nlt_bgc_N,:)     = ssalg(:,:,:)
+if (skl_bgc) then
+  ocean_bio(:,:,nlt_bgc_NO,:)     = ssn(:,:,:)
+  ocean_bio(:,:,nlt_bgc_N,:)     = ssalg(:,:,:)
+endif
 ss_tltx(:,:,:) = sslx(:,:,:)
 ss_tlty(:,:,:) = ssly(:,:,:)
 !frzmlt(:,:,:)  = pfmice(:,:,:) * frazil_factor / dt_cpl_io   !W/m^2 as required by cice.
@@ -816,10 +820,12 @@ tioswflx = swabs_ocn
   tioform(:,:,:) = min(0.0,fresh(:,:,:))
 !16 10m wind. To mask or not to mask?
   tiownd(:,:,:) = sqrt(uatm(:,:,:)**2 + vatm(:,:,:)**2)
-!17 ice-water nitrate flux (mmol/m2/s)
-  tionit(:,:,:) = flux_bio(:,:,nlt_bgc_NO,:)
-!18 ice-to-ocean algal flux (mmol/m2/2)
-  tioalg(:,:,:) = flux_bio(:,:,nlt_bgc_N,:)
+if (skl_bgc) then
+  !17 ice-water nitrate flux (mmol/m2/s)
+    tionit(:,:,:) = flux_bio(:,:,nlt_bgc_NO,:)
+  !18 ice-to-ocean algal flux (mmol/m2/2)
+    tioalg(:,:,:) = flux_bio(:,:,nlt_bgc_N,:)
+endif
 return
 end subroutine get_i2o_fluxes
 
