@@ -75,8 +75,10 @@ subroutine tavg_i2o_fluxes
     iomelt (:,:,:) = iomelt (:,:,:) + tiomelt (:,:,:)*coef_ic
     ioform (:,:,:) = ioform (:,:,:) + tioform (:,:,:)*coef_ic
     iownd (:,:,:)  = iownd (:,:,:) + tiownd (:,:,:)*coef_ic
-    ionit (:,:,:)  = ionit (:,:,:) + tionit (:,:,:)*coef_ic
-    ioalg (:,:,:)  = ioalg (:,:,:) + tioalg (:,:,:)*coef_ic
+    if (skl_bgc) then
+      ionit (:,:,:)  = ionit (:,:,:) + tionit (:,:,:)*coef_ic
+      ioalg (:,:,:)  = ioalg (:,:,:) + tioalg (:,:,:)*coef_ic
+    endif
     iolicefw (:,:,:) = iolicefw (:,:,:) + tiolicefw (:,:,:)*coef_ic
     iolicefh (:,:,:) = iolicefh (:,:,:) + tiolicefh (:,:,:)*coef_ic
 
