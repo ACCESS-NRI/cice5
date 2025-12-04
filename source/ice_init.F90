@@ -752,7 +752,6 @@
          fbot_xfer_type = 'constant'
       endif
 
-
       !if hist_file_freq not set, default to histfreq
       if (my_task == master_task) then
          do n = 1, max_nstrm
