@@ -425,40 +425,9 @@
   !
 
     !
-    ! ice ==> atm
-    !
-    nsend_i2a = 0
-
-    nsend_i2a = nsend_i2a + 1
-    cl_writ(nsend_i2a)='isst_ia'
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a6,i2.2)')'icecon',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a6,i2.2)')'snwthk',jf
-    enddo
-    do jf = 1, ncat
-      nsend_i2a = nsend_i2a + 1
-      write(cl_writ(nsend_i2a), '(a6,i2.2)')'icethk',jf
-    enddo
-    nsend_i2a = nsend_i2a + 1
-    cl_writ(nsend_i2a)='uvel_ia'
-    nsend_i2a = nsend_i2a + 1
-    cl_writ(nsend_i2a)='vvel_ia'
-    nsend_i2a = nsend_i2a + 1
-    cl_writ(nsend_i2a)='co2_i2'
-    nsend_i2a = nsend_i2a + 1
-    cl_writ(nsend_i2a)='co2fx_i2'
-
-    if (my_task == 0) then
-      write(il_out,*) 'init_cpl: Number of fields sent to atm: ',nsend_i2a
-    endif
-    !
     ! ice ==> ocn
     !
-    nsend_i2o = nsend_i2a
+    nsend_i2o = 0
 
     nsend_i2o = nsend_i2o + 1 
     cl_writ(nsend_i2o)='strsu_io'
@@ -500,20 +469,53 @@
     nsend_i2o = nsend_i2o + 1
     cl_writ(nsend_i2o)='lice_ht'
 
+    if (my_task == 0) then
+        write(il_out,*) 'init_cpl: Number of fields sent to ocn: ',nsend_i2o
+    endif
+
+    !
+    ! ice ==> atm
+    !
+    nsend_i2a = nsend_i2o
+
+    nsend_i2a = nsend_i2a + 1
+    cl_writ(nsend_i2a)='isst_ia'
+    do jf = 1, ncat
+      nsend_i2a = nsend_i2a + 1
+      write(cl_writ(nsend_i2a), '(a6,i2.2)')'icecon',jf
+    enddo
+    do jf = 1, ncat
+      nsend_i2a = nsend_i2a + 1
+      write(cl_writ(nsend_i2a), '(a6,i2.2)')'snwthk',jf
+    enddo
+    do jf = 1, ncat
+      nsend_i2a = nsend_i2a + 1
+      write(cl_writ(nsend_i2a), '(a6,i2.2)')'icethk',jf
+    enddo
+    nsend_i2a = nsend_i2a + 1
+    cl_writ(nsend_i2a)='uvel_ia'
+    nsend_i2a = nsend_i2a + 1
+    cl_writ(nsend_i2a)='vvel_ia'
+    nsend_i2a = nsend_i2a + 1
+    cl_writ(nsend_i2a)='co2_i2'
+    nsend_i2a = nsend_i2a + 1
+    cl_writ(nsend_i2a)='co2fx_i2'
+
+
     if (my_task == 0 .or. ll_comparal) then
 
-      if (debug) write(il_out,*) 'init_cpl: Number of fields sent to ocn: ',nsend_i2o - nsend_i2a
+      write(il_out,*) 'init_cpl: Number of fields sent to atm: ',nsend_i2a - nsend_i2o
 
-      if (nsend_i2o /= jpfldout) then
+      if (nsend_i2a /= jpfldout) then
         write(il_out,*)
-        write(il_out,*)'!!! Fatal Error: (init_cpl) nsend = ',nsend_i2o
+        write(il_out,*)'!!! Fatal Error: (init_cpl) nsend = ',nsend_i2a
         write(il_out,*)'!!!           It should be  nsend = ',jpfldout
         call abort_ice('CICE: Number of outgoing coupling fields incorrect!') 
       endif
 
       if (debug) write(il_out,*) 'init_cpl: Total number of fields sent from ice: ',jpfldout
 
-      !jpfldout == nsend_i2o!
+      !jpfldout == nsend_i2a!
       !---------------------!
 
       do jf=1, jpfldout
