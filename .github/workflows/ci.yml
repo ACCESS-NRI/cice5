@@ -39,4 +39,3 @@ jobs:
       # spack-ref: releases/v0.22
     secrets:
       spack-install-command-pat: ${{ secrets.SPACK_INSTALL_COMMAND_PAT }}
-      
