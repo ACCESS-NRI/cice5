@@ -29,7 +29,6 @@
       use ice_history_shared
       use ice_itd, only: hin_max
       use ice_calendar, only: write_ic, histfreq
-      use ice_fileunits, only: nu_diag, flush_fileunit
 
       implicit none
       private
@@ -72,14 +71,14 @@
 
       subroutine ice_write_hist (ns)
 
-      use ice_calendar, only: time, sec, idate, idate0, &
-        month, daymo, dayyr, days_per_year, use_leap_years
+      use ice_calendar, only: time, month, daymo
+      use ice_fileunits, only: nu_diag
 
       integer (kind=int_kind), intent(in) :: ns !history stream number
 
       ! local variables
 
-      real (kind=real_kind) :: ltime                 !history timestamp in seconds
+      real (kind=real_kind) :: ltime                 !history timestamp in days
       character (char_len_long) :: ncfile(max_nstrm), filename !filenames
       character (char_len) :: time_string            !model time for logging
       logical :: file_exists
@@ -161,7 +160,7 @@
       endif
 
 
-      ! these iodesc variables describe how to many from the local variable in blocks, 
+      ! these iodesc variables describe how to map from the local variable in blocks,
       ! to the output variable
       call ice_pio_initdecomp(iodesc=iodesc2d)
       call ice_pio_initdecomp(ndim3=nverts,    iodesc=iodesc3dv, inner_dim=.true.)
@@ -218,8 +217,7 @@ end subroutine ice_write_hist
 subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
 
       use ice_calendar, only: idate, idate0, &
-        dayyr, days_per_year, use_leap_years, histfreq_n, sec
-      use ice_restart_shared, only: runid
+        dayyr, days_per_year, use_leap_years, histfreq_n
 
       integer (kind=int_kind), intent(in) :: ns
       character (char_len_long), intent(in) :: ncfile
@@ -227,9 +225,8 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
 
       ! local variables
 
-      integer (kind=int_kind) :: i,k,ic,n,nn, &
-      status,imtid,jmtid,kmtidi,kmtids,kmtidb, cmtid,timid, &
-      nvertexid,ivertex
+      integer (kind=int_kind) :: i, n, status, imtid, jmtid, kmtidi, kmtids, &
+         kmtidb, cmtid, timid, nvertexid
       type(var_desc_t)      :: varid
       integer (kind=int_kind), dimension(3) :: dimid, dimid_nverts
       integer (kind=int_kind), dimension(4) :: dimidz, dimidex
@@ -243,12 +240,12 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
 
       character (char_len) :: title, start_time,current_date,current_time,time_period_freq
       character (len=8) :: cdate
-      CHARACTER (char_len), dimension(ncoord) :: coord_bounds
+      character (char_len), dimension(ncoord) :: coord_bounds
 
-      TYPE(req_attributes), dimension(nvar), intent(inout) :: var
-      TYPE(coord_attributes), dimension(ncoord), intent(inout) :: coord_var
-      TYPE(coord_attributes), dimension(nvar_verts), intent(inout) :: var_nverts
-      TYPE(coord_attributes), dimension(nvarz), intent(inout) :: var_nz
+      type(req_attributes), dimension(nvar), intent(inout) :: var
+      type(coord_attributes), dimension(ncoord), intent(inout) :: coord_var
+      type(coord_attributes), dimension(nvar_verts), intent(inout) :: var_nverts
+      type(coord_attributes), dimension(nvarz), intent(inout) :: var_nz
 
       ! If history_deflate_level < 0 then don't do deflation,
       ! otherwise it sets the deflate level
@@ -1166,7 +1163,6 @@ subroutine write_coordinate_variables(File, coord_var, var_nz)
 
       integer :: i, k, status
       type(var_desc_t)      :: varid
-      character (len=len(coord_var(1)%short_name)) :: coord_var_name
 
       !-----------------------------------------------------------------
       ! write coordinate variables
@@ -1212,6 +1208,7 @@ subroutine write_coordinate_variables(File, coord_var, var_nz)
         enddo
         call pio_seterrorhandling(File, PIO_INTERNAL_ERROR)
 
+        deallocate(workr2)
 
 end subroutine write_coordinate_variables
 
@@ -1228,8 +1225,6 @@ subroutine write_grid_variables(File, var, var_nverts)
 
    integer :: ivertex, i, status
    type(var_desc_t)      :: varid
-   character (len=len(var(1)%req%short_name)) :: var_name
-   character (len=len(var_nverts(1)%short_name)) :: var_nverts_name
 
    allocate(workr2(nx_block,ny_block,nblocks))
 
@@ -1343,13 +1338,11 @@ subroutine write_3d_and_4d_variables(ns, File, i_time)
    integer, intent(in) :: ns, i_time
    type(file_desc_t), intent(inout)   :: File
 
-   real (kind=dbl_kind),  dimension(:,:), allocatable :: work_g1
-   real (kind=real_kind), dimension(:,:), allocatable :: work_gr
    real (kind=real_kind), allocatable :: workr3(:,:,:,:)
    real (kind=real_kind), allocatable :: workr4(:,:,:,:,:)
 
    type(var_desc_t)      :: varid
-   integer :: n, nn, i, j, k, ic, status
+   integer :: n, nn, i, j, k, status
    integer (kind=PIO_OFFSET_KIND) :: FRAME_1
 
       FRAME_1 = i_time
@@ -1373,9 +1366,6 @@ subroutine write_3d_and_4d_variables(ns, File, i_time)
          endif
       enddo ! num_avail_hist_fields_3Dc
       deallocate(workr3)
-
-    work_gr(:,:) = c0
-    work_g1(:,:) = c0
 
       ! 3D (vertical ice)
       allocate(workr3(nx_block,ny_block,nblocks,nzilyr))

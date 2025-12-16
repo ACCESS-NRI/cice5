@@ -78,15 +78,14 @@ module ice_history_write
 
 subroutine ice_write_hist (ns)
 
-      use ice_calendar, only: time, sec, idate, idate0, &
-        month, daymo, dayyr, days_per_year, use_leap_years
+      use ice_calendar, only: time, month, daymo
       use ice_fileunits, only: nu_diag
 
       integer (kind=int_kind), intent(in) :: ns !history stream number
 
       ! local variables
 
-      real (kind=real_kind) :: ltime                 !history timestamp in seconds
+      real (kind=real_kind) :: ltime                 !history timestamp in days
       character (char_len_long) :: ncfile(max_nstrm) !filenames
       character (char_len) :: time_string            !model time for logging
       logical :: file_exists
@@ -96,10 +95,10 @@ subroutine ice_write_hist (ns)
         i_time, &    ! time index
         timid       ! time var id
 
-      TYPE(req_attributes), dimension(nvar) :: var
-      TYPE(coord_attributes), dimension(ncoord) :: coord_var
-      TYPE(coord_attributes), dimension(nvar_verts) :: var_nverts
-      TYPE(coord_attributes), dimension(nvarz) :: var_nz
+      type(req_attributes), dimension(nvar) :: var
+      type(coord_attributes), dimension(ncoord) :: coord_var
+      type(coord_attributes), dimension(nvar_verts) :: var_nverts
+      type(coord_attributes), dimension(nvarz) :: var_nz
 
       if (my_task == master_task .or. history_parallel_io) then
         ! set timestamp in middle of time interval
@@ -228,7 +227,7 @@ end subroutine ice_write_hist
 subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
 
       use ice_calendar, only: idate, idate0, &
-        dayyr, days_per_year, use_leap_years, histfreq_n, sec
+        dayyr, days_per_year, use_leap_years, histfreq_n
       use ice_restart_shared, only: runid
 
       integer (kind=int_kind), intent(in) :: ns
@@ -241,9 +240,8 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
 
       ! local variables
 
-      integer (kind=int_kind) :: i,k,ic,n,nn, &
-        status,imtid,jmtid,kmtidi,kmtids,kmtidb, cmtid,timid,varid, &
-        nvertexid,ivertex
+      integer (kind=int_kind) :: i, n, status, imtid, jmtid, kmtidi, kmtids, &
+        kmtidb, cmtid, timid, varid, nvertexid
       integer (kind=int_kind), dimension(3) :: dimid, dimid_nverts
       integer (kind=int_kind), dimension(4) :: dimidz, dimidex
       integer (kind=int_kind), dimension(5) :: dimidcz
@@ -484,11 +482,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
         enddo
 
 
-        ! Extra dimensions (NCAT, NZILYR, NZSLYR, NZBLYR)       
-          dimidex(1)=cmtid
-          dimidex(2)=kmtidi
-          dimidex(3)=kmtids
-          dimidex(4)=kmtidb
+        ! Extra dimensions (NCAT, NZILYR, NZSLYR, NZBLYR)
+        dimidex(1)=cmtid
+        dimidex(2)=kmtidi
+        dimidex(3)=kmtids
+        dimidex(4)=kmtidb
 
         do i = 1, nvarz
             if (igrdz(i)) then
@@ -1207,13 +1205,11 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
     enddo
 
     ! Extra dimensions (NCAT, VGRD*)
-
+    if (my_task == master_task) then
         do i = 1, nvarz
-          if (my_task == master_task) coord_var_name = var_nz(i)%short_name
+          coord_var_name = var_nz(i)%short_name
           if (igrdz(i)) then
-          call broadcast_scalar(coord_var_name,master_task)
-          if (my_task == master_task) then
-            call check(nf90_inq_varid(ncid, coord_var_name, varid), &
+             call check(nf90_inq_varid(ncid, coord_var_name, varid), &
                      'inq varid '//coord_var_name)
              SELECT CASE (coord_var_name)
                CASE ('NCAT') 
@@ -1228,8 +1224,8 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
              if (status /= nf90_noerr) call abort_ice( &
                            'ice: Error writing'//coord_var_name)
           endif
-          endif
         enddo
+    endif
 
     deallocate(work_g1)
     deallocate(work_gr)
@@ -1723,7 +1719,7 @@ subroutine write_grid_variables_parallel(ncid, var, var_nverts)
             CASE ('lonu_bounds')
                 work2(:, :, :, :) = lonu_bounds(:, :, :, :)
             CASE ('latu_bounds')
-                work2(:, :, :, :) = lonu_bounds(:, :, :, :)
+                work2(:, :, :, :) = latu_bounds(:, :, :, :)
             END SELECT
 
             call check(nf90_inq_varid(ncid, var_nverts(i)%short_name, varid), &
@@ -1839,8 +1835,8 @@ end subroutine write_3d_and_4d_variables_parallel
 subroutine put_2d_with_blocks(ncid, i_start, var_name, data)
 
   ! by convention only, 2d variables are actually 3d if you consider time
-  ! sometimes the third array is a different index (e.g. number of bounds )
-  ! typically i_start is the current time index, but can be different
+  ! typically i_start is the current time index, but can be set to 1 to write
+  ! time-invarient (e.g. grid data)
 
     integer, intent(in) :: ncid, i_start
     character(len=*), intent(in) :: var_name
