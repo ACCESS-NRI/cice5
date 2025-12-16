@@ -17,8 +17,12 @@ project(CICE
 
 message(STATUS "Build options")
 
-option(CICE_DETERMINISTC "OFF") # attempt to set flags so resulting executables are reproducible
-
+option(CICE_DETERMINISTIC "OFF") # attempt to set flags so resulting executables are reproducible
+if(CMAKE_BUILD_TYPE MATCHES "Debug" AND CICE_DETERMINISTIC)
+  message(FATAL_ERROR 
+  " CICE_DETERMINISTIC   ${CICE_DETERMINISTIC} not available unless CMAKE_BUILD_TYPE=Release"
+  )
+endif()
 # provide some default options from access "1degree" configurations
 # its intended the user will set these
 
@@ -83,7 +87,6 @@ set (NCI_INTEL_FLAGS "-r8 -i4 -w -fpe0 -ftz -convert big_endian -assume byterecl
 set (NCI_REPRO_FLAGS "-fp-model precise -fp-model source -align all")
 if (CICE_DETERMINISTIC)
   set (NCI_OPTIM_FLAGS "-g0 -O0 -axCORE-AVX2 -debug none -check none -assume buffered_io")
-  set (NCI_DEBUG_FLAGS "-g0 -O0 -axCORE-AVX2 -debug none -check none -assume buffered_io")
 else ()
   set (NCI_OPTIM_FLAGS "-g3 -O2 -axCORE-AVX2 -debug all -check none -traceback -assume buffered_io")
   set (NCI_DEBUG_FLAGS "-g3 -O0 -debug all -check all -no-vec -traceback -assume nobuffered_io")
