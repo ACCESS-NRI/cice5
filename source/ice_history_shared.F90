@@ -25,14 +25,17 @@
       module ice_history_shared
 
       use ice_kinds_mod
-      use ice_fileunits, only: nu_diag
       use ice_domain_size, only: ncat, nilyr, nslyr, nblyr, max_nstrm
 
       implicit none
       save
 
       private
-      public :: define_hist_field, accum_hist_field, icefields_nml, construct_filename
+      public :: define_hist_field, accum_hist_field, icefields_nml, &
+#ifdef ncdf
+      check, &
+#endif
+      construct_filename
 
       logical (kind=log_kind), public :: &
          hist_avg  ! if true, write averaged data instead of snapshots
@@ -594,6 +597,25 @@
       contains
 
 !=======================================================================
+
+#ifdef ncdf
+      subroutine check(status, msg)
+         use netcdf, only: nf90_noerr, nf90_strerror
+         use ice_fileunits, only: nu_diag, ice_stderr, ice_stdout
+         use ice_exit, only: abort_ice
+
+         integer, intent (in) :: status
+         character(len=*), intent (in) :: msg
+
+         if(status /= nf90_noerr) then
+            !sometimes the netcdf error string is quite long, so print seperately to prevent overrun
+            write(nu_diag,*) trim(nf90_strerror(status))
+            write (ice_stdout,*) trim(nf90_strerror(status))
+            write (ice_stderr,*) trim(nf90_strerror(status))
+            call abort_ice('ice: NetCDF error '//trim(msg))
+         end if
+      end subroutine check
+#endif
 
       subroutine construct_filename(ncfile,suffix,ns,time_string)
 

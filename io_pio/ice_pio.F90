@@ -19,7 +19,7 @@
   implicit none
 
   private
-  public :: ice_pio_subsystem
+  public :: ice_pio_subsystem, ice_pio_check
   save
 
   interface ice_pio_initdecomp
@@ -33,7 +33,7 @@
   public ice_pio_initfile
   public ice_pio_initdecomp
   logical :: pio_initialized = .false.
-  integer :: pio_iotype
+  integer, parameter :: pio_iotype  = pio_iotype_netcdf4p
   type(iosystem_desc_t) :: ice_pio_subsystem
 
 !===============================================================================
@@ -44,36 +44,32 @@
 
 subroutine ice_pio_init()
 
-    integer :: num_iotasks, stride, ierr, num_agg
+    integer (kind=int_kind) :: num_iotasks, status
+    integer (kind=int_kind), parameter :: num_agg = 1 , stride = 1
     character(*),parameter :: subName = '(ice_pio_init) '
 
     if (pio_initialized) then
         return
     endif
-
-    pio_iotype = pio_iotype_netcdf4p
-
-    num_agg = 1
-    stride = 1
     num_iotasks = get_num_procs() / stride
 
     call pio_init(my_task, MPI_COMM_ICE, num_iotasks, num_agg, stride, PIO_rearr_box, ice_pio_subsystem)
 
-    ! PIO needs to be compiled with --enable-debug to use this
-    ierr = pio_set_log_level(0)
+    ! PIO needs to be compiled with -DPIO_ENABLE_LOGGING=ON (+logging in spack) to use this
+    status = pio_set_log_level(0)
+    call ice_pio_check(status, subname//' ERROR: Failed to set pio log level')
 
     pio_initialized = .true.
 end subroutine ice_pio_init
 
 
-subroutine ice_pio_initfile(mode, filename, File, clobber, cdf64)
+subroutine ice_pio_initfile(mode, filename, File, clobber)
 
     implicit none
     character(len=*)     , intent(in),    optional :: mode
     character(len=*)     , intent(in),    optional :: filename
     type(file_desc_t)    , intent(inout), optional :: File
     logical              , intent(in),    optional :: clobber
-    logical              , intent(in),    optional :: cdf64
 
     ! local variables
 
@@ -84,6 +80,8 @@ subroutine ice_pio_initfile(mode, filename, File, clobber, cdf64)
     logical :: lclobber
     integer :: status
     character(*),parameter :: subName = '(ice_pio_wopen) '
+
+   call pio_seterrorhandling(ice_pio_subsystem, PIO_RETURN_ERROR)
 
     if (present(mode) .and. present(filename) .and. present(File)) then
 
@@ -97,17 +95,20 @@ subroutine ice_pio_initfile(mode, filename, File, clobber, cdf64)
             if (exists) then
                if (lclobber) then
                   status = pio_createfile(ice_pio_subsystem, File, pio_iotype, trim(filename), PIO_clobber)
+                  call ice_pio_check(status, subname//' ERROR: Failed to overwrite file '//trim(filename))
                   if (my_task == master_task) then
                      write(nu_diag,*) subname,' create file ',trim(filename)
                   end if
                else
                   status = pio_openfile(ice_pio_subsystem, File, pio_iotype, trim(filename), pio_write)
+                  call ice_pio_check( status,  subname//' ERROR: Failed to open file '//trim(filename))
                   if (my_task == master_task) then
                      write(nu_diag,*) subname,' open file ',trim(filename)
                   end if
                endif
             else
                status = pio_createfile(ice_pio_subsystem, File, pio_iotype, trim(filename), pio_noclobber)
+               call ice_pio_check( status, subname//' ERROR: Failed to create file '//trim(filename))
                if (my_task == master_task) then
                   write(nu_diag,*) subname,' create file ',trim(filename)
                end if
@@ -115,21 +116,24 @@ subroutine ice_pio_initfile(mode, filename, File, clobber, cdf64)
          else
             ! filename is already open, just return
          endif
-      end if
-
-      if (trim(mode) == 'read') then
+      else if (trim(mode) == 'read') then
          inquire(file=trim(filename),exist=exists)
          if (exists) then
             status = pio_openfile(ice_pio_subsystem, File, pio_iotype, trim(filename), pio_nowrite)
+            call ice_pio_check( status, subname//' ERROR: Failed to open file '//trim(filename))
          else
             if(my_task==master_task) then
                write(nu_diag,*) 'ice_pio_ropen ERROR: file invalid ',trim(filename)
             end if
             call abort_ice('aborting in ice-pio_ropen with invalid file')
          endif
+      else
+         call abort_ice(subName//' : mode='//trim(mode)//' not recognised')
       end if
 
     end if
+
+   call pio_seterrorhandling(ice_pio_subsystem, PIO_INTERNAL_ERROR)
 
 end subroutine ice_pio_initfile
 
@@ -142,7 +146,7 @@ end subroutine ice_pio_initfile
 
       logical :: luse_double
       integer (kind=int_kind) :: &
-          iblk,ilo,ihi,jlo,jhi,lon,lat,i,j,n,k
+          iblk,ilo,ihi,jlo,jhi,lon,lat,i,j,n
 
       type(block) :: this_block
 
@@ -383,7 +387,32 @@ end subroutine ice_pio_initfile
       deallocate(dof4d)
 
    end subroutine ice_pio_initdecomp_4d
-   
+
+
+!================================================================================
+
+   ! PIO Error handling
+   ! Author: Anton Steketee, ACCESS-NRI
+
+   subroutine ice_pio_check(status, abort_msg)
+      use ice_exit, only: abort_ice
+
+      integer(kind=int_kind), intent (in) :: status
+      character (len=*)     , intent (in) :: abort_msg
+
+      ! local variables
+
+      character(len=pio_max_name) :: err_msg
+      integer(kind=int_kind)      :: strerror_status
+      character(len=*), parameter :: subname = '(ice_pio_check)'
+
+      if (status /= PIO_NOERR) then
+         strerror_status = pio_strerror(status, err_msg)
+         call abort_ice(subname//trim(err_msg)//', '//trim(abort_msg))
+      endif
+   end subroutine ice_pio_check
+
+
 !================================================================================
 
   end module ice_pio

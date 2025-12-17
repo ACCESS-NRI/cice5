@@ -1,0 +1,11 @@
+spack:
+  specs:
+  - 'cice5@git.{{ ref }}=stable model=access-om2'
+  packages:
+    all:
+      require:
+      - '%{{ gcc_compiler }}'
+      - 'target={{ target }}'
+  concretizer:
+    unify: false
+  view: false

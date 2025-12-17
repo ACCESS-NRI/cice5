@@ -1,0 +1,11 @@
+spack:
+  specs:
+  - 'cice5@git.{{ ref }}=stable {{ om2_1deg }}'
+  packages:
+    all:
+      require:
+      - '%{{ gcc_compiler }}'
+      - 'target={{ target }}'
+  concretizer:
+    unify: false
+  view: false

@@ -69,19 +69,6 @@ module ice_history_write
     contains
 
 
-subroutine check(status, msg)
-    integer, intent (in) :: status
-    character(len=*), intent (in) :: msg
-
-    if(status /= nf90_noerr) then
-        !sometimes the netcdf error string is quite long, so print seperately to prevent overrun
-        write(nu_diag,*) trim(nf90_strerror(status))
-        write (ice_stdout,*) trim(nf90_strerror(status))
-        write (ice_stderr,*) trim(nf90_strerror(status))
-        call abort_ice('ice: NetCDF error '//trim(msg))
-    end if
-end subroutine check
-
 
 !=======================================================================
 !
@@ -91,17 +78,14 @@ end subroutine check
 
       subroutine ice_write_hist (ns)
 
-      use ice_calendar, only: time, sec, idate, idate0, &
-#ifdef ACCESS
-        month, daymo, &
-#endif
-        dayyr, days_per_year, use_leap_years
+      use ice_calendar, only: time, month, daymo
+      use ice_fileunits, only: nu_diag
 
       integer (kind=int_kind), intent(in) :: ns !history stream number
 
       ! local variables
 
-      real (kind=real_kind) :: ltime                 !history timestamp in seconds
+      real (kind=real_kind) :: ltime                 !history timestamp in days
       character (char_len_long) :: ncfile(max_nstrm) !filenames
       character (char_len) :: time_string            !model time for logging
       logical :: file_exists
@@ -111,13 +95,12 @@ end subroutine check
         i_time, &    ! time index
         timid       ! time var id
 
-      TYPE(req_attributes), dimension(nvar) :: var
-      TYPE(coord_attributes), dimension(ncoord) :: coord_var
-      TYPE(coord_attributes), dimension(nvar_verts) :: var_nverts
-      TYPE(coord_attributes), dimension(nvarz) :: var_nz
+      type(req_attributes), dimension(nvar) :: var
+      type(coord_attributes), dimension(ncoord) :: coord_var
+      type(coord_attributes), dimension(nvar_verts) :: var_nverts
+      type(coord_attributes), dimension(nvarz) :: var_nz
 
       if (my_task == master_task .or. history_parallel_io) then
-#if defined(ACCESS)
         ! set timestamp in middle of time interval
         if (histfreq(ns) == 'm' .or. histfreq(ns) == 'M') then
             if (month /= 1) then
@@ -130,9 +113,6 @@ end subroutine check
         else
             ltime=time/int(secday)
         endif
-#else
-        ltime=time/int(secday)
-#endif
 
         call construct_filename(ncfile(ns),'nc',ns,time_string)
 
@@ -218,7 +198,7 @@ end subroutine check
 
     endif
     !-----------------------------------------------------------------
-    ! write 2d variable data
+    ! write variable data
     !-----------------------------------------------------------------
 
     if (history_parallel_io) then
@@ -247,7 +227,7 @@ end subroutine ice_write_hist
 subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
 
       use ice_calendar, only: idate, idate0, &
-        dayyr, days_per_year, use_leap_years
+        dayyr, days_per_year, use_leap_years, histfreq_n
       use ice_restart_shared, only: runid
 
       integer (kind=int_kind), intent(in) :: ns
@@ -260,18 +240,17 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
 
       ! local variables
 
-      integer (kind=int_kind) :: i,k,ic,n,nn, &
-        status,imtid,jmtid,kmtidi,kmtids,kmtidb, cmtid,timid,varid, &
-        nvertexid,ivertex
+      integer (kind=int_kind) :: i, n, status, imtid, jmtid, kmtidi, kmtids, &
+        kmtidb, cmtid, timid, varid, nvertexid
       integer (kind=int_kind), dimension(3) :: dimid, dimid_nverts
       integer (kind=int_kind), dimension(4) :: dimidz, dimidex
       integer (kind=int_kind), dimension(5) :: dimidcz
 
-      integer (kind=int_kind) :: shuffle, deflate, deflate_level ! comrpession settings
+      integer (kind=int_kind) :: shuffle, deflate, deflate_level ! compression settings
 
       integer (kind=int_kind) :: ind,boundid
 
-      character (char_len) :: title, start_time,current_date,current_time
+      character (char_len) :: title, start_time,current_date,current_time,time_period_freq
       character (len=8) :: cdate
 
 
@@ -667,6 +646,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                 call check(nf90_put_att(ncid,varid,'cell_measures', &
                             avail_hist_fields(n)%vcellmeas), &
                            'put att cell_measures '//avail_hist_fields(n)%vname)
+                if (avail_hist_fields(n)%vcomment /= "none") then
+                  call check(nf90_put_att(ncid,varid,'comment', &
+                            avail_hist_fields(n)%vcomment), &
+                            'put att comment '//avail_hist_fields(n)%vname)
+                endif
                 call check(nf90_put_att(ncid,varid,'missing_value',spval), &
                            'put att missing_value '//avail_hist_fields(n)%vname)
                 call check(nf90_put_att(ncid,varid,'_FillValue',spval), &
@@ -678,7 +662,6 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                 if (hist_avg) then
                     if (TRIM(avail_hist_fields(n)%vname)/='sig1' .or. &
                         TRIM(avail_hist_fields(n)%vname)/='sig2') then
-
                         call check(nf90_put_att(ncid,varid,'cell_methods','time: mean'), &
                                   'put att cell methods time mean '//avail_hist_fields(n)%vname)
                     endif
@@ -738,6 +721,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                             avail_hist_fields(n)%vcellmeas)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining cell measures for '//avail_hist_fields(n)%vname)
+                if (avail_hist_fields(n)%vcomment /= "none") then
+                    call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+                endif
                 status = nf90_put_att(ncid,varid,'missing_value',spval)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -801,6 +789,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                             avail_hist_fields(n)%vcellmeas)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining cell measures for '//avail_hist_fields(n)%vname)
+                if (avail_hist_fields(n)%vcomment /= "none") then
+                    call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+                    endif
                 status = nf90_put_att(ncid,varid,'missing_value',spval)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -850,6 +843,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                             avail_hist_fields(n)%vcellmeas)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining cell measures for '//avail_hist_fields(n)%vname)
+                if (avail_hist_fields(n)%vcomment /= "none") then
+                    call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+                endif
                 status = nf90_put_att(ncid,varid,'missing_value',spval)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -900,6 +898,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                             avail_hist_fields(n)%vcellmeas)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining cell measures for '//avail_hist_fields(n)%vname)
+                if (avail_hist_fields(n)%vcomment /= "none") then
+                    call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+                endif
                 status = nf90_put_att(ncid,varid,'missing_value',spval)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -965,6 +968,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                             avail_hist_fields(n)%vcellmeas)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining cell measures for '//avail_hist_fields(n)%vname)
+                if (avail_hist_fields(n)%vcomment /= "none") then
+                    call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+                endif
                 status = nf90_put_att(ncid,varid,'missing_value',spval)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -1030,6 +1038,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                             avail_hist_fields(n)%vcellmeas)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining cell measures for '//avail_hist_fields(n)%vname)
+                if (avail_hist_fields(n)%vcomment /= "none") then
+                    call check(nf90_put_att(ncid,varid,'comment', &
+                        avail_hist_fields(n)%vcomment), &
+                        'put att comment '//avail_hist_fields(n)%vname)
+                endif
                 status = nf90_put_att(ncid,varid,'missing_value',spval)
                 if (status /= nf90_noerr) call abort_ice( &
                    'Error defining missing_value for '//avail_hist_fields(n)%vname)
@@ -1076,6 +1089,23 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
         title  = 'Los Alamos Sea Ice Model (CICE) Version 5'
         call check(nf90_put_att(ncid,nf90_global,'source',title), &
                    'global attribute source')
+ 
+        select case (histfreq(ns))
+            case ("y", "Y")
+                write(time_period_freq,'(a,i0)') 'year_',histfreq_n(ns)
+            case ("m", "M")
+                write(time_period_freq,'(a,i0)') 'month_',histfreq_n(ns)
+            case ("d", "D")
+                write(time_period_freq,'(a,i0)') 'day_',histfreq_n(ns)
+            case ("h", "H")
+                write(time_period_freq,'(a,i0)') 'hour_',histfreq_n(ns)
+            case ("1")
+                write(time_period_freq,'(a,i0)') 'step_',histfreq_n(ns)
+        end select
+
+        call check(nf90_put_att(ncid,nf90_global,'time_period_freq',trim(time_period_freq)),&
+                            'global attribute time_period_freq')
+
 
 #if defined(AUSCOM) && !defined(ACCESS)
         write(title,'(a,i3,a)') 'This Year Has ',int(dayyr),' days'
@@ -1093,9 +1123,10 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
         call check(nf90_put_att(ncid,nf90_global,'comment2',title), &
                    'global attribute comment2')
 
-        title = 'CF-1.0'
-        call check(nf90_put_att(ncid,nf90_global,'conventions',title), &
-                   'global attribute conventions')
+        ! TO-DO: Update output for CF compliance !
+        ! title = 'CF-1.0'
+        ! call check(nf90_put_att(ncid,nf90_global,'conventions',title), &
+        !            'global attribute conventions')
 
         call date_and_time(date=current_date, time=current_time)
         write(start_time,1000) current_date(1:4), current_date(5:6), &
@@ -1133,17 +1164,17 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
     integer :: varid
     character (len=len(coord_var(1)%short_name)) :: coord_var_name
 
-      if (my_task==master_task) then
-         allocate(work_g1(nx_global,ny_global))
-         allocate(work_gr(nx_global,ny_global))
-      else
-         allocate(work_g1(1,1))
-         allocate(work_gr(1,1))   ! to save memory
-      endif
+    if (my_task==master_task) then
+        allocate(work_g1(nx_global,ny_global))
+        allocate(work_gr(nx_global,ny_global))
+    else
+        allocate(work_g1(1,1))
+        allocate(work_gr(1,1))   ! to save memory
+    endif
 
-      work_g1(:,:) = c0
+    work_g1(:,:) = c0
 
-      do i = 1,ncoord
+    do i = 1,ncoord
         if (my_task == master_task) coord_var_name = coord_var(i)%short_name
         call broadcast_scalar(coord_var_name, master_task)
         SELECT CASE (coord_var_name)
@@ -1173,14 +1204,12 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
           endif
         enddo
 
-        ! Extra dimensions (NCAT, VGRD*)
-
+    ! Extra dimensions (NCAT, VGRD*)
+    if (my_task == master_task) then
         do i = 1, nvarz
-          if (my_task == master_task) coord_var_name = var_nz(i)%short_name
+          coord_var_name = var_nz(i)%short_name
           if (igrdz(i)) then
-          call broadcast_scalar(coord_var_name,master_task)
-          if (my_task == master_task) then
-            call check(nf90_inq_varid(ncid, coord_var_name, varid), &
+             call check(nf90_inq_varid(ncid, coord_var_name, varid), &
                      'inq varid '//coord_var_name)
              SELECT CASE (coord_var_name)
                CASE ('NCAT') 
@@ -1195,8 +1224,8 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
              if (status /= nf90_noerr) call abort_ice( &
                            'ice: Error writing'//coord_var_name)
           endif
-          endif
         enddo
+    endif
 
     deallocate(work_g1)
     deallocate(work_gr)
@@ -1258,8 +1287,7 @@ subroutine write_grid_variables(ncid, var, var_nverts)
 
     do i = 3, nvar      ! note n_tmask=1, n_blkmask=2
         if (igrd(i)) then
-            var_name = var(i)%req%short_name
-
+            if (my_task == master_task) var_name = var(i)%req%short_name
             call broadcast_scalar(var_name,master_task)
             SELECT CASE (var_name)
             CASE ('tarea')
@@ -1303,7 +1331,7 @@ subroutine write_grid_variables(ncid, var, var_nverts)
         work1   (:,:,:) = c0
 
         do i = 1, nvar_verts
-            var_nverts_name = var_nverts(i)%short_name
+            if (my_task == master_task) var_nverts_name = var_nverts(i)%short_name
             call broadcast_scalar(var_nverts_name,master_task)
             SELECT CASE (var_nverts_name)
             CASE ('lont_bounds')
@@ -1691,7 +1719,7 @@ subroutine write_grid_variables_parallel(ncid, var, var_nverts)
             CASE ('lonu_bounds')
                 work2(:, :, :, :) = lonu_bounds(:, :, :, :)
             CASE ('latu_bounds')
-                work2(:, :, :, :) = lonu_bounds(:, :, :, :)
+                work2(:, :, :, :) = latu_bounds(:, :, :, :)
             END SELECT
 
             call check(nf90_inq_varid(ncid, var_nverts(i)%short_name, varid), &
@@ -1807,8 +1835,8 @@ end subroutine write_3d_and_4d_variables_parallel
 subroutine put_2d_with_blocks(ncid, i_start, var_name, data)
 
   ! by convention only, 2d variables are actually 3d if you consider time
-  ! sometimes the third array is a different index (e.g. number of bounds )
-  ! typically i_start is the current time index, but can be different
+  ! typically i_start is the current time index, but can be set to 1 to write
+  ! time-invarient (e.g. grid data)
 
     integer, intent(in) :: ncid, i_start
     character(len=*), intent(in) :: var_name
