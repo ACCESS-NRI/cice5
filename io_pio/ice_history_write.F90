@@ -9,82 +9,46 @@
 !
       module ice_history_write
 
+      use ice_pio
+      use pio
+      use netcdf, only: NF90_UNLIMITED, NF90_CHUNKED, nf90_global, nf90_noerr
+
       use ice_kinds_mod
-      use ice_pio, only: ice_pio_subsystem
-      use netcdf
+      use ice_constants, only: c0, c360, secday, spval, rad_to_deg
+      use ice_blocks, only: nx_block, ny_block, block, get_block
+      use ice_exit, only: abort_ice
+      use ice_domain, only: distrb_info, nblocks, blocks_ice
+      use ice_domain, only: equal_num_blocks_per_cpu
+      use ice_communicate, only: my_task, master_task, MPI_COMM_ICE
+      use ice_broadcast, only: broadcast_scalar
+      use ice_gather_scatter, only: gather_global
+      use ice_domain_size, only: nx_global, ny_global, max_nstrm, max_blocks
+      use ice_grid, only: TLON, TLAT, ULON, ULAT, hm, bm, tarea, uarea, &
+         dxu, dxt, dyu, dyt, HTN, HTE, ANGLE, ANGLET, &
+         lont_bounds, latt_bounds, lonu_bounds, latu_bounds
+      use ice_history_shared
+      use ice_itd, only: hin_max
+      use ice_calendar, only: write_ic, histfreq
 
       implicit none
       private
       public :: ice_write_hist
       save
 
-      logical (kind=log_kind), public :: lcdf64
+      type coord_attributes         ! netcdf coordinate attributes
+         character (len=11)   :: short_name
+         character (len=45)   :: long_name
+         character (len=20)   :: units
+      end type coord_attributes
 
-!=======================================================================
+      type req_attributes         ! req'd netcdf attributes
+         type (coord_attributes) :: req
+         character (len=20)   :: coordinates
+      end type req_attributes
 
-      contains
-
-!=======================================================================
-!
-! write average ice quantities or snapshots
-!
-! author:   Elizabeth C. Hunke, LANL
-
-      subroutine ice_write_hist (ns)
-
-      use ice_blocks, only: nx_block, ny_block
-      use ice_broadcast, only: broadcast_scalar
-      use ice_calendar, only: time, sec, idate, idate0, write_ic, &
-          histfreq, histfreq_n, dayyr, days_per_year, use_leap_years
-      use ice_communicate, only: my_task, master_task
-      use ice_constants, only: c0, c360, secday, spval, spval_dbl, rad_to_deg
-      use ice_domain, only: distrb_info, nblocks
-      use ice_domain_size, only: nx_global, ny_global, max_blocks, max_nstrm
-      use ice_domain_size, only: block_size_x, block_size_y
-      use ice_exit, only: abort_ice
-      use ice_fileunits, only: nu_diag
-      use ice_gather_scatter, only: gather_global
-      use ice_grid, only: TLON, TLAT, ULON, ULAT, hm, bm, tarea, uarea, &
-          dxu, dxt, dyu, dyt, HTN, HTE, ANGLE, ANGLET, tmask, &
-          lont_bounds, latt_bounds, lonu_bounds, latu_bounds
-      use ice_history_shared
-      use ice_itd, only: hin_max
-      use ice_restart_shared, only: runid
-
-      use ice_pio
-      use pio
-      use pio_nf
-
-      integer (kind=int_kind), intent(in) :: ns
-
-      ! local variables
-
-      integer (kind=int_kind) :: i,j,k,ic,n,nn, &
-         ncid,status,imtid,jmtid,kmtidi,kmtids,kmtidb, cmtid,timid, &
-         length,nvertexid,ivertex
-      integer (kind=int_kind), dimension(2) :: dimid2
-      integer (kind=int_kind), dimension(3) :: dimid3
-      integer (kind=int_kind), dimension(4) :: dimidz
-      integer (kind=int_kind), dimension(5) :: dimidcz
-      integer (kind=int_kind), dimension(3) :: dimid_nverts
-      integer (kind=int_kind), dimension(4) :: dimidex
-      real (kind=real_kind) :: ltime
-      character (char_len) :: title
-      character (char_len) :: time_period_freq
-      character (char_len_long) :: ncfile(max_nstrm)
-
-      integer (kind=int_kind) :: iyear, imonth, iday
-      integer (kind=int_kind) :: icategory,ind,i_aice,boundid
-
-      character (char_len) :: start_time,current_date,current_time
-      character (len=16) :: c_aice
-      character (len=8) :: cdate
-
-      type(file_desc_t)     :: File
       type(io_desc_t)       :: iodesc2d, &
                                iodesc3dc, iodesc3dv, iodesc3di, iodesc3db, &
                                iodesc4di, iodesc4ds
-      type(var_desc_t)      :: varid
 
       ! 4 coordinate variables: TLON, TLAT, ULON, ULAT
       INTEGER (kind=int_kind), PARAMETER :: ncoord = 4
@@ -96,59 +60,54 @@
       ! lont_bounds, latt_bounds, lonu_bounds, latu_bounds
       INTEGER (kind=int_kind), PARAMETER :: nvar_verts = 4
 
-      TYPE coord_attributes         ! netcdf coordinate attributes
-        character (len=11)   :: short_name
-        character (len=45)   :: long_name
-        character (len=20)   :: units
-      END TYPE coord_attributes
+      contains
 
-      TYPE req_attributes         ! req'd netcdf attributes
-        type (coord_attributes) :: req
-        character (len=20)   :: coordinates
-      END TYPE req_attributes
+!=======================================================================
 
+!
+! write average ice quantities or snapshots
+!
+! author:   Elizabeth C. Hunke, LANL
+
+      subroutine ice_write_hist (ns)
+
+      use ice_calendar, only: time, month, daymo
+      use ice_fileunits, only: nu_diag
+
+      integer (kind=int_kind), intent(in) :: ns !history stream number
+
+      ! local variables
+
+      real (kind=real_kind) :: ltime                 !history timestamp in days
+      character (char_len_long) :: ncfile(max_nstrm), filename !filenames
+      character (char_len) :: time_string            !model time for logging
+      logical :: file_exists
+      integer (kind=int_kind) :: & 
+        i_time, &    ! time index
+        timid       ! time var id
+      type(file_desc_t)     :: File
+
+      type(var_desc_t)      :: varid
       TYPE(req_attributes), dimension(nvar) :: var
       TYPE(coord_attributes), dimension(ncoord) :: coord_var
       TYPE(coord_attributes), dimension(nvar_verts) :: var_nverts
       TYPE(coord_attributes), dimension(nvarz) :: var_nz
-      CHARACTER (char_len), dimension(ncoord) :: coord_bounds
-
-      real (kind=real_kind), allocatable :: workr2(:,:,:)
-      real (kind=real_kind), allocatable :: workr3(:,:,:,:)
-      real (kind=real_kind), allocatable :: workr4(:,:,:,:,:)
-      real (kind=real_kind), allocatable :: workr3v(:,:,:,:)
-
-      character(len=char_len_long) :: &
-           filename
-
-      integer (kind=int_kind), dimension(1) ::  &
-         tim_start,tim_length          ! dimension quantities for netCDF
-
-      integer (kind=int_kind), dimension(2) ::  &
-         bnd_start,bnd_length          ! dimension quantities for netCDF
-
-      integer (kind=PIO_OFFSET_KIND) :: FRAME_1 = 1
-      integer, dimension(2) :: chunksizes
-
-      integer (kind=int_kind) :: shuffle, deflate, deflate_level
-      character (len=9) :: ret_str
-      integer :: ierr
-
-      ! We leave shuffle at 0, this is only useful for integer data.
-      shuffle = 0
-
-      ! If history_deflate_level < 0 then don't do deflation,
-      ! otherwise it sets the deflate level
-      if (history_deflate_level < 0) then
-        deflate = 0
-        deflate_level = 0
-      else
-        deflate = 1
-        deflate_level = history_deflate_level
-      endif
 
       if (my_task == master_task) then
-        call construct_filename(ncfile(ns),'nc',ns)
+        ! set timestamp in middle of time interval
+        if (histfreq(ns) == 'm' .or. histfreq(ns) == 'M') then
+            if (month /= 1) then
+                ltime=time/int(secday)-real(daymo(month-1))/2.0
+            else
+                ltime=time/int(secday)-real(daymo(12))/2.0
+            endif
+        else if(histfreq(ns) == 'd' .or. histfreq(ns) == 'D') then 
+            ltime=time/int(secday) - 0.5
+        else
+            ltime=time/int(secday)
+        endif
+
+        call construct_filename(ncfile(ns),'nc',ns,time_string)
 
         ! add local directory path name to ncfile
         if (write_ic) then
@@ -156,109 +115,226 @@
         else
           ncfile(ns) = trim(history_dir)//ncfile(ns)
         endif
-        filename = ncfile(ns)
-      end if
-      call broadcast_scalar(filename, master_task)
 
-      ! create file
+        ! run inquire only on master_task, to avoid possible race condition with
+        ! multiple procs creating the file
+        inquire(file=trim(ncfile(ns)),exist=file_exists)
+      endif
+
+      call broadcast_scalar(ncfile(ns), master_task)
+      call broadcast_scalar(file_exists, master_task)
 
       File%fh=-1
-      call ice_pio_initfile(mode='write', filename=trim(filename), File=File, &
-                            clobber=.true., cdf64=lcdf64)
 
+      call ice_pio_initfile(mode='write', filename=trim(ncfile(ns)), File=File)
+
+      if (.not. file_exists) then
+         write(nu_diag,*) 'Writing dimensions and metadata: '//trim(ncfile(ns))
+         call ice_hist_create(ns, ncfile(ns), File, var, coord_var, var_nverts, var_nz)
+      endif
+
+      !-----------------------------------------------------------------
+      ! extent time coord by 1 and write time variable
+      !-----------------------------------------------------------------
+      call ice_pio_check(pio_inq_dimid(File, 'time', timid), &
+                  'inq dimid time')
+      call ice_pio_check(pio_inquire_dimension(File, timid, len=i_time), &
+                  'inquire dim time')
+      call ice_pio_check(pio_inq_varid(File,'time',varid), &
+                  'inq varid time')
+      i_time = i_time + 1 ! index of the current history time
+      call ice_pio_check(pio_put_var(File,varid,(/i_time/),ltime), &
+                  'put var time')
+
+      !-----------------------------------------------------------------
+      ! write time_bounds info
+      !-----------------------------------------------------------------
+
+      if (hist_avg) then
+         time_bounds=(/time_beg(ns),time_end(ns)/)
+         call ice_pio_check(pio_inq_varid(File,'time_bounds',varid), &
+                     'inq varid time_bounds')
+         call ice_pio_check(pio_put_var(File,varid,ival=(/time_beg(ns),time_end(ns)/), &
+                     start=(/1,i_time/), count=(/2,1/)), &
+                     'put var time_bounds')
+      endif
+
+
+      ! these iodesc variables describe how to map from the local variable in blocks,
+      ! to the output variable
       call ice_pio_initdecomp(iodesc=iodesc2d)
+      call ice_pio_initdecomp(ndim3=nverts,    iodesc=iodesc3dv, inner_dim=.true.)
       call ice_pio_initdecomp(ndim3=ncat_hist, iodesc=iodesc3dc)
       call ice_pio_initdecomp(ndim3=nzilyr,     iodesc=iodesc3di)
       call ice_pio_initdecomp(ndim3=nzlyrb,    iodesc=iodesc3db)
-      call ice_pio_initdecomp(ndim3=nverts, inner_dim=.true., iodesc=iodesc3dv)
       call ice_pio_initdecomp(ndim3=nzilyr,  ndim4=ncat_hist,  iodesc=iodesc4di)
       call ice_pio_initdecomp(ndim3=nzslyr,  ndim4=ncat_hist,  iodesc=iodesc4ds)
 
-!      ltime = time/int(secday)
-      ltime = real(time/int(secday),kind=real_kind)
+      if (i_time == 1) then
+         ! these variables are time-invariant, only write once per file
+         !-----------------------------------------------------------------
+         ! write coordinate variables
+         !-----------------------------------------------------------------
+         call write_coordinate_variables(File, coord_var, var_nz)
+
+         !-----------------------------------------------------------------
+         ! write grid masks, area and rotation angle
+         !-----------------------------------------------------------------
+         call write_grid_variables(File, var, var_nverts)
+
+      endif
+
+      !-----------------------------------------------------------------
+      ! write variable data
+      !-----------------------------------------------------------------
+
+      call write_2d_variables(ns, File, i_time)
+      call write_3d_and_4d_variables(ns, File, i_time)
+
+      !-----------------------------------------------------------------
+      ! close output dataset
+      !-----------------------------------------------------------------
+
+      call pio_closefile(File)
+      if (my_task == master_task) then
+        write(nu_diag,*) 'Wrote ',trim(ncfile(ns)),' at time ',trim(time_string)
+      endif
+
+      !-----------------------------------------------------------------
+      ! clean-up PIO descriptors
+      !-----------------------------------------------------------------
+      call pio_freedecomp(ice_pio_subsystem, iodesc2d)
+      call pio_freedecomp(ice_pio_subsystem, iodesc3dv)
+      call pio_freedecomp(ice_pio_subsystem, iodesc3dc)
+      call pio_freedecomp(ice_pio_subsystem, iodesc3di)
+      call pio_freedecomp(ice_pio_subsystem, iodesc3db)
+      call pio_freedecomp(ice_pio_subsystem, iodesc4di)
+      call pio_freedecomp(ice_pio_subsystem, iodesc4ds)
+
+end subroutine ice_write_hist
+
+
+subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
+
+      use ice_calendar, only: idate, idate0, &
+        dayyr, days_per_year, use_leap_years, histfreq_n
+
+      integer (kind=int_kind), intent(in) :: ns
+      character (char_len_long), intent(in) :: ncfile
+      type(file_desc_t), intent(inout)     :: File
+
+      ! local variables
+
+      integer (kind=int_kind) :: i, n, status, imtid, jmtid, kmtidi, kmtids, &
+         kmtidb, cmtid, timid, nvertexid
+      type(var_desc_t)      :: varid
+      integer (kind=int_kind), dimension(3) :: dimid, dimid_nverts
+      integer (kind=int_kind), dimension(4) :: dimidz, dimidex
+      integer (kind=int_kind), dimension(5) :: dimidcz
+
+      integer (kind=int_kind) :: deflate, deflate_level ! compression settings
+      ! We leave shuffle at 0, this is only useful for integer data.
+      integer (kind=int_kind), parameter :: shuffle = 0
+
+      integer (kind=int_kind) :: ind,boundid
+
+      character (char_len) :: title, start_time,current_date,current_time,time_period_freq
+      character (len=8) :: cdate
+      character (char_len), dimension(ncoord) :: coord_bounds
+
+      type(req_attributes), dimension(nvar), intent(inout) :: var
+      type(coord_attributes), dimension(ncoord), intent(inout) :: coord_var
+      type(coord_attributes), dimension(nvar_verts), intent(inout) :: var_nverts
+      type(coord_attributes), dimension(nvarz), intent(inout) :: var_nz
+
+      ! If history_deflate_level < 0 then don't do deflation,
+      ! otherwise it sets the deflate level
+      if (history_deflate_level < 0) then
+         deflate = 0
+         deflate_level = 0
+      else
+         deflate = 1
+         deflate_level = history_deflate_level
+      endif
 
       !-----------------------------------------------------------------
       ! define dimensions
       !-----------------------------------------------------------------
+      call ice_pio_check(pio_def_dim(File, 'time', NF90_UNLIMITED, timid), &
+                  'def dim time')
 
-       if (hist_avg .and. histfreq(ns) /= '1') then
-          status = pio_def_dim(File,'d2',2,boundid)
-        endif
+      if (hist_avg .and. histfreq(ns) /= '1') then
+            call ice_pio_check(pio_def_dim(File,'d2',2,boundid), 'def dim d2')
+      endif
 
-        status = pio_def_dim(File,'ni',nx_global,imtid)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error defining dim ni')
-
-        status = pio_def_dim(File,'nj',ny_global,jmtid)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error defining dim nj')
-
-        status = pio_def_dim(File,'nc',ncat_hist,cmtid)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error defining dim nc')
-
-        status = pio_def_dim(File,'nkice',nzilyr,kmtidi)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error defining dim nkice')
-
-        status = pio_def_dim(File,'nksnow',nzslyr,kmtids)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error defining dim nksnow')
-
-        status = pio_def_dim(File,'nkbio',nzblyr,kmtidb)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error defining dim nkbio')
-
-        status = pio_def_dim(File,'time',PIO_UNLIMITED,timid)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error defining dim time')
-
-        status = pio_def_dim(File,'nvertices',nverts,nvertexid)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error defining dim nvertices')
+      call ice_pio_check(pio_def_dim(File, 'ni', nx_global, imtid), &
+                  'def dim ni')
+      call ice_pio_check(pio_def_dim(File, 'nj', ny_global, jmtid), &
+                  'def dim nj')
+      call ice_pio_check(pio_def_dim(File, 'nc', ncat_hist, cmtid), &
+                  'def dim nc')
+      call ice_pio_check(pio_def_dim(File, 'nkice', nzilyr, kmtidi), &
+                  'def dim nkice')
+      call ice_pio_check(pio_def_dim(File, 'nksnow', nzslyr, kmtids), &
+                  'def dim nksnow')
+      call ice_pio_check(pio_def_dim(File, 'nkbio', nzblyr, kmtidb), &
+                  'def dim nkbio')
+      call ice_pio_check(pio_def_dim(File, 'nvertices', nverts, nvertexid), &
+                  'def dim nverts')
 
       !-----------------------------------------------------------------
-      ! define coordinate variables:  time, time_bounds
+      ! define coordinate variables
       !-----------------------------------------------------------------
 
-        status = pio_def_var(File,'time',pio_real,(/timid/),varid)
-        if (status /= nf90_noerr) call abort_ice( &
-                      'ice: Error def var time')
+      call ice_pio_check(pio_def_var(File,'time',pio_real,(/timid/),varid), &
+                  'def var time')
+      call ice_pio_check(pio_put_att(File,varid,'long_name','model time'), &
+                  'put_att long_name')
 
-        status = pio_put_att(File,varid,'long_name','model time')
+      write(cdate,'(i8.8)') idate0
+      write(title,'(a,a,a,a,a,a,a,a)') 'days since ', &
+            cdate(1:4),'-',cdate(5:6),'-',cdate(7:8),' 00:00:00'
+      call ice_pio_check(pio_put_att(File,varid,'units',title), &
+                  'put_att time units')
 
-        write(cdate,'(i8.8)') idate0
-        write(title,'(a,a,a,a,a,a,a)') 'days since ', &
-              cdate(1:4),'-',cdate(5:6),'-',cdate(7:8),' 00:00:00'
-        status = pio_put_att(File,varid,'units',trim(title))
+      if (days_per_year == 360) then
+            call ice_pio_check(pio_put_att(File,varid,'calendar','360_day'), &
+                        'att time calendar')
+      elseif (days_per_year == 365 .and. .not.use_leap_years ) then
+            call ice_pio_check(pio_put_att(File,varid,'calendar','NoLeap'), &
+                        'att time calendar')
+      elseif (use_leap_years) then
+            call ice_pio_check(pio_put_att(File,varid,'calendar','proleptic_gregorian'), &
+                        'att time calendar')
+      else
+            call abort_ice( 'ice Error: invalid calendar settings')
+      endif
 
-        if (days_per_year == 360) then
-           status = pio_put_att(File,varid,'calendar','360_day')
-        elseif (days_per_year == 365 .and. .not.use_leap_years ) then
-           status = pio_put_att(File,varid,'calendar','NoLeap')
-        elseif (use_leap_years) then
-           status = pio_put_att(File,varid,'calendar','Gregorian')
-        else
-           call abort_ice( 'ice Error: invalid calendar settings')
-        endif
+      if (hist_avg .and. histfreq(ns) /= '1' ) then
+            call ice_pio_check(pio_put_att(File,varid,'bounds','time_bounds'), &
+                        'att time bounds')
+      endif
 
-        if (hist_avg .and. histfreq(ns) /= '1') then
-          status = pio_put_att(File,varid,'bounds','time_bounds')
-        endif
+      !-----------------------------------------------------------------
+      ! Define attributes for time bounds if hist_avg is true
+      !-----------------------------------------------------------------
 
-        ! Define attributes for time_bounds if hist_avg is true
-        if (hist_avg .and. histfreq(ns) /= '1') then
-          dimid2(1) = boundid
-          dimid2(2) = timid
-          status = pio_def_var(File,'time_bounds',pio_real,dimid2,varid)
+      if (hist_avg .and. histfreq(ns) /= '1') then
+            dimid(1) = boundid
+            dimid(2) = timid
+            call ice_pio_check(pio_def_var(File, 'time_bounds', &
+                                 pio_real,dimid(1:2),varid), &
+                        'def var time_bounds')
 
-          status = pio_put_att(File,varid,'long_name', &
-                                'boundaries for time-averaging interval')
-          write(cdate,'(i8.8)') idate0
-          write(title,'(a,a,a,a,a,a,a,a)') 'days since ', &
-                cdate(1:4),'-',cdate(5:6),'-',cdate(7:8),' 00:00:00'
-          status = pio_put_att(File,varid,'units',trim(title))
-        endif
+            call ice_pio_check(pio_put_att(File,varid,'long_name', &
+                              'boundaries for time-averaging interval'), &
+                        'att time_bounds long_name')
+            write(cdate,'(i8.8)') idate0
+            write(title,'(a,a,a,a,a,a,a,a)') 'days since ', &
+                  cdate(1:4),'-',cdate(5:6),'-',cdate(7:8),' 00:00:00'
+            call ice_pio_check(pio_put_att(File,varid,'units',title), &
+                                 'att time_bounds units')
+      endif
 
       !-----------------------------------------------------------------
       ! define information for required time-invariant variables
@@ -267,19 +343,19 @@
       ind = 0
       ind = ind + 1
       coord_var(ind) = coord_attributes('TLON', &
-                       'T grid center longitude', 'degrees_east')
+                        'T grid center longitude', 'degrees_east')
       coord_bounds(ind) = 'lont_bounds'
       ind = ind + 1
       coord_var(ind) = coord_attributes('TLAT', &
-                       'T grid center latitude',  'degrees_north')
+                        'T grid center latitude',  'degrees_north')
       coord_bounds(ind) = 'latt_bounds'
       ind = ind + 1
       coord_var(ind) = coord_attributes('ULON', &
-                       'U grid center longitude', 'degrees_east')
+                        'U grid center longitude', 'degrees_east')
       coord_bounds(ind) = 'lonu_bounds'
       ind = ind + 1
       coord_var(ind) = coord_attributes('ULAT', &
-                       'U grid center latitude',  'degrees_north')
+                        'U grid center latitude',  'degrees_north')
       coord_bounds(ind) = 'latu_bounds'
 
       var_nz(1) = coord_attributes('NCAT', 'category maximum thickness', 'm')
@@ -348,550 +424,679 @@
       ! define attributes for time-invariant variables
       !-----------------------------------------------------------------
 
-        dimid2(1) = imtid
-        dimid2(2) = jmtid
+      dimid(1) = imtid
+      dimid(2) = jmtid
+      dimid(3) = timid
 
-        do i = 1, ncoord
-          status = pio_def_var(File, trim(coord_var(i)%short_name), pio_real, &
-                                dimid2, varid)
-          if (status /= nf90_noerr) call abort_ice( &
-                        'ice: Error def var '//trim(coord_var(i)%short_name))
-          status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                       deflate_level)
-          if (status /= nf90_noerr) call abort_ice( &
-                        'ice: Error deflating var '//trim(coord_var(i)%short_name))
+      do i = 1, ncoord
+         call ice_pio_check(pio_def_var(File, coord_var(i)%short_name, pio_real, &
+                                 dimid(1:2), varid), &
+                     'def var '//coord_var(i)%short_name)
 
-          if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-              status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                     (/ history_chunksize_x, history_chunksize_y /))
-              if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error chunking var '//trim(coord_var(i)%short_name))
-          endif
+         if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+            call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                        (/ history_chunksize_x, history_chunksize_y /)), &
+                     'def var chunking '//coord_var(i)%short_name)
+         endif
 
-          status = pio_put_att(File,varid,'long_name',trim(coord_var(i)%long_name))
-          status = pio_put_att(File, varid, 'units', trim(coord_var(i)%units))
-          status = pio_put_att(File, varid, 'missing_value', spval)
-          status = pio_put_att(File, varid,'_FillValue',spval)
-          if (coord_var(i)%short_name == 'ULAT') then
-             status = pio_put_att(File,varid,'comment', &
-                  trim('Latitude of NE corner of T grid cell'))
-          endif
-          if (f_bounds) then
-              status = pio_put_att(File, varid, 'bounds', trim(coord_bounds(i)))
-          endif
-        enddo
+         call ice_pio_check(pio_def_var_deflate(File, varid, shuffle, deflate, deflate_level), &
+                     'deflate '//coord_var(i)%short_name)
 
-        ! Extra dimensions (NCAT, NZILYR, NZSLYR, NZBLYR)
-          dimidex(1)=cmtid
-          dimidex(2)=kmtidi
-          dimidex(3)=kmtids
-          dimidex(4)=kmtidb
+         call ice_pio_check(pio_put_att(File, varid,'long_name',coord_var(i)%long_name), &
+                     'put att long_name '//coord_var(i)%short_name)
+         call ice_pio_check(pio_put_att(File, varid, 'units', coord_var(i)%units), &
+                     'put att units '//coord_var(i)%short_name)
+         call ice_pio_check(pio_put_att(File, varid,'missing_value',spval), &
+                     'put att missing_value '//coord_var(i)%short_name)
 
-        do i = 1, nvarz
-           if (igrdz(i)) then
-              status = pio_def_var(File, trim(var_nz(i)%short_name), pio_real, &
-                                   (/dimidex(i)/), varid)
-              if (status /= nf90_noerr) call abort_ice( &
-                'ice: Error def var '//trim(var_nz(i)%short_name))
+         call ice_pio_check(pio_put_att(File, varid, '_FillValue', spval), &
+                     'put att _FillValue '//coord_var(i)%short_name)
 
-              status = pio_put_att(File, varid, 'long_name', var_nz(i)%long_name)
-              status = pio_put_att(File, varid, 'units'    , var_nz(i)%units)
-           endif
-        enddo
+         if (coord_var(i)%short_name == 'ULAT') then
+            call ice_pio_check(pio_put_att(File,varid,'comment', &
+                                    'Latitude of NE corner of T grid cell'), &
+                        'put att comment for '//coord_var(i)%short_name)
+         endif
+         if (f_bounds) then
+            call ice_pio_check(pio_put_att(File, varid, 'bounds', coord_bounds(i)), &
+                        'put att bounds '//coord_var(i)%short_name)
+         endif
+      enddo
 
-        ! Attributes for tmask defined separately, since it has no units
-        if (igrd(n_tmask)) then
-           status = pio_def_var(File, 'tmask', pio_real, dimid2, varid)
-           if (status /= nf90_noerr) call abort_ice('ice: Error defining var tmask')
-           status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                        deflate_level)
-           if (status /= nf90_noerr) call abort_ice('ice: Error deflating var tmask')
+      ! Extra dimensions (NCAT, NZILYR, NZSLYR, NZBLYR)
+      dimidex(1)=cmtid
+      dimidex(2)=kmtidi
+      dimidex(3)=kmtids
+      dimidex(4)=kmtidb
 
-           if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-               status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                            (/ history_chunksize_x, history_chunksize_y /))
+      do i = 1, nvarz
+            if (igrdz(i)) then
+               call ice_pio_check(pio_def_var(File, var_nz(i)%short_name, &
+                                    pio_real, (/dimidex(i)/), varid), &
+                           'def var '//var_nz(i)%short_name)
+
+               call ice_pio_check(pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                                deflate_level), &
+                           'deflate '//var_nz(i)%short_name)
+
+               call ice_pio_check(pio_put_att(File, varid,'long_name',var_nz(i)%long_name), &
+                           'put att long_name '//var_nz(i)%short_name)
+               call ice_pio_check(pio_put_att(File, varid, 'units', var_nz(i)%units), &
+                           'for att units '//var_nz(i)%short_name)
+            endif
+      enddo
+
+      ! Attributes for tmask, blkmask defined separately, since they have no units
+      if (igrd(n_tmask)) then
+            call ice_pio_check(pio_def_var(File, 'tmask', pio_real, dimid(1:2), varid), &
+                     'def var tmask')
+
+            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+               call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                           (/ history_chunksize_x, history_chunksize_y /)), &
+                           'def var chunking tmask')
+            endif
+
+            call ice_pio_check(pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                       deflate_level), 'deflating var tmask')
+
+            call ice_pio_check(pio_put_att(File,varid, 'long_name', 'ocean grid mask'), &
+                     'put att tmask long_name')
+            call ice_pio_check(pio_put_att(File, varid, 'coordinates', 'TLON TLAT'), &
+                     'put att tmask units')
+            call ice_pio_check(pio_put_att(File,varid,'comment', '0 = land, 1 = ocean'), &
+                     'put att tmask comment')
+            call ice_pio_check(pio_put_att(File,varid,'missing_value',spval), &
+                     'put att missing_value for tmask')
+            call ice_pio_check(pio_put_att(File,varid,'_FillValue',spval), &
+                     'put att _FillValue for tmask')
+      endif
+
+      if (igrd(n_blkmask)) then
+            call ice_pio_check(pio_def_var(File, 'blkmask', pio_real, dimid(1:2), varid), &
+                     'def var blkmask')
+
+            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+               call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                           (/ history_chunksize_x, history_chunksize_y /)), &
+                           'def var chunking blkmask')
+            endif
+
+            call ice_pio_check(pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                          deflate_level), &
+                     'deflating var blkmask')
+
+            call ice_pio_check(pio_put_att(File,varid, 'long_name', 'ice grid block mask'), &
+                        'put att blkmask long_name')
+            call ice_pio_check(pio_put_att(File, varid, 'coordinates', 'TLON TLAT'), &
+                        'put att blkmask coordinates')
+            call ice_pio_check(pio_put_att(File,varid,'comment', 'mytask + iblk/100'), &
+                        'put att blkmask comment')
+            call ice_pio_check(pio_put_att(File,varid,'missing_value',spval), &
+                        'put att blkmask missing_value')
+            call ice_pio_check(pio_put_att(File,varid,'_FillValue',spval), &
+                        'put att blkmask _FillValue')
+      endif
+
+      do i = 3, nvar      ! note n_tmask=1, n_blkmask=2
+            if (igrd(i)) then
+               call ice_pio_check(pio_def_var(File, var(i)%req%short_name, &
+                                       pio_real, dimid(1:2), varid), &
+                           'def variable '//var(i)%req%short_name)
+
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ history_chunksize_x, history_chunksize_y /)), &
+                              'def var chunking '//var(i)%req%short_name)
+               endif
+
+               call ice_pio_check(pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level), &
+                           'deflate var '//var(i)%req%short_name)
+
+               call ice_pio_check(pio_put_att(File,varid, 'long_name', var(i)%req%long_name), &
+                           'put att long_name '//var(i)%req%short_name)
+               call ice_pio_check(pio_put_att(File, varid, 'units', var(i)%req%units), &
+                           'put att units '//var(i)%req%short_name)
+               call ice_pio_check(pio_put_att(File, varid, 'coordinates', var(i)%coordinates), &
+                           'put att coordinates '//var(i)%req%short_name)
+               call ice_pio_check(pio_put_att(File,varid,'missing_value',spval), &
+                           'put att missing_value '//var(i)%req%short_name)
+               call ice_pio_check(pio_put_att(File,varid,'_FillValue',spval), &
+                           'put att _FillValue '//var(i)%req%short_name)
+            endif
+      enddo
+
+      ! Fields with dimensions (nverts,nx,ny)
+      dimid_nverts(1) = nvertexid
+      dimid_nverts(2) = imtid
+      dimid_nverts(3) = jmtid
+      do i = 1, nvar_verts
+            if (f_bounds) then
+               call ice_pio_check(pio_def_var(File, var_nverts(i)%short_name, &
+                                    pio_real,dimid_nverts, varid), &
+                           'def var '//var_nverts(i)%short_name)
+
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ 1, history_chunksize_x, history_chunksize_y /)), &
+                              'def var chunking '//var_nverts(i)%short_name)
+               endif
+
+               call ice_pio_check(pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level), &
+                           'deflate var '//var_nverts(i)%short_name)
+
+               call ice_pio_check(pio_put_att(File,varid, 'long_name', &
+                           var_nverts(i)%long_name), &
+                           'put att long_name '//var_nverts(i)%short_name)
+               call ice_pio_check(pio_put_att(File, varid, 'units', var_nverts(i)%units), &
+                           'put att units '//var_nverts(i)%short_name)
+               call ice_pio_check(pio_put_att(File,varid,'missing_value',spval), &
+                           'put att missing_value '//var_nverts(i)%short_name)
+               call ice_pio_check(pio_put_att(File,varid,'_FillValue',spval), &
+                           'put att _FillValue '//var_nverts(i)%short_name)
+            endif
+      enddo
+
+      do n=1,num_avail_hist_fields_2D
+            if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
+               call ice_pio_check(pio_def_var(File, avail_hist_fields(n)%vname, &
+                                       pio_real, dimid, varid), &
+                           'def var '//avail_hist_fields(n)%vname)
+
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ history_chunksize_x, history_chunksize_y, 1 /)), &
+                              'def var chunking '//avail_hist_fields(n)%vname)
+               endif
+
+               call ice_pio_check(pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level), &
+                           'deflate '//avail_hist_fields(n)%vname)
+
+               call ice_pio_check(pio_put_att(File,varid,'units', &
+                           avail_hist_fields(n)%vunit), &
+                           'put att units '//avail_hist_fields(n)%vname)
+               call ice_pio_check(pio_put_att(File,varid, 'long_name', &
+                           avail_hist_fields(n)%vdesc), &
+                           'put att long_name '//avail_hist_fields(n)%vname)
+               call ice_pio_check(pio_put_att(File,varid,'coordinates', &
+                           avail_hist_fields(n)%vcoord), &
+                           'put att coordinates '//avail_hist_fields(n)%vname)
+               call ice_pio_check(pio_put_att(File,varid,'cell_measures', &
+                           avail_hist_fields(n)%vcellmeas), &
+                           'put att cell_measures '//avail_hist_fields(n)%vname)
+               if (avail_hist_fields(n)%vcomment /= "none") then
+                  call ice_pio_check(pio_put_att(File,varid,'comment', &
+                            avail_hist_fields(n)%vcomment), &
+                            'put att comment '//avail_hist_fields(n)%vname)
+               endif
+               call ice_pio_check(pio_put_att(File,varid,'missing_value',spval), &
+                           'put att missing_value '//avail_hist_fields(n)%vname)
+               call ice_pio_check(pio_put_att(File,varid,'_FillValue',spval), &
+                           'put att _FillValue '//avail_hist_fields(n)%vname)
+
+               !---------------------------------------------------------------
+               ! Add cell_methods attribute to variables if averaged
+               !---------------------------------------------------------------
+               if (hist_avg) then
+                  if (TRIM(avail_hist_fields(n)%vname)/='sig1' .or. &
+                     TRIM(avail_hist_fields(n)%vname)/='sig2') then
+                     call ice_pio_check(pio_put_att(File,varid,'cell_methods','time: mean'), &
+                              'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                  endif
+               endif
+
+               if (histfreq(ns) == '1' .or. .not. hist_avg         &
+                  .or. n==n_divu(ns)      .or. n==n_shear(ns)     &  ! snapshots
+                  .or. n==n_sig1(ns)      .or. n==n_sig2(ns)      &
+                  .or. n==n_trsig(ns)                             &
+                  .or. n==n_mlt_onset(ns) .or. n==n_frz_onset(ns) &
+                  .or. n==n_hisnap(ns)    .or. n==n_aisnap(ns)) then
+                  call ice_pio_check(pio_put_att(File,varid,'time_rep','instantaneous'), &
+                              'put att time_rep instantaneous')
+               else
+                  call ice_pio_check(pio_put_att(File,varid,'time_rep','averaged'), &
+                              'put att time_rep averaged')
+               endif
+            endif
+      enddo  ! num_avail_hist_fields_2D
+
+         ! 3D (category)
+
+      dimidz(1) = imtid
+      dimidz(2) = jmtid
+      dimidz(3) = cmtid
+      dimidz(4) = timid
+
+      do n = n2D + 1, n3Dccum
+         ! to-do: use check subroutine
+            if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
+               status  = pio_def_var(File, avail_hist_fields(n)%vname, &
+                                       pio_real, dimidz, varid)
                if (status /= nf90_noerr) call abort_ice( &
-                          'ice: Error def var chunking tmask')
-            endif
+                  'Error defining variable '//avail_hist_fields(n)%vname)
 
-           status = pio_put_att(File,varid, 'long_name', 'ocean grid mask') 
-           if (status /= nf90_noerr) call abort_ice('ice: Error put_att')
-           status = pio_put_att(File, varid, 'coordinates', 'TLON TLAT')
-           if (status /= nf90_noerr) call abort_ice('ice: Error put_att')
-           status = pio_put_att(File, varid, 'missing_value', spval)
-           if (status /= nf90_noerr) call abort_ice('ice: Error put_att')
-           status = pio_put_att(File, varid,'_FillValue',spval)
-           if (status /= nf90_noerr) call abort_ice('ice: Error put_att')
-           status = pio_put_att(File,varid,'comment', '0 = land, 1 = ocean')
-           if (status /= nf90_noerr) call abort_ice('ice: Error put_att')
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ history_chunksize_x, history_chunksize_y, 1, 1 /)), &
+                              'def var chunking '//avail_hist_fields(n)%vname)
+               endif
 
-        endif
-
-        if (igrd(n_blkmask)) then
-           status = pio_def_var(File, 'blkmask', pio_real, dimid2, varid)
-           status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                        deflate_level)
-           if (status /= nf90_noerr) call abort_ice('ice: Error deflating var blkmask')
-           if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-               status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                            (/ history_chunksize_x, history_chunksize_y /))
+               status = pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level)
                if (status /= nf90_noerr) call abort_ice( &
-                          'ice: Error def var chunking blkmask')
-           endif
+                  'Error deflating variable '//avail_hist_fields(n)%vname)
 
-           status = pio_put_att(File,varid, 'long_name', 'ice grid block mask') 
-           status = pio_put_att(File, varid, 'coordinates', 'TLON TLAT')
-           status = pio_put_att(File,varid,'comment', 'mytask + iblk/100')
-           status = pio_put_att(File, varid, 'missing_value', spval)
-           status = pio_put_att(File, varid,'_FillValue',spval)
-        endif
+               status = pio_put_att(File,varid,'units', &
+                           avail_hist_fields(n)%vunit)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining units for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid, 'long_name', &
+                           avail_hist_fields(n)%vdesc)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining long_name for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'coordinates', &
+                           avail_hist_fields(n)%vcoord)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining coordinates for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'cell_measures', &
+                           avail_hist_fields(n)%vcellmeas)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining cell measures for '//avail_hist_fields(n)%vname)
+               if (avail_hist_fields(n)%vcomment /= "none") then
+                  call ice_pio_check(pio_put_att(File,varid,'comment', &
+                     avail_hist_fields(n)%vcomment), &
+                     'put att comment '//avail_hist_fields(n)%vname)
+               endif
+               status = pio_put_att(File,varid,'missing_value',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining missing_value for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'_FillValue',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining _FillValue for '//avail_hist_fields(n)%vname)
 
-        do i = 3, nvar       ! note: n_tmask=1, n_blkmask=2
-          if (igrd(i)) then
-             status = pio_def_var(File, trim(var(i)%req%short_name), &
-                                   pio_real, dimid2, varid)
-             if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def var '//trim(var(i)%req%short_name))
-             status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                        deflate_level)
-             if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(var(i)%req%short_name))
+               !---------------------------------------------------------------
+               ! Add cell_methods attribute to variables if averaged
+               !---------------------------------------------------------------
+               if (hist_avg .and. histfreq(ns) /= '1') then
+                  status = pio_put_att(File,varid,'cell_methods','time: mean')
+                  if (status /= nf90_noerr) call abort_ice( &
+                     'Error defining cell methods for '//avail_hist_fields(n)%vname)
+               endif
 
-             if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                 status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                         (/ history_chunksize_x, history_chunksize_y /))
-                 if (status /= nf90_noerr) call abort_ice( &
-                         'ice: Error chunking var '//trim(var(i)%req%short_name))
-             endif
-
-             status = pio_put_att(File,varid, 'long_name', trim(var(i)%req%long_name))
-             status = pio_put_att(File, varid, 'units', trim(var(i)%req%units))
-             status = pio_put_att(File, varid, 'coordinates', trim(var(i)%coordinates))
-             status = pio_put_att(File, varid, 'missing_value', spval)
-             status = pio_put_att(File, varid,'_FillValue',spval)
-          endif
-        enddo
-
-        ! Fields with dimensions (nverts,nx,ny)
-        dimid_nverts(1) = nvertexid
-        dimid_nverts(2) = imtid
-        dimid_nverts(3) = jmtid
-        do i = 1, nvar_verts
-          if (f_bounds) then
-             status = pio_def_var(File, trim(var_nverts(i)%short_name), &
-                                   pio_real,dimid_nverts, varid)
-             if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def  var '//trim(var_nverts(i)%short_name))
-             status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                        deflate_level)
-             if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(var_nverts(i)%short_name))
-             if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                 status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                         (/ 1, history_chunksize_x, history_chunksize_y /))
-                 if (status /= nf90_noerr) call abort_ice( &
-                         'ice: Error chunking var '//trim(var_nverts(i)%short_name))
-             endif
-
-             status = & 
-             pio_put_att(File,varid, 'long_name', trim(var_nverts(i)%long_name))
-             status = &
-             pio_put_att(File, varid, 'units', trim(var_nverts(i)%units))
-             status = pio_put_att(File, varid, 'missing_value', spval)
-             status = pio_put_att(File, varid,'_FillValue',spval)
-          endif
-        enddo
- 
-      !-----------------------------------------------------------------
-      ! define attributes for time-variant variables
-      !-----------------------------------------------------------------
-
-      !-----------------------------------------------------------------
-      ! 2D
-      !-----------------------------------------------------------------
-
-        dimid3(1) = imtid
-        dimid3(2) = jmtid
-        dimid3(3) = timid
-
-        do n=1,num_avail_hist_fields_2D
-          if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            status  = pio_def_var(File, trim(avail_hist_fields(n)%vname), &
-                         pio_real, dimid3, varid)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def var '//trim(avail_hist_fields(n)%vname))
-            status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                         deflate_level)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(avail_hist_fields(n)%vname))
-            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                 status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                         (/ history_chunksize_x, history_chunksize_y, 1 /))
-                 if (status /= nf90_noerr) call abort_ice( &
-                         'ice: Error chunking var '//trim(avail_hist_fields(n)%vname))
+               if (histfreq(ns) == '1' .or. .not. hist_avg) then
+                  status = pio_put_att(File,varid,'time_rep','instantaneous')
+               else
+                  status = pio_put_att(File,varid,'time_rep','averaged')
+               endif
             endif
+      enddo  ! num_avail_hist_fields_3Dc
 
-            status = pio_put_att(File,varid,'units', &
-                        trim(avail_hist_fields(n)%vunit))
-            status = pio_put_att(File,varid, 'long_name', &
-                        trim(avail_hist_fields(n)%vdesc))
-            status = pio_put_att(File,varid,'coordinates', &
-                        trim(avail_hist_fields(n)%vcoord))
-            status = pio_put_att(File,varid,'cell_measures', &
-                        trim(avail_hist_fields(n)%vcellmeas))
-            status = pio_put_att(File,varid,'missing_value',spval)
-            status = pio_put_att(File,varid,'_FillValue',spval)
+         ! 3D (ice layers)
 
-            ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
-              if (TRIM(avail_hist_fields(n)%vname)/='sig1' &
-              .or.TRIM(avail_hist_fields(n)%vname)/='sig2') then
-                status = pio_put_att(File,varid,'cell_methods','time: mean')
-              endif
+      dimidz(1) = imtid
+      dimidz(2) = jmtid
+      dimidz(3) = kmtidi
+      dimidz(4) = timid
+
+      do n = n3Dccum + 1, n3Dzcum
+            if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
+               status  = pio_def_var(File, avail_hist_fields(n)%vname, &
+                                       pio_real, dimidz, varid)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining variable '//avail_hist_fields(n)%vname)
+
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ history_chunksize_x, history_chunksize_y, 1, 1 /)), &
+                              'def var chunking '//avail_hist_fields(n)%vname)
+               endif
+
+               status = pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error deflating variable '//avail_hist_fields(n)%vname)
+
+               status = pio_put_att(File,varid,'units', &
+                           avail_hist_fields(n)%vunit)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining units for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid, 'long_name', &
+                           avail_hist_fields(n)%vdesc)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining long_name for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'coordinates', &
+                           avail_hist_fields(n)%vcoord)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining coordinates for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'cell_measures', &
+                           avail_hist_fields(n)%vcellmeas)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining cell measures for '//avail_hist_fields(n)%vname)
+               if (avail_hist_fields(n)%vcomment /= "none") then
+                  call ice_pio_check(pio_put_att(File,varid,'comment', &
+                     avail_hist_fields(n)%vcomment), &
+                     'put att comment '//avail_hist_fields(n)%vname)
+               endif
+               status = pio_put_att(File,varid,'missing_value',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining missing_value for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'_FillValue',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining _FillValue for '//avail_hist_fields(n)%vname)
+
+               ! Add cell_methods attribute to variables if averaged
+               if (hist_avg .and. histfreq(ns) /= '1') then
+                  status = pio_put_att(File,varid,'cell_methods','time: mean')
+               endif
+
+               if (histfreq(ns) == '1' .or. .not. hist_avg) then
+                  status = pio_put_att(File,varid,'time_rep','instantaneous')
+               else
+                  status = pio_put_att(File,varid,'time_rep','averaged')
+               endif
+
             endif
+      enddo  ! num_avail_hist_fields_3Dz
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg         &
-                .or. n==n_divu(ns)      .or. n==n_shear(ns)     &  ! snapshots
-                .or. n==n_sig1(ns)      .or. n==n_sig2(ns)      &
-                .or. n==n_trsig(ns)                             &
-                .or. n==n_mlt_onset(ns) .or. n==n_frz_onset(ns) &
-                .or. n==n_hisnap(ns)    .or. n==n_aisnap(ns)) then
-               status = pio_put_att(File,varid,'time_rep','instantaneous')
-            else
-               status = pio_put_att(File,varid,'time_rep','averaged')
+         ! 3D (biology layers)
+
+      dimidz(1) = imtid
+      dimidz(2) = jmtid
+      dimidz(3) = kmtidb
+      dimidz(4) = timid
+
+      do n = n3Dzcum + 1, n3Dbcum
+            if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
+               status  = pio_def_var(File, avail_hist_fields(n)%vname, &
+                                       pio_real, dimidz, varid)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining variable '//avail_hist_fields(n)%vname)
+
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ history_chunksize_x, history_chunksize_y, 1, 1 /)), &
+                              'def var chunking '//avail_hist_fields(n)%vname)
+               endif
+
+               status = pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error deflating variable '//avail_hist_fields(n)%vname)
+
+               status = pio_put_att(File,varid,'units', &
+                           avail_hist_fields(n)%vunit)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining units for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid, 'long_name', &
+                           avail_hist_fields(n)%vdesc)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining long_name for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'coordinates', &
+                           avail_hist_fields(n)%vcoord)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining coordinates for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'cell_measures', &
+                           avail_hist_fields(n)%vcellmeas)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining cell measures for '//avail_hist_fields(n)%vname)
+               if (avail_hist_fields(n)%vcomment /= "none") then
+                  call ice_pio_check(pio_put_att(File,varid,'comment', &
+                     avail_hist_fields(n)%vcomment), &
+                     'put att comment '//avail_hist_fields(n)%vname)
+               endif
+               status = pio_put_att(File,varid,'missing_value',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining missing_value for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'_FillValue',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining _FillValue for '//avail_hist_fields(n)%vname)
+
+               ! Add cell_methods attribute to variables if averaged
+               if (hist_avg .and. histfreq(ns) /= '1') then
+                  status = pio_put_att(File,varid,'cell_methods','time: mean')
+               endif
+
+               if (histfreq(ns) == '1' .or. .not. hist_avg) then
+                  status = pio_put_att(File,varid,'time_rep','instantaneous')
+               else
+                  status = pio_put_att(File,varid,'time_rep','averaged')
+               endif
+
             endif
-          endif
-        enddo  ! num_avail_hist_fields_2D
+      enddo  ! num_avail_hist_fields_3Db
 
-      !-----------------------------------------------------------------
-      ! 3D (category)
-      !-----------------------------------------------------------------
+         ! 4D (ice categories and layers)
 
-        dimidz(1) = imtid
-        dimidz(2) = jmtid
-        dimidz(3) = cmtid
-        dimidz(4) = timid
+      dimidcz(1) = imtid
+      dimidcz(2) = jmtid
+      dimidcz(3) = kmtidi
+      dimidcz(4) = cmtid
+      dimidcz(5) = timid
 
-        do n = n2D + 1, n3Dccum
-          if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            status  = pio_def_var(File, trim(avail_hist_fields(n)%vname), &
-                         pio_real, dimidz, varid)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def var '//trim(avail_hist_fields(n)%vname))
-            status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                         deflate_level)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(avail_hist_fields(n)%vname))
+      do n = n3Dbcum + 1, n4Dicum
+            if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
+               status  = pio_def_var(File, avail_hist_fields(n)%vname, &
+                                       pio_real, dimidcz, varid)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining variable '//avail_hist_fields(n)%vname)
 
-            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                         (/ history_chunksize_x, history_chunksize_y, 1, 1 /))
-                if (status /= nf90_noerr) call abort_ice( &
-                         'ice: Error chunking var '//trim(avail_hist_fields(n)%vname))
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ history_chunksize_x, history_chunksize_y, 1, 1, 1 /)), &
+                              'def var chunking '//avail_hist_fields(n)%vname)
+               endif
+
+               status = pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error deflating variable '//avail_hist_fields(n)%vname)
+
+               status = pio_put_att(File,varid,'units', &
+                           avail_hist_fields(n)%vunit)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining units for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid, 'long_name', &
+                           avail_hist_fields(n)%vdesc)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining long_name for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'coordinates', &
+                           avail_hist_fields(n)%vcoord)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining coordinates for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'cell_measures', &
+                           avail_hist_fields(n)%vcellmeas)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining cell measures for '//avail_hist_fields(n)%vname)
+               if (avail_hist_fields(n)%vcomment /= "none") then
+                  call ice_pio_check(pio_put_att(File,varid,'comment', &
+                     avail_hist_fields(n)%vcomment), &
+                     'put att comment '//avail_hist_fields(n)%vname)
+               endif
+               status = pio_put_att(File,varid,'missing_value',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining missing_value for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'_FillValue',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining _FillValue for '//avail_hist_fields(n)%vname)
+
+               !---------------------------------------------------------------
+               ! Add cell_methods attribute to variables if averaged
+               !---------------------------------------------------------------
+               if (hist_avg .and. histfreq(ns) /= '1') then
+                  status = pio_put_att(File,varid,'cell_methods','time: mean')
+                  if (status /= nf90_noerr) call abort_ice( &
+                        'Error defining cell methods for '//avail_hist_fields(n)%vname)
+               endif
+
+               if (histfreq(ns) == '1' .or. .not. hist_avg) then
+                  status = pio_put_att(File,varid,'time_rep','instantaneous')
+               else
+                  status = pio_put_att(File,varid,'time_rep','averaged')
+               endif
             endif
+      enddo  ! num_avail_hist_fields_4Di
 
-            status = pio_put_att(File,varid,'units', &
-                        trim(avail_hist_fields(n)%vunit))
-            status = pio_put_att(File,varid, 'long_name', &
-                        trim(avail_hist_fields(n)%vdesc))
-            status = pio_put_att(File,varid,'coordinates', &
-                        trim(avail_hist_fields(n)%vcoord))
-            status = pio_put_att(File,varid,'cell_measures', &
-                        trim(avail_hist_fields(n)%vcellmeas))
-            status = pio_put_att(File,varid,'missing_value',spval)
-            status = pio_put_att(File,varid,'_FillValue',spval)
 
-            ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
-                status = pio_put_att(File,varid,'cell_methods','time: mean')
-            endif
-
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
-               status = pio_put_att(File,varid,'time_rep','instantaneous')
-            else
-               status = pio_put_att(File,varid,'time_rep','averaged')
-            endif
-          endif
-        enddo  ! num_avail_hist_fields_3Dc
-
-      !-----------------------------------------------------------------
-      ! 3D (ice layers)
-      !-----------------------------------------------------------------
-
-        dimidz(1) = imtid
-        dimidz(2) = jmtid
-        dimidz(3) = kmtidi
-        dimidz(4) = timid
-
-        do n = n3Dccum + 1, n3Dzcum
-          if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            status  = pio_def_var(File, trim(avail_hist_fields(n)%vname), &
-                         pio_real, dimidz, varid)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def var '//trim(avail_hist_fields(n)%vname))
-            status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                         deflate_level)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(avail_hist_fields(n)%vname))
-            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                     (/ history_chunksize_x, history_chunksize_y, 1, 1 /))
-                if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error chunking var '//trim(avail_hist_fields(n)%vname))
-            endif
-
-            status = pio_put_att(File,varid,'units', &
-                        trim(avail_hist_fields(n)%vunit))
-            status = pio_put_att(File,varid, 'long_name', &
-                        trim(avail_hist_fields(n)%vdesc))
-            status = pio_put_att(File,varid,'coordinates', &
-                        trim(avail_hist_fields(n)%vcoord))
-            status = pio_put_att(File,varid,'cell_measures', &
-                        trim(avail_hist_fields(n)%vcellmeas))
-            status = pio_put_att(File,varid,'missing_value',spval)
-            status = pio_put_att(File,varid,'_FillValue',spval)
-
-            ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
-                status = pio_put_att(File,varid,'cell_methods','time: mean')
-            endif
-
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
-               status = pio_put_att(File,varid,'time_rep','instantaneous')
-            else
-               status = pio_put_att(File,varid,'time_rep','averaged')
-            endif
-          endif
-        enddo  ! num_avail_hist_fields_3Dz
-        
-      !-----------------------------------------------------------------
-      ! 3D (biology layers)
-      !-----------------------------------------------------------------
-
-        dimidz(1) = imtid
-        dimidz(2) = jmtid
-        dimidz(3) = kmtidb
-        dimidz(4) = timid
-
-        do n = n3Dzcum + 1, n3Dbcum
-          if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            status  = pio_def_var(File, trim(avail_hist_fields(n)%vname), &
-                         pio_real, dimidz, varid)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def var '//trim(avail_hist_fields(n)%vname))
-            status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                         deflate_level)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(avail_hist_fields(n)%vname))
-
-            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                         (/ history_chunksize_x, history_chunksize_y, 1, 1 /))
-                if (status /= nf90_noerr) call abort_ice( &
-                         'ice: Error deflating var '//trim(avail_hist_fields(n)%vname))
-            endif
-
-            status = pio_put_att(File,varid,'units', &
-                        trim(avail_hist_fields(n)%vunit))
-            status = pio_put_att(File,varid, 'long_name', &
-                        trim(avail_hist_fields(n)%vdesc))
-            status = pio_put_att(File,varid,'coordinates', &
-                        trim(avail_hist_fields(n)%vcoord))
-            status = pio_put_att(File,varid,'cell_measures', &
-                        trim(avail_hist_fields(n)%vcellmeas))
-            status = pio_put_att(File,varid,'missing_value',spval)
-            status = pio_put_att(File,varid,'_FillValue',spval)
-
-            ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
-                status = pio_put_att(File,varid,'cell_methods','time: mean')
-            endif
-
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
-               status = pio_put_att(File,varid,'time_rep','instantaneous')
-            else
-               status = pio_put_att(File,varid,'time_rep','averaged')
-            endif
-          endif
-        enddo  ! num_avail_hist_fields_3Db
-
-      !-----------------------------------------------------------------
-      ! define attributes for 4D variables
-      ! time coordinate is dropped
-      !-----------------------------------------------------------------
-
-      !-----------------------------------------------------------------
-      ! 4D (ice categories and layers)
-      !-----------------------------------------------------------------
-
-        dimidcz(1) = imtid
-        dimidcz(2) = jmtid
-        dimidcz(3) = kmtidi
-        dimidcz(4) = cmtid
-        dimidcz(5) = timid
-
-        do n = n3Dbcum + 1, n4Dicum
-          if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            status  = pio_def_var(File, trim(avail_hist_fields(n)%vname), &
-                             pio_real, dimidcz, varid)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def var '//trim(avail_hist_fields(n)%vname))
-            status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                         deflate_level)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(avail_hist_fields(n)%vname))
-
-            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                         (/ history_chunksize_x, history_chunksize_y, 1, 1, 1 /))
-                if (status /= nf90_noerr) call abort_ice( &
-                         'ice: Error chunking var '//trim(avail_hist_fields(n)%vname))
-            endif
-
-            status = pio_put_att(File,varid,'units', &
-                        trim(avail_hist_fields(n)%vunit))
-            status = pio_put_att(File,varid, 'long_name', &
-                        trim(avail_hist_fields(n)%vdesc))
-            status = pio_put_att(File,varid,'coordinates', &
-                        trim(avail_hist_fields(n)%vcoord))
-            status = pio_put_att(File,varid,'cell_measures', &
-                        trim(avail_hist_fields(n)%vcellmeas))
-            status = pio_put_att(File,varid,'missing_value',spval)
-            status = pio_put_att(File,varid,'_FillValue',spval)
-
-            ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
-                status = pio_put_att(File,varid,'cell_methods','time: mean')
-            endif
-
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
-               status = pio_put_att(File,varid,'time_rep','instantaneous')
-            else
-               status = pio_put_att(File,varid,'time_rep','averaged')
-            endif
-          endif
-        enddo  ! num_avail_hist_fields_4Di
-
-      !-----------------------------------------------------------------
       ! 4D (ice categories and snow layers)
-      !-----------------------------------------------------------------
 
-        dimidcz(1) = imtid
-        dimidcz(2) = jmtid
-        dimidcz(3) = kmtids
-        dimidcz(4) = cmtid
-        dimidcz(5) = timid
+      dimidcz(1) = imtid
+      dimidcz(2) = jmtid
+      dimidcz(3) = kmtids
+      dimidcz(4) = cmtid
+      dimidcz(5) = timid
 
-        do n = n4Dicum + 1, n4Dscum
-          if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            status  = pio_def_var(File, trim(avail_hist_fields(n)%vname), &
-                             pio_real, dimidcz, varid)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def var '//trim(avail_hist_fields(n)%vname))
-            status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                         deflate_level)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(avail_hist_fields(n)%vname))
-            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                         (/ history_chunksize_x, history_chunksize_y, 1, 1, 1 /))
-                if (status /= nf90_noerr) call abort_ice( &
-                         'ice: Error chunking var '//trim(avail_hist_fields(n)%vname))
+      do n = n4Dicum + 1, n4Dscum
+            if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
+               status  = pio_def_var(File, avail_hist_fields(n)%vname, &
+                                       pio_real, dimidcz, varid) 
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining variable '//avail_hist_fields(n)%vname)
+
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ history_chunksize_x, history_chunksize_y, 1, 1 ,1 /)), &
+                              'def var chunking '//avail_hist_fields(n)%vname)
+               endif
+
+               status = pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error deflating variable '//avail_hist_fields(n)%vname)
+
+               status = pio_put_att(File,varid,'units', &
+                           avail_hist_fields(n)%vunit)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining units for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid, 'long_name', &
+                           avail_hist_fields(n)%vdesc)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining long_name for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'coordinates', &
+                           avail_hist_fields(n)%vcoord)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining coordinates for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'cell_measures', &
+                           avail_hist_fields(n)%vcellmeas)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining cell measures for '//avail_hist_fields(n)%vname)
+               if (avail_hist_fields(n)%vcomment /= "none") then
+                  call ice_pio_check(pio_put_att(File,varid,'comment', &
+                     avail_hist_fields(n)%vcomment), &
+                     'put att comment '//avail_hist_fields(n)%vname)
+               endif
+               status = pio_put_att(File,varid,'missing_value',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining missing_value for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'_FillValue',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining _FillValue for '//avail_hist_fields(n)%vname)
+
+               !---------------------------------------------------------------
+               ! Add cell_methods attribute to variables if averaged
+               !---------------------------------------------------------------
+               if (hist_avg .and. histfreq(ns) /= '1') then
+                  status = pio_put_att(File,varid,'cell_methods','time: mean')
+                  if (status /= nf90_noerr) call abort_ice( &
+                     'Error defining cell methods for '//avail_hist_fields(n)%vname)
+               endif
+
+               if (histfreq(ns) == '1' .or. .not. hist_avg) then
+                  status = pio_put_att(File,varid,'time_rep','instantaneous')
+               else
+                  status = pio_put_att(File,varid,'time_rep','averaged')
+               endif
             endif
+      enddo  ! num_avail_hist_fields_4Ds
 
-            status = pio_put_att(File,varid,'units', &
-                        trim(avail_hist_fields(n)%vunit))
-            status = pio_put_att(File,varid, 'long_name', &
-                        trim(avail_hist_fields(n)%vdesc))
-            status = pio_put_att(File,varid,'coordinates', &
-                        trim(avail_hist_fields(n)%vcoord))
-            status = pio_put_att(File,varid,'cell_measures', &
-                        trim(avail_hist_fields(n)%vcellmeas))
-            status = pio_put_att(File,varid,'missing_value',spval)
-            status = pio_put_att(File,varid,'_FillValue',spval)
-
-            ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
-                status = pio_put_att(File,varid,'cell_methods','time: mean')
-            endif
-
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
-               status = pio_put_att(File,varid,'time_rep','instantaneous')
-            else
-               status = pio_put_att(File,varid,'time_rep','averaged')
-            endif
-          endif
-        enddo  ! num_avail_hist_fields_4Ds
-
-      !-----------------------------------------------------------------
       ! 4D (ice categories and biology layers)
-      !-----------------------------------------------------------------
 
-        dimidcz(1) = imtid
-        dimidcz(2) = jmtid
-        dimidcz(3) = kmtidb
-        dimidcz(4) = cmtid
-        dimidcz(5) = timid
+      dimidcz(1) = imtid
+      dimidcz(2) = jmtid
+      dimidcz(3) = kmtidb
+      dimidcz(4) = cmtid
+      dimidcz(5) = timid
 
-        do n = n4Dscum + 1, n4Dbcum
-          if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-            status  = pio_def_var(File, trim(avail_hist_fields(n)%vname), &
-                             pio_real, dimidcz, varid)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error def var '//trim(avail_hist_fields(n)%vname))
-            status = pio_def_var_deflate(File, varid, shuffle, deflate, &
-                                         deflate_level)
-            if (status /= nf90_noerr) call abort_ice( &
-                     'ice: Error deflating var '//trim(avail_hist_fields(n)%vname))
-            if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
-                status = pio_def_var_chunking(File, varid, NF90_CHUNKED, &
-                         (/ history_chunksize_x, history_chunksize_y, 1, 1, 1 /))
-                if (status /= nf90_noerr) call abort_ice( &
-                         'ice: Error chunking var '//trim(avail_hist_fields(n)%vname))
+      do n = n4Dscum + 1, n4Dbcum
+            if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
+               status  = pio_def_var(File, avail_hist_fields(n)%vname, &
+                                       pio_real, dimidcz, varid)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining variable '//avail_hist_fields(n)%vname)
+
+               if (history_chunksize_x > 0 .and. history_chunksize_y > 0) then
+                  call ice_pio_check(pio_def_var_chunking(File, varid, NF90_CHUNKED, &
+                              (/ history_chunksize_x, history_chunksize_y, 1, 1 /)), &
+                              'def var chunking '//avail_hist_fields(n)%vname)
+               endif
+
+               status = pio_def_var_deflate(File, varid, shuffle, deflate, &
+                                             deflate_level)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error deflating variable '//avail_hist_fields(n)%vname)
+
+               status = pio_put_att(File,varid,'units', &
+                           avail_hist_fields(n)%vunit)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining units for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid, 'long_name', &
+                           avail_hist_fields(n)%vdesc)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining long_name for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'coordinates', &
+                           avail_hist_fields(n)%vcoord)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining coordinates for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'cell_measures', &
+                           avail_hist_fields(n)%vcellmeas)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining cell measures for '//avail_hist_fields(n)%vname)
+               if (avail_hist_fields(n)%vcomment /= "none") then
+                  call ice_pio_check(pio_put_att(File,varid,'comment', &
+                     avail_hist_fields(n)%vcomment), &
+                     'put att comment '//avail_hist_fields(n)%vname)
+               endif
+               status = pio_put_att(File,varid,'missing_value',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining missing_value for '//avail_hist_fields(n)%vname)
+               status = pio_put_att(File,varid,'_FillValue',spval)
+               if (status /= nf90_noerr) call abort_ice( &
+                  'Error defining _FillValue for '//avail_hist_fields(n)%vname)
+
+               !---------------------------------------------------------------
+               ! Add cell_methods attribute to variables if averaged
+               !---------------------------------------------------------------
+               if (hist_avg .and. histfreq(ns) /= '1' ) then
+                  status = pio_put_att(File,varid,'cell_methods','time: mean')
+                  if (status /= nf90_noerr) call abort_ice( &
+                     'Error defining cell methods for '//avail_hist_fields(n)%vname)
+               endif
+
+               if (histfreq(ns) == '1' .or. .not. hist_avg) then
+                  call ice_pio_check(pio_put_att(File,varid,'time_rep','instantaneous'), &
+                              'put att time_rep instantaneous')
+               else
+                  call ice_pio_check(pio_put_att(File,varid,'time_rep','averaged'), &
+                              'put att time_rep averaged')
+               endif
             endif
+      enddo  ! num_avail_hist_fields_4Db
 
-            status = pio_put_att(File,varid,'units', &
-                        trim(avail_hist_fields(n)%vunit))
-            status = pio_put_att(File,varid, 'long_name', &
-                        trim(avail_hist_fields(n)%vdesc))
-            status = pio_put_att(File,varid,'coordinates', &
-                        trim(avail_hist_fields(n)%vcoord))
-            status = pio_put_att(File,varid,'cell_measures', &
-                        trim(avail_hist_fields(n)%vcellmeas))
-            status = pio_put_att(File,varid,'missing_value',spval)
-            status = pio_put_att(File,varid,'_FillValue',spval)
+      title  = 'sea ice model output for CICE'
+      call ice_pio_check(pio_put_att(File,nf90_global,'title',title), &
+                  'global attribute title')
 
-            ! Add cell_methods attribute to variables if averaged
-            if (hist_avg .and. histfreq(ns) /= '1') then
-                status = pio_put_att(File,varid,'cell_methods','time: mean')
-            endif
+      title = 'Diagnostic and Prognostic Variables'
+      call ice_pio_check(pio_put_att(File,nf90_global,'contents',title), &
+                  'global attribute contents')
 
-            if (histfreq(ns) == '1' .or. .not. hist_avg) then
-               status = pio_put_att(File,varid,'time_rep','instantaneous')
-            else
-               status = pio_put_att(File,varid,'time_rep','averaged')
-            endif
-          endif
-        enddo  ! num_avail_hist_fields_4Db
+      title  = 'Los Alamos Sea Ice Model (CICE) Version 5'
+      call ice_pio_check(pio_put_att(File,nf90_global,'source',title), &
+                  'global attribute source')
 
-      !-----------------------------------------------------------------
-      ! global attributes
-      !-----------------------------------------------------------------
-      ! ... the user should change these to something useful ...
-      !-----------------------------------------------------------------
-#ifdef CCSMCOUPLED
-        status = pio_put_att(File,pio_global,'title',runid)
-#else
-        title  = 'sea ice model output for CICE'
-        status = pio_put_att(File,pio_global,'title',trim(title))
-#endif
-        title = 'Diagnostic and Prognostic Variables'
-        status = pio_put_att(File,pio_global,'contents',trim(title))
-
-        title  = 'Los Alamos Sea Ice Model (CICE) Version 5'
-        status = pio_put_att(File,pio_global,'source',trim(title))
-
-        select case (histfreq(ns))
+      select case (histfreq(ns))
          case ("y", "Y")
             write(time_period_freq,'(a,i0)') 'year_',histfreq_n(ns)
          case ("m", "M")
@@ -902,71 +1107,72 @@
             write(time_period_freq,'(a,i0)') 'hour_',histfreq_n(ns)
          case ("1")
             write(time_period_freq,'(a,i0)') 'step_',histfreq_n(ns)
-        end select
+      end select
 
-        status = pio_put_att(File,pio_global,'time_period_freq',trim(time_period_freq))
+      status = pio_put_att(File,pio_global,'time_period_freq',trim(time_period_freq))
 
-        if (use_leap_years) then
-          write(title,'(a,i3,a)') 'This year has ',int(dayyr),' days'
-        else
-          write(title,'(a,i3,a)') 'All years have exactly ',int(dayyr),' days'
-        endif
-        status = pio_put_att(File,pio_global,'comment',trim(title))
+#ifdef AusCOM
+      write(title,'(a,i3,a)') 'This Year Has ',int(dayyr),' days'
+#else
+      if (use_leap_years) then
+            write(title,'(a,i3,a)') 'This year has ',int(dayyr),' days'
+      else
+            write(title,'(a,i3,a)') 'All years have exactly ',int(dayyr),' days'
+      endif
+#endif
+      call ice_pio_check(pio_put_att(File,nf90_global,'comment',title), &
+                  'global attribute comment')
 
-        write(title,'(a,i8.8)') 'File written on model date ',idate
-        status = pio_put_att(File,pio_global,'comment2',trim(title))
+      write(title,'(a,i8.8)') 'File started on model date ',idate
+      call ice_pio_check(pio_put_att(File,nf90_global,'comment2',title), &
+                  'global attribute date1')
 
-        write(title,'(a,i6)') 'seconds elapsed into model date: ',sec
-        status = pio_put_att(File,pio_global,'comment3',trim(title))
+      ! TO-DO: Update output for CF compliance !
+      ! title = 'CF-1.0'
+      ! call ice_pio_check(pio_put_att(File,nf90_global,'conventions',title), &
+                  ! 'global attribute conventions')
 
-        title = 'CF-1.0'
-        status =  &
-             pio_put_att(File,pio_global,'conventions',trim(title))
-
-        call date_and_time(date=current_date, time=current_time)
-        write(start_time,1000) current_date(1:4), current_date(5:6), &
-                               current_date(7:8), current_time(1:2), &
-                               current_time(3:4)
+      call date_and_time(date=current_date, time=current_time)
+      write(start_time,1000) current_date(1:4), current_date(5:6), &
+                              current_date(7:8), current_time(1:2), &
+                              current_time(3:4), current_time(5:8)
 1000    format('This dataset was created on ', &
-                a,'-',a,'-',a,' at ',a,':',a)
-        status = pio_put_att(File,pio_global,'history',trim(start_time))
+               a,'-',a,'-',a,' at ',a,':',a,':',a)
 
-        status = pio_put_att(File,pio_global,'io_flavor','io_pio')
+      call ice_pio_check(pio_put_att(File,nf90_global,'history',start_time), &
+                  'global attribute history')
+
+      call ice_pio_check(pio_put_att(File,nf90_global,'io_flavor','io_pio'), &
+                  'global attribute io_flavor')
 
       !-----------------------------------------------------------------
       ! end define mode
       !-----------------------------------------------------------------
 
-        status = pio_enddef(File)
+      call ice_pio_check(pio_enddef(File), 'enddef')
 
-      !-----------------------------------------------------------------
-      ! write time variable
-      !-----------------------------------------------------------------
+end subroutine ice_hist_create
 
-        status = pio_inq_varid(File,'time',varid)
-        status = pio_put_var(File,varid,(/1/),ltime)
+subroutine write_coordinate_variables(File, coord_var, var_nz)
 
-      !-----------------------------------------------------------------
-      ! write time_bounds info
-      !-----------------------------------------------------------------
+      type(file_desc_t), intent(inout)     :: File
+      type(coord_attributes), dimension(ncoord), intent(in) :: coord_var
+      type(coord_attributes), dimension(nvarz) :: var_nz
 
-        if (hist_avg .and. histfreq(ns) /= '1') then
-          status = pio_inq_varid(File,'time_bounds',varid)
-          time_bounds=(/time_beg(ns),time_end(ns)/)
-          bnd_start  = (/1,1/)
-          bnd_length = (/2,1/)
-          status = pio_put_var(File,varid,ival=time_bounds, &
-                   start=bnd_start(:),count=bnd_length(:)) 
-        endif
+      real (kind=real_kind), allocatable :: workr2(:,:,:)
+
+      integer :: i, k, status
+      type(var_desc_t)      :: varid
 
       !-----------------------------------------------------------------
       ! write coordinate variables
       !-----------------------------------------------------------------
-
+        call pio_seterrorhandling(File, PIO_RETURN_ERROR)
         allocate(workr2(nx_block,ny_block,nblocks))
 
         do i = 1,ncoord
-          status = pio_inq_varid(File, coord_var(i)%short_name, varid)
+          call ice_pio_check(pio_inq_varid(File, coord_var(i)%short_name, varid), &
+                     'inquire varid '//coord_var(i)%short_name)
           SELECT CASE (coord_var(i)%short_name)
             CASE ('TLON')
               ! Convert T grid longitude from -180 -> 180 to 0 to 360
@@ -980,11 +1186,12 @@
           END SELECT
           call pio_write_darray(File, varid, iodesc2d, &
                workr2, status, fillval=spval)
+          call ice_pio_check(status, 'write darray '//coord_var(i)%short_name)
         enddo
 
         ! Extra dimensions (NCAT, VGRD*)
 
-	do i = 1, nvarz
+        do i = 1, nvarz
           if (igrdz(i)) then
             status = pio_inq_varid(File, var_nz(i)%short_name, varid)
             SELECT CASE (var_nz(i)%short_name)
@@ -999,23 +1206,29 @@
              END SELECT
            endif
         enddo
+        call pio_seterrorhandling(File, PIO_INTERNAL_ERROR)
 
-      !-----------------------------------------------------------------
-      ! write grid masks, area and rotation angle
-      !-----------------------------------------------------------------
+        deallocate(workr2)
 
-!      if (igrd(n_tmask)) then
-!        status = pio_inq_varid(File, 'tmask', varid)
-!        call pio_write_darray(File, varid, iodesc2d, &
-!                              hm(:,:,1:nblocks), status, fillval=spval)
-!      endif
-!      if (igrd(n_blkmask)) then
-!        status = pio_inq_varid(File, 'blkmask', varid)
-!        call pio_write_darray(File, varid, iodesc2d, &
-!                              bm(:,:,1:nblocks), status, fillval=spval)
-!      endif
-        
-      do i = 1, nvar       ! note: n_tmask=1, n_blkmask=2
+end subroutine write_coordinate_variables
+
+
+
+subroutine write_grid_variables(File, var, var_nverts)
+
+   type(file_desc_t), intent(inout)    :: File
+   type(req_attributes), dimension(nvar), intent(in) :: var
+   type(coord_attributes), dimension(nvar_verts), intent(in) :: var_nverts
+
+   real (kind=real_kind), allocatable :: workr2(:,:,:)
+   real (kind=real_kind), allocatable :: workr3v(:,:,:,:)
+
+   integer :: ivertex, i, status
+   type(var_desc_t)      :: varid
+
+   allocate(workr2(nx_block,ny_block,nblocks))
+
+   do i = 1, nvar       ! note: n_tmask=1, n_blkmask=2
          if (igrd(i)) then
             SELECT CASE (var(i)%req%short_name)
             CASE ('tmask')
@@ -1083,12 +1296,26 @@
       deallocate(workr3v)
       endif  ! f_bounds
 
+      deallocate(workr2)
 
-      !-----------------------------------------------------------------
-      ! write variable data
-      !-----------------------------------------------------------------
+end subroutine write_grid_variables
 
-      ! 2D
+
+subroutine write_2d_variables(ns, File, i_time)
+
+   integer, intent(in) :: ns, i_time
+   type(file_desc_t), intent(inout)     :: File
+
+   real (kind=real_kind), allocatable :: workr2(:,:,:)
+
+   integer :: n, status
+   type(var_desc_t)      :: varid
+   integer (kind=PIO_OFFSET_KIND) :: FRAME_1
+
+      FRAME_1 = i_time
+
+      allocate(workr2(nx_block,ny_block,nblocks))
+
       do n=1,num_avail_hist_fields_2D
          if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
             status  = pio_inq_varid(File,avail_hist_fields(n)%vname,varid)
@@ -1103,7 +1330,24 @@
 
       deallocate(workr2)
 
-      ! 3D (category)
+end subroutine write_2d_variables
+
+
+subroutine write_3d_and_4d_variables(ns, File, i_time)
+
+   integer, intent(in) :: ns, i_time
+   type(file_desc_t), intent(inout)   :: File
+
+   real (kind=real_kind), allocatable :: workr3(:,:,:,:)
+   real (kind=real_kind), allocatable :: workr4(:,:,:,:,:)
+
+   type(var_desc_t)      :: varid
+   integer :: n, nn, i, j, k, status
+   integer (kind=PIO_OFFSET_KIND) :: FRAME_1
+
+      FRAME_1 = i_time
+
+          ! 3D (category)
       allocate(workr3(nx_block,ny_block,nblocks,ncat_hist))
       do n = n2D + 1, n3Dccum
          nn = n - n2D
@@ -1207,30 +1451,8 @@
       enddo ! num_avail_hist_fields_4Ds
       deallocate(workr4)
 
-!     similarly for num_avail_hist_fields_4Db (define workr4b, iodesc4db)
+end subroutine write_3d_and_4d_variables
 
-     !-----------------------------------------------------------------
-      ! close output dataset
-      !-----------------------------------------------------------------
-
-      call pio_closefile(File)
-      if (my_task == master_task) then
-         write(nu_diag,*) ' '
-         write(nu_diag,*) 'Finished writing ',trim(ncfile(ns))
-      endif
-
-      !-----------------------------------------------------------------
-      ! clean-up PIO descriptors
-      !-----------------------------------------------------------------
-      call pio_freedecomp(ice_pio_subsystem, iodesc2d)
-      call pio_freedecomp(ice_pio_subsystem, iodesc3dv)
-      call pio_freedecomp(ice_pio_subsystem, iodesc3dc)
-      call pio_freedecomp(ice_pio_subsystem, iodesc3di)
-      call pio_freedecomp(ice_pio_subsystem, iodesc3db)
-      call pio_freedecomp(ice_pio_subsystem, iodesc4di)
-
-
-      end subroutine ice_write_hist
 
 !=======================================================================
 

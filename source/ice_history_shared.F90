@@ -25,15 +25,18 @@
       module ice_history_shared
 
       use ice_kinds_mod
-      use ice_fileunits, only: nu_diag
       use ice_domain_size, only: ncat, nilyr, nslyr, nblyr, max_nstrm
 
       implicit none
       save
 
       private
-      public :: define_hist_field, accum_hist_field, icefields_nml, construct_filename
-      
+      public :: define_hist_field, accum_hist_field, icefields_nml, &
+#ifdef ncdf
+      check, &
+#endif
+      construct_filename
+
       logical (kind=log_kind), public :: &
          hist_avg  ! if true, write averaged data instead of snapshots
 
@@ -465,20 +468,44 @@
 
 !=======================================================================
 
-      subroutine construct_filename(ncfile,suffix,ns)
+#ifdef ncdf
+      subroutine check(status, msg)
+         use netcdf, only: nf90_noerr, nf90_strerror
+         use ice_fileunits, only: nu_diag, ice_stderr, ice_stdout
+         use ice_exit, only: abort_ice
+
+         integer, intent (in) :: status
+         character(len=*), intent (in) :: msg
+
+         if(status /= nf90_noerr) then
+            !sometimes the netcdf error string is quite long, so print seperately to prevent overrun
+            write(nu_diag,*) trim(nf90_strerror(status))
+            write (ice_stdout,*) trim(nf90_strerror(status))
+            write (ice_stderr,*) trim(nf90_strerror(status))
+            call abort_ice('ice: NetCDF error '//trim(msg))
+         end if
+      end subroutine check
+#endif
+
+      subroutine construct_filename(ncfile,suffix,ns,time_string)
+
+      ! construct filenames for history output
+      ! we follow cosima convention:
+      ! e.g. ice-1daily-mean_0001-01.nc for daily data in january 0001
 
       use ice_calendar, only: time, sec, nyr, month, daymo,  &
-                              mday, write_ic, histfreq, histfreq_n, &
+                              mday, write_ic, histfreq, hist_file_freq, histfreq_n, &
                               year_init, new_year, new_month, new_day, &
                               dt
       use ice_restart_shared, only: lenstr
 
-      character (len=*), intent(inout) :: ncfile
+      character (char_len_long), intent(inout) :: ncfile
+      character (char_len), intent(out), optional :: time_string
+      character (char_len) :: ldate_string
       character (len=2), intent(in) :: suffix
       integer (kind=int_kind), intent(in) :: ns
 
       integer (kind=int_kind) :: iyear, imonth, iday, isec
-      character (len=1) :: cstream
 
         iyear = nyr + year_init - 1 ! set year_init=1 in ice_in to get iyear=nyr
         imonth = month
@@ -490,9 +517,9 @@
 #endif
         ! construct filename
         if (write_ic) then
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-              incond_file(1:lenstr(incond_file)),'.',iyear,'-', &
-              imonth,'-',iday,'-',isec,'.',suffix
+            ncfile=incond_file(1:lenstr(incond_file))
+            write(ldate_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5)')  &
+               iyear,'-',imonth,'-',iday,'-',sec
         else
 
          if (hist_avg .and. histfreq(ns) /= '1') then
@@ -510,41 +537,56 @@
           endif
          endif
 
-         cstream = ''
-!echmod ! this was implemented for CESM but it breaks post-processing software
-!echmod ! of other groups (including RASM which uses CCSMCOUPLED)
-!echmod         if (ns > 1) write(cstream,'(i1.1)') ns-1
+         ncfile=history_file(1:lenstr(history_file))
 
-         if (histfreq(ns) == '1') then ! instantaneous, write every dt
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'_inst.', &
-             iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
-
-         elseif (hist_avg) then    ! write averaged data
-
-          if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream), &
-             '.',iyear,'-',imonth,'-',iday,'.',suffix
-          elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
-           write(ncfile,'(a,a,i2.2,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'_', &
-             histfreq_n(ns),'h.',iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
-          elseif (histfreq(ns) == 'm'.or.histfreq(ns) == 'M') then ! monthly
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,a)')  &
-            history_file(1:lenstr(history_file))//trim(cstream),'.', &
-             iyear,'-',imonth,'.',suffix
-          elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
-           write(ncfile,'(a,a,i4.4,a,a)') &
-            history_file(1:lenstr(history_file))//trim(cstream),'.', &
-             iyear,'.',suffix
-          endif
-
-         else                     ! instantaneous with histfreq > dt
-           write(ncfile,'(a,a,i4.4,a,i2.2,a,i2.2,a,i5.5,a,a)')  &
-            history_file(1:lenstr(history_file)),'_inst.', &
-             iyear,'-',imonth,'-',iday,'-',sec,'.',suffix
+         ! frequency of history ouput (typically 1)
+         if (histfreq_n(ns)>9) then
+            write(ldate_string,'(i2)') histfreq_n(ns)  
+         else
+            write(ldate_string,'(i1)') histfreq_n(ns)  
          endif
+
+         ncfile=ncfile(1:lenstr(ncfile))//'-'//trim(ldate_string)
+
+         ! name file based on history frequency (e.g. "daily-mean")
+         if (histfreq(ns) == 'd'.or.histfreq(ns) == 'D') then     ! daily
+            ncfile=ncfile(1:lenstr(ncfile))//'daily'
+         elseif (histfreq(ns) == 'h'.or.histfreq(ns) == 'H') then ! hourly
+            ncfile=ncfile(1:lenstr(ncfile))//'hourly'
+         elseif (histfreq(ns) == 'm'.or.histfreq(ns) == 'M') then ! monthly
+            ncfile=ncfile(1:lenstr(ncfile))//'monthly'
+         elseif (histfreq(ns) == 'y'.or.histfreq(ns) == 'Y') then ! yearly
+            ncfile=ncfile(1:lenstr(ncfile))//'yearly'
+         endif
+
+         if (hist_avg) then
+            ncfile=ncfile(1:lenstr(ncfile))//'-mean'
+         else
+            ncfile=ncfile(1:lenstr(ncfile))//'-snap'
+         endif
+
+         ! date in filename is based on history file output frequency (e.g. "0001-01" for one file per month)
+         if (hist_file_freq(ns) == 'd'.or.hist_file_freq(ns) == 'D') then     ! daily
+            write(ldate_string,'(i4.4,a,i2.2,a,i2.2)') iyear,'-',imonth,'-',iday
+         elseif (hist_file_freq(ns) == 'h'.or.hist_file_freq(ns) == 'H') then ! hourly
+            write(ldate_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5)') iyear,'-',imonth,'-',iday,'-',sec
+         elseif (hist_file_freq(ns) == 'm'.or.hist_file_freq(ns) == 'M') then ! monthly
+            write(ldate_string,'(i4.4,a,i2.2)') iyear,'-',imonth
+         elseif (hist_file_freq(ns) == 'y'.or.hist_file_freq(ns) == 'Y') then ! yearly
+            write(ldate_string,'(i4.4)') iyear
+         else !instantaneous
+            write(ldate_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5)') iyear,'-',imonth,'-',iday,'-',sec
+         endif
+
+        endif
+
+        ! join the pieces, typically iceh-1daily-mean_0001-01.nc
+        ncfile=ncfile(1:lenstr(ncfile))//'_'//ldate_string(1:lenstr(ldate_string))//'.'//suffix
+
+        ! create a string of current time for debugging
+        if ( present(time_string) ) then
+            write(time_string,'(i4.4,a,i2.2,a,i2.2,a,i5.5)')  &
+                 iyear,'-',imonth,'-',iday,'-',sec
         endif
 
       end subroutine construct_filename
