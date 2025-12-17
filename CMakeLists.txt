@@ -17,6 +17,12 @@ project(CICE
 
 message(STATUS "Build options")
 
+option(CICE_DETERMINISTIC "OFF") # attempt to set flags so resulting executables are reproducible
+if(CMAKE_BUILD_TYPE MATCHES "Debug" AND CICE_DETERMINISTIC)
+  message(FATAL_ERROR 
+  " CICE_DETERMINISTIC   ${CICE_DETERMINISTIC} not available unless CMAKE_BUILD_TYPE=Release"
+  )
+endif()
 # provide some default options from access "1degree" configurations
 # its intended the user will set these
 
@@ -77,11 +83,14 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(CMakePackageConfigHelpers)
 
 # https://github.com/ACCESS-NRI/access-spack-packages/blob/d8b48b18a1400cf2a6850af0bf038af55804d92f/packages/cice5/package.py#L197C1-L198C65
-# note: previous deterministic and optimisation report options not included
 set (NCI_INTEL_FLAGS "-r8 -i4 -w -fpe0 -ftz -convert big_endian -assume byterecl -check noarg_temp_created")
 set (NCI_REPRO_FLAGS "-fp-model precise -fp-model source -align all")
-set (NCI_OPTIM_FLAGS "-g3 -O2 -axCORE-AVX2 -debug all -check none -traceback -assume buffered_io")
-set (NCI_DEBUG_FLAGS "-g3 -O0 -debug all -check all -no-vec -traceback -assume nobuffered_io")
+if (CICE_DETERMINISTIC)
+  set (NCI_OPTIM_FLAGS "-g0 -O0 -axCORE-AVX2 -debug none -check none -assume buffered_io")
+else ()
+  set (NCI_OPTIM_FLAGS "-g3 -O2 -axCORE-AVX2 -debug all -check none -traceback -assume buffered_io")
+  set (NCI_DEBUG_FLAGS "-g3 -O0 -debug all -check all -no-vec -traceback -assume nobuffered_io")
+endif ()
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
   set(CMAKE_Fortran_FLAGS_RELEASE "-Wall -fdefault-real-8 -fdefault-double-8 -ffpe-trap=invalid,zero,overflow -fallow-argument-mismatch")
