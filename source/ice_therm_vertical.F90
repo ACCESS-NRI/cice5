@@ -1390,7 +1390,8 @@
 !
 ! author Alex West, MOHC
 
-      subroutine cap_conductive_flux(nx_block,ny_block,my_task,icells,indxi,indxj,fcondtopn,fcondtopn_solve,fcondtopn_extra,hin,zTsn,zTin,hslyr)
+      subroutine cap_conductive_flux(nx_block,ny_block,my_task,icells,indxi,&
+         indxj,fcondtopn,fcondtopn_solve,fcondtopn_extra,hin,zTsn,zTin,hslyr)
 
       use ice_itd, only: hs_min
 

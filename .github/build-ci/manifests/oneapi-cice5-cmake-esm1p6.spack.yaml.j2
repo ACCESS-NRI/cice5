@@ -1,0 +1,16 @@
+spack:
+  specs:
+  - 'cice5@git.{{ ref }}=stable {{ esm1p6 }} ^openmpi@4'
+  - 'cice5@git.{{ ref }}=stable {{ esm1p6 }} ^openmpi@5'
+  - 'cice5@git.{{ ref }}=stable build_type=Debug {{ esm1p6 }}'
+  packages:
+    gcc-runtime:
+      require:
+        '%gcc'
+    all:
+      require:
+      - '%{{ oneapi_compiler }}'
+      - 'target={{ target }}'
+  concretizer:
+    unify: false
+  view: false
