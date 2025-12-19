@@ -117,7 +117,7 @@ $(EXEC): $(OBJS)
 	$(FC) -c $(FFLAGS) $(FIXEDFLAGS) $(INCS) $(INCLDIR) $*.f  
 
 .F90.o:
-	$(CPP) $(CPPFLAGS) $(CPPDEFS) $(INCS) $(INCLDIR) $< > $*.f90
+	$(FC) $(CPPFLAGS) $(CPPDEFS) $(INCS) $(INCLDIR) $< -o $*.f90
 	$(FC) -c $(FFLAGS) $(FREEFLAGS) $(INCS) $(INCLDIR) $*.f90  
 
 mostlyclean:
