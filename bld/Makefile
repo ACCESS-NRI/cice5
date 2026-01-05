@@ -81,6 +81,24 @@ ifneq ($(MAKECMDGOALS), db_files)
 endif
 
 #-------------------------------------------------------------------------------
+# detect compiler and set preprocessor flags
+#-------------------------------------------------------------------------------
+
+FC_VERSION := $(shell $(FC) --version 2>/dev/null)
+
+ifeq ($(findstring GNU Fortran,$(FC_VERSION)),GNU Fortran)
+  COMPILER = gfortran
+else ifneq ($(findstring Intel,$(FC_VERSION)),)
+  COMPILER = intel
+endif
+
+ifeq ($(COMPILER),gfortran)
+  FPPFLAG = -cpp
+else ifeq ($(COMPILER),intel)
+  FPPFLAG = -fpp
+endif
+
+#-------------------------------------------------------------------------------
 # echo file names, paths, compile flags, etc. used during build
 #-------------------------------------------------------------------------------
 
@@ -113,11 +131,11 @@ $(EXEC): $(OBJS)
 	cc $(CFLAGS) $(CPPDEFS) $(INCS) $(INCLDIR) $<
 
 .F.o:
-	$(CPP) $(CPPFLAGS) $(CPPDEFS) $(INCS) $(INCLDIR) $< > $*.f 
+	$(FC) $(FPPFLAG) $(CPPFLAGS) $(CPPDEFS) $(INCS) $(INCLDIR) $< > $*.f 
 	$(FC) -c $(FFLAGS) $(FIXEDFLAGS) $(INCS) $(INCLDIR) $*.f  
 
 .F90.o:
-	$(FC) $(CPPFLAGS) $(CPPDEFS) $(INCS) $(INCLDIR) $< > $*.f90
+	$(FC) $(FPPFLAG) $(CPPFLAGS) $(CPPDEFS) $(INCS) $(INCLDIR) $< > $*.f90
 	$(FC) -c $(FFLAGS) $(FREEFLAGS) $(INCS) $(INCLDIR) $*.f90  
 
 mostlyclean:
