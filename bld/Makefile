@@ -81,21 +81,21 @@ ifneq ($(MAKECMDGOALS), db_files)
 endif
 
 #-------------------------------------------------------------------------------
-# detect compiler and set preprocessor flags
+# detect compiler and find argument to preprocess only
 #-------------------------------------------------------------------------------
 
 FC_VERSION := $(shell $(FC) --version 2>/dev/null)
 
 ifeq ($(findstring GNU Fortran,$(FC_VERSION)),GNU Fortran)
   COMPILER = gfortran
-else ifneq ($(findstring Intel,$(FC_VERSION)),)
+else ifneq ($(findstring Intel,$(FC_VERSION)),) # this matches both ifx and ifort
   COMPILER = intel
 endif
 
 ifeq ($(COMPILER),gfortran)
-  FPPFLAG = -cpp
+  FPPFLAG = -cpp -E
 else ifeq ($(COMPILER),intel)
-  FPPFLAG = -fpp
+  FPPFLAG = -fpp -P
 endif
 
 #-------------------------------------------------------------------------------
