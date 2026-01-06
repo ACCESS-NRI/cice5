@@ -29,8 +29,8 @@
                            nt_Tsfc, nt_iage, nt_sice, nt_qice, nt_qsno, &
                            nt_apnd, nt_hpnd
       use ice_therm_shared, only: ktherm, ferrmax, heat_capacity, l_brine, &
-                                  calc_Tsfc, calculate_tin_from_qin, Tmin, &
-                                  cap_fluxes
+                           calc_Tsfc, calculate_tin_from_qin, Tmin, Tsnice,  &
+                           cap_fluxes
       use ice_therm_bl99, only: temperature_changes
       use ice_therm_0layer, only: zerolayer_temperature
       use ice_flux, only: Tf
@@ -91,7 +91,6 @@
                                   fcondbotn,              &
                                   fsensn,      flatn,     &
                                   flwoutn,                & 
-                                  ice_freeboardn,         &
                                   evapn,                  &
                                   evapn_ice,   evapn_snow,&
                                   freshn,      fsaltn,    &
@@ -101,7 +100,7 @@
                                   mlt_onset,   frz_onset, &
                                   yday,        l_stop,    &
                                   istop,       jstop,     &
-                                  dsnow)
+                                  dsnow,       Tsnice)
 
       use ice_communicate, only: my_task
       use ice_therm_mushy, only: temperature_changes_salinity
@@ -193,10 +192,7 @@
          snoice   , & ! snow-ice formation       (m/step-->cm/day) 
          dsnow    , & ! change in snow thickness (m/step-->cm/day) 
          mlt_onset, & ! day of year that sfc melting begins 
-         frz_onset, & ! day of year that freezing begins (congel or frazil) 
-         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
-                         ! above sea level in m
-
+         frz_onset    ! day of year that freezing begins (congel or frazil) 
 
       real (kind=dbl_kind), intent(in) :: &
          yday      ! day of year
@@ -221,6 +217,7 @@
 ! 2D state variables (thickness, temperature, enthalpy)
 
       real (kind=dbl_kind), dimension (icells) :: &
+         Tsnice      , & ! snow ice interface temperature (deg C), (diagnostic)
          hilyr       , & ! ice layer thickness
          hslyr       , & ! snow layer thickness
          Tsf         , & ! ice/snow top surface temp, same as Tsfcn (deg C)
@@ -286,7 +283,9 @@
          fhocnn (i,j) = c0
          fadvocn(i,j) = c0
          fcondbotn(i,j) = c0
-         ice_freeboardn(i,j) = c0
+         evapn_ice(i,j)= c0
+         evapn_snow(i,j)=c0
+
          meltt  (i,j) = c0
          meltb  (i,j) = c0
          melts  (i,j) = c0
@@ -461,25 +460,37 @@
 
       endif         ! heat_capacity
 
-      ! Alex West: Read 1D bottom conductive flux array into 2D array
-      ! for diagnostics (SIMIP)i
+      ! intermediate energy for error check
+      do ij = 1, icells
+         einter(ij) = c0
+         do k = 1, nslyr
+            einter(ij) = einter(ij) + hslyr(ij) * zqsn(ij,k)
+         enddo ! k
+         do k = 1, nilyr
+            einter(ij) = einter(ij) + hilyr(ij) * zqin(ij,k)
+         enddo ! k
+      enddo ! ij
+
+      ! Read 1D bottom conductive flux array into 2D array for diagnostics (SIMIP)
       do ij = 1, icells
          i = indxi(ij)
          j = indxj(ij)
          fcondbotn(i,j) = fcondbot(ij)
-      enddo
 
-
-            ! intermediate energy for error check
-            do ij = 1, icells
-               einter(ij) = c0
-               do k = 1, nslyr
-                  einter(ij) = einter(ij) + hslyr(ij) * zqsn(ij,k)
-               enddo ! k
-               do k = 1, nilyr
-                  einter(ij) = einter(ij) + hilyr(ij) * zqin(ij,k)
-               enddo ! k
-            enddo ! ij
+         ! Tsnice from https://github.com/CICE-Consortium/Icepack/blob/e9d626f0e5b743e143a2e87248a1aa22ee4f3751/columnphysics/icepack_therm_vertical.F90#L378C1-L385C12
+         ! Tsnice is :
+          if (hslyr(ij) > puny) then
+            ! interface temperature is taken by assumming a linear temperature gradient between temperature at
+            ! middle of top ice layer & middle of bottom snow layer temperatures,
+            ! weighted by the thickness of each layer (https://github.com/CICE-Consortium/Icepack/pull/542) 
+             Tsnice(ij) = Tsnice(ij) + aicen(i,j)*(&
+                (hilyr(ij)*zTsn(ij,nslyr) + hslyr(ij)*zTin(ij,1)) &
+                / (hslyr(ij)+hilyr(ij)) &
+                )
+          else
+             Tsnice(ij) = Tsnice(ij) + aicen(i,j)*Tsf(ij)
+          endif
+       enddo
 
       if (l_stop) return
 
@@ -500,7 +511,6 @@
                                 fbot,         Tbot,     &
                                 flatn,        fsurfn,   &
                                 fcondtopn,    fcondbot, &
-                                ice_freeboardn,         &
                                 fsnow,        hsn_new,  &
                                 fhocnn,       evapn,    &
                                 evapn_ice,    evapn_snow,&
@@ -1455,7 +1465,6 @@
                                     fbot,      Tbot,     &
                                     flatn,     fsurfn,   &
                                     fcondtopn, fcondbot, &
-                                    ice_freeboardn,      &
                                     fsnow,     hsn_new,  &
                                     fhocnn,    evapn,    &
                                     evapn_ice, evapn_snow,&
@@ -1517,10 +1526,7 @@
          dsnow       , & ! snow  formation          (m/step-->cm/day)
          iage        , & ! ice age (s)
          mlt_onset   , & ! day of year that sfc melting begins
-         frz_onset   , & ! day of year that freezing begins (congel or frazil)
-         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
-                         ! above sea level in m
-
+         frz_onset       ! day of year that freezing begins (congel or frazil)
 
       real (kind=dbl_kind), dimension (icells), &
          intent(inout) :: &
@@ -2034,7 +2040,7 @@
                       hin,      hsn,      &
                       zqin,     zqsn,     &
                       dzi,      dzs,      &
-                      dsnow,    ice_freeboardn)
+                      dsnow )
 
 !---!-------------------------------------------------------------------
 !---! Repartition the ice and snow into equal-thickness layers,
@@ -2237,7 +2243,7 @@
                             hin,      hsn,      &
                             zqin,     zqsn,     &
                             dzi,      dzs,      &
-                            dsnow,    ice_freeboardn)
+                            dsnow )
 
       integer (kind=int_kind), intent(in) :: &
          nx_block, ny_block, & ! block dimensions
@@ -2255,12 +2261,6 @@
          snoice  , & ! snow-ice formation       (m/step-->cm/day)
          dsnow   , & ! change in snow thickness after snow-ice formation (m)
          iage        ! snow thickness (m)
-
-      real (kind=dbl_kind), dimension(nx_block,ny_block), &
-         intent(inout) :: &
-         ice_freeboardn  ! height of ice surface (i.e. not snow surface)
-                         ! above sea level in m
-
 
       real (kind=dbl_kind), dimension (icells), &
          intent(inout) :: &
@@ -2369,16 +2369,6 @@
             snoice(i,j) = snoice(i,j) + dhin(ij)
          endif               ! dhin > puny
       enddo                  ! ij
-
-      ! Calculate diagnostic sea ice freeboard after adjustments (SIMIP)
-      do ij = 1, icells
-         i = indxi(ij)
-         j = indxj(ij)
-
-         ice_freeboardn(i,j) = &
-            hin(ij) * (1 - rhoi / rhow)  -  hsn(ij) * (rhos / rhow)
-      enddo
-
 
       end subroutine freeboard
 

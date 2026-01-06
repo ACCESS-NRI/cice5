@@ -147,7 +147,7 @@
       call sst_sss              ! POP data for CICE initialization
 #endif 
       call init_thermo_vertical ! initialize vertical thermodynamics
-      call init_itd(calc_Tsfc, heat_capacity)! initialize ice thickness distribution
+      call init_itd(heat_capacity)! initialize ice thickness distribution
       call calendar(time)       ! determine the initial date
 
 !ars599: 11042014: remove most of the lines based on cice4.1_fm

@@ -423,9 +423,9 @@ else
     case (4); myvar = 'FICEBERG_GC3_AVE'
   end select
   write(il_out,*)'(get_lice_discharge), iceberg = ', iceberg
-  write(il_out,'(a,a)') '(get_lice_discharge) reading in iceberg data, myvar= ',trim(myvar)
+  ! write(il_out,'(a,a)') '(get_lice_discharge) reading in iceberg data, myvar= ',trim(myvar)
   do im = 1, 12
-    write(il_out,*) '(get_lice_discharge) reading in data, month= ',im
+    ! write(il_out,*) '(get_lice_discharge) reading in data, month= ',im
     call ice_read_nc(ncid_i2o, im, trim(myvar), vwork, dbug)
 
     ! Restrict iceberg fluxes to ocean points
