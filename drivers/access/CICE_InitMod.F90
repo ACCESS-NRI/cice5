@@ -67,7 +67,9 @@
       use ice_algae, only: get_forcing_bgc
       use ice_calendar, only: dt, dt_dyn, time, istep, istep1, write_ic, &
           init_calendar, calendar, idate, month
-      use ice_communicate, only: MPI_COMM_ICE, init_communicate
+      use ice_communicate, only: MPI_COMM_ICE
+      use ice_communicate, only: init_communicate
+      use ice_coupling, only: top_layer_Tandk_init
       use ice_diagnostics, only: init_diags
       use ice_domain, only: init_domain_blocks
       use ice_dyn_eap, only: init_eap
@@ -94,9 +96,6 @@
       use ice_zbgc_shared, only: skl_bgc
 #ifdef popcice
       use drv_forcing, only: sst_sss
-#endif
-#ifdef ACCESS
-      use ice_coupling, only: top_layer_Tandk_init
 #endif
 
 #ifdef AusCOM
@@ -367,16 +366,12 @@
          call restartfile()           ! given by pointer in ice_in
 !ars599: 11042014: markout call calendar
 !	according to dhb599 initmod at cice4.1_fm
-#ifdef ACCESS
          ! TODO: 'time' argument in the calendar call below affects frz_onset output.
          ! Hardcoding time=0.0 gives the same results as the older CM2 based calendar
          ! initialisation.
          ! See https://github.com/ACCESS-NRI/cice5/issues/49
          ! and https://github.com/ACCESS-NRI/cice5/pull/48 for details.
          call calendar(0.0)          ! update time parameters
-#else
-         call calendar(time)          ! update time parameters
-#endif
          if (kdyn == 2) call read_restart_eap ! EAP
       else if (restart) then          ! ice_ic = core restart file
          call restartfile (ice_ic)    !  or 'default' or 'none'

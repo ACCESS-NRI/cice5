@@ -85,7 +85,7 @@ subroutine ice_write_hist (ns)
 
       ! local variables
 
-      real (kind=real_kind) :: ltime                 !history timestamp in days
+      real (kind=dbl_kind) :: ltime                 !history timestamp in days
       character (char_len_long) :: ncfile(max_nstrm) !filenames
       character (char_len) :: time_string            !model time for logging
       logical :: file_exists
@@ -311,7 +311,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
     ! define coordinate variables
     !-----------------------------------------------------------------
 
-      call check(nf90_def_var(ncid,'time',nf90_float,timid,varid), &
+      call check(nf90_def_var(ncid,'time',nf90_double,timid,varid), &
                     'def var time')
       call check(nf90_put_att(ncid,varid,'long_name','model time'), &
                   'put_att long_name')

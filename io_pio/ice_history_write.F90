@@ -78,7 +78,7 @@
 
       ! local variables
 
-      real (kind=real_kind) :: ltime                 !history timestamp in days
+      real (kind=dbl_kind) :: ltime                 !history timestamp in days
       character (char_len_long) :: ncfile(max_nstrm), filename !filenames
       character (char_len) :: time_string            !model time for logging
       logical :: file_exists
@@ -286,7 +286,7 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
       ! define coordinate variables
       !-----------------------------------------------------------------
 
-      call ice_pio_check(pio_def_var(File,'time',pio_real,(/timid/),varid), &
+      call ice_pio_check(pio_def_var(File,'time',pio_double,(/timid/),varid), &
                   'def var time')
       call ice_pio_check(pio_put_att(File,varid,'long_name','model time'), &
                   'put_att long_name')

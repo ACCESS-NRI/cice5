@@ -150,6 +150,7 @@ if ( file_exist(fname) ) then
   call ice_read_nc(ncid, nrec, 'press_i', um_press,  dbug)
   call ice_read_nc(ncid, nrec, 'co2_ai', um_co2,  dbug)
   call ice_read_nc(ncid, nrec, 'wnd_ai', um_wnd,  dbug)
+
   if (my_task == master_task) call ice_close_nc(ncid)
 else
   if (my_task==0) then
