@@ -185,7 +185,7 @@
           fswthru, meltt, melts, meltb, meltl, congel, snoice, &
           merge_fluxes, evap_ice, evap_snow
       use ice_firstyear, only: update_FYarea
-      use ice_grid, only: lmask_n, lmask_s, TLAT, TLON
+      use ice_grid, only: lmask_n, lmask_s, TLAT, TLON, tmask
       use ice_itd, only: hi_min
       use ice_meltpond_cesm, only: compute_ponds_cesm
       use ice_meltpond_lvl, only: compute_ponds_lvl, ffracn, dhsn, &

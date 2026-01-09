@@ -824,7 +824,9 @@
          if (vhistfreq(ns1:ns1) == histfreq(ns)) then
 
             if (ns1 > 1 .and. index(vhistfreq(1:ns1-1),'x') /= 0) then
-               call abort_ice(subname//' ERROR: history frequency variable f_' // vname // ' can''t contain ''x'' along with active frequencies')
+               call abort_ice(subname// &
+                  ' ERROR: history frequency variable f_' // vname // &
+                  ' can''t contain ''x'' along with active frequencies')
             endif
 
             num_avail_hist_fields_tot = num_avail_hist_fields_tot + 1

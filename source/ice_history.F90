@@ -81,7 +81,7 @@
       use ice_zbgc_shared, only: skl_bgc
       use ice_fileunits, only: goto_nml
 
-#ifdef AusCOM
+#ifdef ACCESS
       use cpl_parameters, only: do_scale_fluxes
 #endif
 
@@ -246,7 +246,7 @@
         if ( f_sisnthick /= 'x' ) call abort_ice("f_sisnthick not available, set to 'x'")
 #endif
 
-#ifdef AusCOM
+#ifdef ACCESS
         if ( .not. do_scale_fluxes ) then
             ! normal case is these are scaled in place to ice area average, 
             ! however without do_scale_fluxes, these are grid cell averages
@@ -1133,12 +1133,14 @@
 
          call define_hist_field(n_sisnconc,"sisnconc","%",tstr2D, tcstr, &
              "Snow Area Percentage",                             &
-             "area weighted average of Percentage of the sea-ice surface that is covered by snow", c100, c0,                                    &
+             "area weighted average of Percentage of the sea-ice surface that"//&
+             " is covered by snow", c100, c0,                                    &
              ns1, f_sisnconc, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sisnthick,"sisnthick","m",tstr2D, tcstr,    &
              "Snow Thickness",                            &
-             "area weighted average of actual thickness of snow over the snow-covered part of the sea ice", c1, c0, &
+             "area weighted average of actual thickness of snow over the "//&
+             "snow-covered part of the sea ice", c1, c0, &
              ns1, f_sisnthick, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sisnmass,"sisnmass","kg m^-2",tstr2D, tcstr,    &
@@ -2051,9 +2053,15 @@
          if (f_Tair   (1:1) /= 'x') &
              call accum_hist_field(n_Tair,   iblk, Tair(:,:,iblk), a2D)
          if (f_Tref   (1:1) /= 'x') &
+#ifdef ACCESS
              call accum_hist_field(n_Tref,   iblk, Tref(:,:,iblk)*workb(:,:), a2D)
          if (f_Qref   (1:1) /= 'x') &
              call accum_hist_field(n_Qref,   iblk, Qref(:,:,iblk)*workb(:,:), a2D)
+#else
+             call accum_hist_field(n_Tref,   iblk, Tref(:,:,iblk), a2D)
+         if (f_Qref   (1:1) /= 'x') &
+             call accum_hist_field(n_Qref,   iblk, Qref(:,:,iblk), a2D)    
+#endif
          if (f_congel (1:1) /= 'x') &
              call accum_hist_field(n_congel, iblk, congel(:,:,iblk), a2D)
          if (f_frazil (1:1) /= 'x') &

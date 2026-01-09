@@ -29,8 +29,8 @@
                            nt_Tsfc, nt_iage, nt_sice, nt_qice, nt_qsno, &
                            nt_apnd, nt_hpnd
       use ice_therm_shared, only: ktherm, ferrmax, heat_capacity, l_brine, &
-                           calc_Tsfc, calculate_tin_from_qin, Tmin, Tsnice,  &
-                           cap_fluxes
+                                  calc_Tsfc, calculate_tin_from_qin, Tmin, Tsnice, &
+                                  cap_fluxes
       use ice_therm_bl99, only: temperature_changes
       use ice_therm_0layer, only: zerolayer_temperature
       use ice_flux, only: Tf
@@ -285,7 +285,6 @@
          fcondbotn(i,j) = c0
          evapn_ice(i,j)= c0
          evapn_snow(i,j)=c0
-
          meltt  (i,j) = c0
          meltb  (i,j) = c0
          melts  (i,j) = c0

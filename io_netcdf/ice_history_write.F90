@@ -7,7 +7,7 @@
 !         Elizabeth C. Hunke and William H. Lipscomb, LANL
 !         C. M. Bitz, UW
 !
-! 2004 WHL: Block structure added 
+! 2004 WHL: Block structure added
 ! 2006 ECH: Accepted some CCSM code into mainstream CICE
 !           Added ice_present, aicen, vicen; removed aice1...10, vice1...1.
 !           Added histfreq_n and histfreq='h' options, removed histfreq='w'
@@ -38,7 +38,7 @@ module ice_history_write
     use ice_history_shared
     use ice_itd, only: hin_max
     use ice_calendar, only: write_ic, histfreq
-    use ice_fileunits, only: nu_diag, ice_stderr, ice_stdout
+
 
     implicit none
     private
@@ -76,7 +76,7 @@ module ice_history_write
 !
 ! author:   Elizabeth C. Hunke, LANL
 
-      subroutine ice_write_hist (ns)
+subroutine ice_write_hist (ns)
 
       use ice_calendar, only: time, month, daymo
       use ice_fileunits, only: nu_diag
@@ -482,11 +482,11 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
         enddo
 
 
-        ! Extra dimensions (NCAT, NZILYR, NZSLYR, NZBLYR)       
-          dimidex(1)=cmtid
-          dimidex(2)=kmtidi
-          dimidex(3)=kmtids
-          dimidex(4)=kmtidb
+        ! Extra dimensions (NCAT, NZILYR, NZSLYR, NZBLYR)
+        dimidex(1)=cmtid
+        dimidex(2)=kmtidi
+        dimidex(3)=kmtids
+        dimidex(4)=kmtidb
 
         do i = 1, nvarz
             if (igrdz(i)) then
@@ -663,17 +663,18 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                     if (TRIM(avail_hist_fields(n)%vname)/='sig1' .or. &
                         TRIM(avail_hist_fields(n)%vname)/='sig2') then
                         if (avail_hist_fields(n)%avg_ice_present) then
-                        call check(nf90_put_att(ncid,varid,'cell_methods',&
-                            'area: time: mean where sea_ice (mask=siconc)'), &
-                            'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                            call check(nf90_put_att(ncid,varid,'cell_methods',&
+                                'area: time: mean where sea_ice (mask=siconc)'), &
+                                'put att cell methods time mean '//avail_hist_fields(n)%vname)
                         else
-                        if (TRIM(avail_hist_fields(n)%vname(1:2))/='si') then !native diags
-                            call check(nf90_put_att(ncid,varid,'cell_methods','time: mean'), &
-                            'put att cell methods time mean '//avail_hist_fields(n)%vname)
-                        else !cmip diags
-                            call check(nf90_put_att(ncid,varid,'cell_methods', &
-                            'area: mean where sea time: mean'), &
-                            'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                            if (TRIM(avail_hist_fields(n)%vname(1:2))/='si') then !native diags
+                                call check(nf90_put_att(ncid,varid,'cell_methods','time: mean'), &
+                                'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                            else !cmip diags
+                                call check(nf90_put_att(ncid,varid,'cell_methods', &
+                                'area: mean where sea time: mean'), &
+                                'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                            endif
                         endif
                     endif
                 endif
@@ -1122,9 +1123,9 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
         write(title,'(a,i3,a)') 'This Year Has ',int(dayyr),' days'
 #else
         if (use_leap_years) then
-          write(title,'(a,i3,a)') 'This year has ',int(dayyr),' days'
+            write(title,'(a,i3,a)') 'This year has ',int(dayyr),' days'
         else
-          write(title,'(a,i3,a)') 'All years have exactly ',int(dayyr),' days'
+            write(title,'(a,i3,a)') 'All years have exactly ',int(dayyr),' days'
         endif
 #endif
         call check(nf90_put_att(ncid,nf90_global,'comment',title), &
@@ -1189,31 +1190,31 @@ subroutine write_coordinate_variables(ncid, coord_var, var_nz)
         if (my_task == master_task) coord_var_name = coord_var(i)%short_name
         call broadcast_scalar(coord_var_name, master_task)
         SELECT CASE (coord_var_name)
-            CASE ('TLON')
-              ! Convert T grid longitude from -180 -> 180 to 0 to 360
-              work1 = TLON*rad_to_deg + c360
-              where (work1 > c360) work1 = work1 - c360
-              where (work1 < c0 )  work1 = work1 + c360
-              call gather_global(work_g1,work1,master_task,distrb_info)
-            CASE ('TLAT')
-              work1 = TLAT*rad_to_deg
-              call gather_global(work_g1,work1,master_task,distrb_info)
-            CASE ('ULON')
-              work1 = ULON*rad_to_deg
-              call gather_global(work_g1,work1,master_task,distrb_info)
-            CASE ('ULAT')
-              work1 = ULAT*rad_to_deg
-              call gather_global(work_g1,work1,master_task,distrb_info)
-          END SELECT
+        CASE ('TLON')
+            ! Convert T grid longitude from -180 -> 180 to 0 to 360
+            work1 = TLON*rad_to_deg + c360
+            where (work1 > c360) work1 = work1 - c360
+            where (work1 < c0 )  work1 = work1 + c360
+            call gather_global(work_g1,work1,master_task,distrb_info)
+        CASE ('TLAT')
+            work1 = TLAT*rad_to_deg
+            call gather_global(work_g1,work1,master_task,distrb_info)
+        CASE ('ULON')
+            work1 = ULON*rad_to_deg
+            call gather_global(work_g1,work1,master_task,distrb_info)
+        CASE ('ULAT')
+            work1 = ULAT*rad_to_deg
+            call gather_global(work_g1,work1,master_task,distrb_info)
+        END SELECT
 
-          if (my_task == master_task) then
+        if (my_task == master_task) then
             work_gr = work_g1
             call check(nf90_inq_varid(ncid, coord_var_name, varid), &
                         'inq varid '//coord_var_name)
             call check(nf90_put_var(ncid,varid,work_gr), &
                         'put var '//coord_var_name)
-          endif
-        enddo
+        endif
+    enddo
 
     ! Extra dimensions (NCAT, VGRD*)
     if (my_task == master_task) then
@@ -1274,9 +1275,9 @@ subroutine write_grid_variables(ncid, var, var_nverts)
     work_gr(:,:) = c0
     work_gr3(:,:,:) = c0
 
-      if (igrd(n_tmask)) then
-      call gather_global(work_g1, hm, master_task, distrb_info)
-      if (my_task == master_task) then
+    if (igrd(n_tmask)) then
+        call gather_global(work_g1, hm, master_task, distrb_info)
+        if (my_task == master_task) then
             work_gr = work_g1
             call check(nf90_inq_varid(ncid, 'tmask', varid), &
                        'inq var tmask')
@@ -1399,30 +1400,30 @@ subroutine write_2d_variables(ns, ncid, i_time)
 
     if (my_task == master_task) then
        allocate(work_g1(nx_global,ny_global))
-         allocate(work_gr(nx_global,ny_global))
-      else
+       allocate(work_gr(nx_global,ny_global))
+    else
        allocate(work_g1(1,1))
-         allocate(work_gr(1,1))     ! to save memory
-      endif
+       allocate(work_gr(1,1))     ! to save memory
+    endif
 
-      work_gr(:,:) = c0
-      work_g1(:,:) = c0
+    work_gr(:,:) = c0
+    work_g1(:,:) = c0
 
     do n=1, num_avail_hist_fields_2D
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-          call gather_global(work_g1, a2D(:,:,n,:), &
-                             master_task, distrb_info)
-          if (my_task == master_task) then
-            work_gr(:,:) = work_g1(:,:)
+            call gather_global(work_g1, a2D(:,:,n,:), &
+                               master_task, distrb_info)
+            if (my_task == master_task) then
+                work_gr(:,:) = work_g1(:,:)
                 call check(nf90_inq_varid(ncid,avail_hist_fields(n)%vname,varid), &
                            'inq varid '//avail_hist_fields(n)%vname)
                 call check(nf90_put_var(ncid,varid,work_gr(:,:), &
                                         start=(/1,1,i_time/), &
                                         count=(/nx_global,ny_global/)), &
                             'put var '//avail_hist_fields(n)%vname)
-          endif
+            endif
         endif
-      enddo ! num_avail_hist_fields_2D
+    enddo ! num_avail_hist_fields_2D
 
     deallocate(work_g1)
     deallocate(work_gr)
@@ -1448,161 +1449,161 @@ subroutine write_3d_and_4d_variables(ns, ncid, i_time)
        allocate(work_gr(1,1))     ! to save memory
     endif
 
-      work_gr(:,:) = c0
-      work_g1(:,:) = c0
+    work_gr(:,:) = c0
+    work_g1(:,:) = c0
 
-      do n = n2D + 1, n3Dccum
+    do n = n2D + 1, n3Dccum
         nn = n - n2D
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-          if (my_task == master_task) then
+            if (my_task == master_task) then
                 call check(nf90_inq_varid(ncid,avail_hist_fields(n)%vname,varid), &
                            'inq varid '//avail_hist_fields(n)%vname)
-          endif
-          do k = 1, ncat_hist
-             call gather_global(work_g1, a3Dc(:,:,k,nn,:), &
-                                master_task, distrb_info)
-             work_gr(:,:) = work_g1(:,:)
+            endif
+            do k = 1, ncat_hist
+                call gather_global(work_g1, a3Dc(:,:,k,nn,:), &
+                                   master_task, distrb_info)
+                work_gr(:,:) = work_g1(:,:)
 
-             if (my_task == master_task) then
+                if (my_task == master_task) then
                     call check(nf90_put_var(ncid,varid,work_gr(:,:), &
                                             start=(/1,1,k,i_time/), &
                                             count=(/nx_global,ny_global, 1/)), &
                                'put var '//avail_hist_fields(n)%vname)
-             endif
-          enddo ! k
+                endif
+            enddo ! k
         endif
-      enddo ! num_avail_hist_fields_3Dc
+    enddo ! num_avail_hist_fields_3Dc
 
-      work_gr(:,:) = c0
-      work_g1(:,:) = c0
+    work_gr(:,:) = c0
+    work_g1(:,:) = c0
 
-      do n = n3Dccum+1, n3Dzcum
+    do n = n3Dccum+1, n3Dzcum
         nn = n - n3Dccum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-          if (my_task == master_task) then
+            if (my_task == master_task) then
                 call check(nf90_inq_varid(ncid,avail_hist_fields(n)%vname,varid), &
                            'inq varid '//avail_hist_fields(n)%vname)
-          endif
-          do k = 1, nzilyr
-             call gather_global(work_g1, a3Dz(:,:,k,nn,:), &
-                                master_task, distrb_info)
-             work_gr(:,:) = work_g1(:,:)
+            endif
+            do k = 1, nzilyr
+                call gather_global(work_g1, a3Dz(:,:,k,nn,:), &
+                                  master_task, distrb_info)
+                work_gr(:,:) = work_g1(:,:)
 
-             if (my_task == master_task) then
+                if (my_task == master_task) then
                     call check(nf90_put_var(ncid,varid,work_gr(:,:), &
                                             start=(/1,1,k,i_time/), &
                                             count=(/nx_global,ny_global,1/)), &
                                'put var '//avail_hist_fields(n)%vname)
-           endif
-           enddo ! k
+                endif
+            enddo ! k
         endif
-      enddo ! num_avail_hist_fields_3Dz
+    enddo ! num_avail_hist_fields_3Dz
 
-      work_gr(:,:) = c0
-      work_g1(:,:) = c0
+    work_gr(:,:) = c0
+    work_g1(:,:) = c0
 
-     do n = n3Dzcum+1, n3Dbcum
+    do n = n3Dzcum+1, n3Dbcum
         nn = n - n3Dzcum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-          if (my_task == master_task) then
+            if (my_task == master_task) then
                 call check(nf90_inq_varid(ncid,avail_hist_fields(n)%vname,varid), &
                            'inq varid '//avail_hist_fields(n)%vname)
-          endif
-          do k = 1, nzblyr
-             call gather_global(work_g1, a3Db(:,:,k,nn,:), &
-                                master_task, distrb_info)
-             work_gr(:,:) = work_g1(:,:)
+            endif
+            do k = 1, nzblyr
+                call gather_global(work_g1, a3Db(:,:,k,nn,:), &
+                                  master_task, distrb_info)
+                work_gr(:,:) = work_g1(:,:)
 
-             if (my_task == master_task) then
+                if (my_task == master_task) then
                     call check(nf90_put_var(ncid,varid,work_gr(:,:),    &
                                             start=(/1,1,k,i_time/), &
                                             count=(/nx_global,ny_global,1/)), &
                                'put var '//avail_hist_fields(n)%vname)
-           endif
-           enddo ! k
+                endif
+             enddo ! k
         endif
-      enddo ! num_avail_hist_fields_3Db
+    enddo ! num_avail_hist_fields_3Db
 
-      work_gr(:,:) = c0
-      work_g1(:,:) = c0
+    work_gr(:,:) = c0
+    work_g1(:,:) = c0
 
-      do n = n3Dbcum+1, n4Dicum
+    do n = n3Dbcum+1, n4Dicum
         nn = n - n3Dbcum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-          if (my_task == master_task) then
+            if (my_task == master_task) then
                 call check(nf90_inq_varid(ncid,avail_hist_fields(n)%vname,varid), &
                            'inq varid '//avail_hist_fields(n)%vname)
-          endif
-          do ic = 1, ncat_hist
-             do k = 1, nzilyr
-                call gather_global(work_g1, a4Di(:,:,k,ic,nn,:), &
-                                master_task, distrb_info)
-                work_gr(:,:) = work_g1(:,:)
-                if (my_task == master_task) then
+            endif
+            do ic = 1, ncat_hist
+                do k = 1, nzilyr
+                    call gather_global(work_g1, a4Di(:,:,k,ic,nn,:), &
+                                    master_task, distrb_info)
+                    work_gr(:,:) = work_g1(:,:)
+                    if (my_task == master_task) then
                         call check(nf90_put_var(ncid,varid,work_gr(:,:), &
                                                 start=(/1,1,k,ic,i_time/), &
                                                 count=(/nx_global,ny_global,1, 1/)), &
                                    'put var '//avail_hist_fields(n)%vname)
-                endif
-             enddo ! k
-          enddo ! ic
+                    endif
+                enddo ! k
+            enddo ! ic
         endif
-      enddo ! num_avail_hist_fields_4Di
+    enddo ! num_avail_hist_fields_4Di
 
-      work_gr(:,:) = c0
-      work_g1(:,:) = c0
+    work_gr(:,:) = c0
+    work_g1(:,:) = c0
 
-      do n = n4Dicum+1, n4Dscum
+    do n = n4Dicum+1, n4Dscum
         nn = n - n4Dicum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-          if (my_task == master_task) then
+            if (my_task == master_task) then
                 call check(nf90_inq_varid(ncid,avail_hist_fields(n)%vname,varid), &
                            'inq var '//avail_hist_fields(n)%vname)
-          endif
-          do ic = 1, ncat_hist
-             do k = 1, nzslyr
-                call gather_global(work_g1, a4Ds(:,:,k,ic,nn,:), &
-                                master_task, distrb_info)
-                work_gr(:,:) = work_g1(:,:)
-                if (my_task == master_task) then
+            endif
+            do ic = 1, ncat_hist
+                do k = 1, nzslyr
+                    call gather_global(work_g1, a4Ds(:,:,k,ic,nn,:), &
+                                    master_task, distrb_info)
+                    work_gr(:,:) = work_g1(:,:)
+                    if (my_task == master_task) then
                         call check(nf90_put_var(ncid,varid,work_gr(:,:), &
                                                 start=(/1,1,k,ic,i_time/), &
                                                 count=(/nx_global,ny_global,1, 1/)), &
                                   'put var '//avail_hist_fields(n)%vname)
-                endif
-             enddo ! k
-          enddo ! ic
+                    endif
+                enddo ! k
+            enddo ! ic
         endif
-      enddo ! num_avail_hist_fields_4Ds
+    enddo ! num_avail_hist_fields_4Ds
 
-      work_gr(:,:) = c0
-      work_g1(:,:) = c0
+    work_gr(:,:) = c0
+    work_g1(:,:) = c0
 
-      do n = n4Dscum+1, n4Dbcum
+    do n = n4Dscum+1, n4Dbcum
         nn = n - n4Dscum
         if (avail_hist_fields(n)%vhistfreq == histfreq(ns) .or. write_ic) then
-          if (my_task == master_task) then
+            if (my_task == master_task) then
                 call check(nf90_inq_varid(ncid,avail_hist_fields(n)%vname,varid), &
                            'inq varid '//avail_hist_fields(n)%vname)
-          endif
-          do ic = 1, ncat_hist
-             do k = 1, nzblyr
-                call gather_global(work_g1, a4Db(:,:,k,ic,nn,:), &
-                                master_task, distrb_info)
-                work_gr(:,:) = work_g1(:,:)
-                if (my_task == master_task) then
+            endif
+            do ic = 1, ncat_hist
+                do k = 1, nzblyr
+                    call gather_global(work_g1, a4Db(:,:,k,ic,nn,:), &
+                                    master_task, distrb_info)
+                    work_gr(:,:) = work_g1(:,:)
+                    if (my_task == master_task) then
                         call check(nf90_put_var(ncid,varid,work_gr(:,:), &
                                                 start=(/1,1,k,ic,i_time/), &
                                                 count=(/nx_global,ny_global,1, 1/)), &
                                    'put var '//avail_hist_fields(n)%vname)
-                endif
-             enddo ! k
-          enddo ! ic
+                    endif
+                enddo ! k
+            enddo ! ic
         endif
-      enddo ! num_avail_hist_fields_4Db
+    enddo ! num_avail_hist_fields_4Db
 
-      deallocate(work_gr)
-      deallocate(work_g1)
+    deallocate(work_gr)
+    deallocate(work_g1)
 
 end subroutine write_3d_and_4d_variables
 
@@ -1656,7 +1657,7 @@ subroutine write_coordinate_variables_parallel(ncid, coord_var, var_nz)
                 call check(nf90_put_var(ncid, varid, (/(k, k=1, nzblyr)/)), &
                             'put var VGRDb')
             END SELECT
-      endif
+        endif
     enddo
 
 end subroutine write_coordinate_variables_parallel
