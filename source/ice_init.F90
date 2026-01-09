@@ -503,14 +503,16 @@
       endif
       call release_fileunit(nu_nml)
 
+
+      if (aicenmin == 99) then
+         aicenmin = puny
 #ifdef ACCESS
-      if (ktherm == 1 .and. aicenmin == 99) then
-         !Set a higher value
-         ! of aicenmin if we're using multilayers with UM-style coupling for stability.
-         aicenmin = 0.00001_dbl_kind
-      endif
+         if (ktherm == 1 .and. aicenmin == 99) then
+            ! Set a higher value of aicenmin if we're using multilayers with UM-style coupling for stability.
+            aicenmin = 0.00001_dbl_kind
+         endif
 #endif
-      if (aicenmin == 99) aicenmin = puny
+      endif
 
       !-----------------------------------------------------------------
       ! set up diagnostics output and resolve conflicts
