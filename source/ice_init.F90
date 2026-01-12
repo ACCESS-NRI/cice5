@@ -533,7 +533,7 @@
          end if
       else
          ! each task gets unique ice log filename when if test is true, for debugging
-         if (1 == 0) then
+         if ( .false. ) then
             call get_fileUnit(nu_diag)
             write(str,'(a,i4.4)') "ice.log.task_",my_task
             open(nu_diag,file=str)
@@ -551,16 +551,23 @@
             write(ice_stdout,*) 'Diagnostic output will be in file ',diag_file
             open (nu_diag, file=diag_file, status='unknown')
          endif
+         write(nu_diag,*) '--------------------------------'
+         write(nu_diag,*) '  CICE model diagnostic output  '
+         write(nu_diag,*) '--------------------------------'
+         write(nu_diag,*) ' '
       else
-         ! each task gets unique ice log filename.
-        call get_fileUnit(nu_diag)
-        write(str,'(a,i4.4)') "ice.log.task_",my_task
-        open(nu_diag,file=str)
+         ! each task gets unique ice log filename when if test is true, for debugging
+         if ( .false. ) then
+            call get_fileUnit(nu_diag)
+            write(str,'(a,i4.4)') "ice.log.task_",my_task
+            open(nu_diag,file=str)
+            write(nu_diag,*) '--------------------------------'
+            write(nu_diag,*) '  CICE model diagnostic output  '
+            write(nu_diag,*) '--------------------------------'
+            write(nu_diag,*) ' '
+         endif
       endif
-      write(nu_diag,*) '--------------------------------'
-      write(nu_diag,*) '  CICE model diagnostic output  '
-      write(nu_diag,*) '--------------------------------'
-      write(nu_diag,*) ' '
+
 
       if (trim(runtype) == 'continue') restart = .true.
       if (trim(runtype) /= 'continue' .and. (restart)) then
