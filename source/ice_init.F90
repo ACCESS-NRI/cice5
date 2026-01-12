@@ -546,21 +546,22 @@
       if (trim(diag_type) == 'file') call get_fileunit(nu_diag)
 #endif
 
-      if (my_task == master_task) then
-         if (trim(diag_type) == 'file') then
-            write(ice_stdout,*) 'Diagnostic output will be in file ',diag_file
-            open (nu_diag, file=diag_file, status='unknown')
-         endif
+      ! each task gets unique ice log filename when if test is true, for debugging
+      if ( .false. ) then
+         call get_fileUnit(nu_diag)
+         write(str,'(a,i4.4)') "ice.log.task_",my_task
+         open(nu_diag,file=str)
          write(nu_diag,*) '--------------------------------'
          write(nu_diag,*) '  CICE model diagnostic output  '
          write(nu_diag,*) '--------------------------------'
          write(nu_diag,*) ' '
       else
-         ! each task gets unique ice log filename when if test is true, for debugging
-         if ( .false. ) then
-            call get_fileUnit(nu_diag)
-            write(str,'(a,i4.4)') "ice.log.task_",my_task
-            open(nu_diag,file=str)
+         ! shared diag file
+         if (trim(diag_type) == 'file') then
+            write(ice_stdout,*) 'Diagnostic output will be in file ',diag_file
+            open (nu_diag, file=diag_file, status='unknown')
+         endif
+         if (my_task == master_task) then
             write(nu_diag,*) '--------------------------------'
             write(nu_diag,*) '  CICE model diagnostic output  '
             write(nu_diag,*) '--------------------------------'
