@@ -2577,7 +2577,16 @@
          ferr = abs(efinal(ij)-einit(ij)-einp) / dt
 
          if (ferr > ferrmax) then
+#ifdef ACCESS
+           if (ferr > 10.0 * ferrmax) then
+             l_stop = .true.
+             write(nu_diag,*) 'BBB: TOO BAD --- CICE is to stop!' 
+           else 
+             write(nu_diag,*) 'BBB: WARNING -- too big flux error --'
+           endif
+#else
             l_stop = .true.
+#endif
             istop = i
             jstop = j
 

@@ -921,7 +921,7 @@
           Cdn_atm_rdg(i,j) = ai * ctecar*tmp1/distrdg(i,j)*sca* &
                      (log(tmp1/iceruf)/log(zref/iceruf))**c2
 #else
-          Cdn_atm_rdg(i,j) = ai * ctecar*tmp1/distrdg(i,j)*sca* &
+          Cdn_atm_rdg(i,j) = ctecar*tmp1/distrdg(i,j)*sca* &
                      (log(tmp1*icerufi)/log(zref*icerufi))**c2
 #endif
             Cdn_atm_rdg(i,j) = min(Cdn_atm_rdg(i,j),camax)
