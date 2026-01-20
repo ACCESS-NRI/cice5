@@ -104,7 +104,7 @@
       use ice_meltpond_lvl, only: restart_pond_lvl, dpscale, frzpnd, &
                                   rfracmin, rfracmax, pndaspect, hs1
       use ice_aerosol, only: restart_aero
-      use ice_therm_shared, only: ktherm, calc_Tsfc, conduct, cap_fluxes
+      use ice_therm_shared, only: ktherm, calc_Tsfc, conduct, cap_fluxes, ferrmax
       use ice_therm_vertical, only: ustar_min, fbot_xfer_type, saltmax
       use ice_therm_mushy, only: a_rapid_mode, Rac_rapid_mode, aspect_rapid_mode, &
                                  dSdt_slow_mode, phi_c_slow_mode, &
@@ -163,7 +163,7 @@
 #ifdef AusCOM
         chio, ice_ref_salinity, ksno, aicenmin,                         &
 #endif
-        saltmax, dSdt_slow_mode, phi_c_slow_mode, phi_i_mushy
+        saltmax, dSdt_slow_mode, phi_c_slow_mode, phi_i_mushy, ferrmax
 
       namelist /dynamics_nml/ &
         kdyn,           ndte,           revised_evp,    yield_curve,    &
@@ -296,6 +296,8 @@
                              ! Only relevant if calc_Tsfc = .false.
       update_ocn_f = .false. ! include fresh water and salt fluxes for frazil
       ustar_min = 0.005      ! minimum friction velocity for ocean heat flux (m/s)
+      ferrmax = 1.0e-3_dbl_kind   ! max allowed energy flux error (W m-2)
+                                  ! recommend ferrmax < 0.01 W m-2
       l_mpond_fresh = .false.     ! logical switch for including meltpond freshwater
                                   ! flux feedback to ocean model
       fbot_xfer_type = 'constant' ! transfer coefficient type for ocn heat flux
