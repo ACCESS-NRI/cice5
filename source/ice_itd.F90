@@ -87,14 +87,9 @@
 ! authors: William H. Lipscomb and Elizabeth C. Hunke, LANL
 !          C. M. Bitz, UW
 
-      subroutine init_itd (calc_Tsfc, heat_capacity)   ! Alex West: added these two arguments
-                                                       ! as per Alison's changes.  
-						       ! Needed to control setting of
-						       ! aicenmin for use in 
-						       ! zap_small_areas
+      subroutine init_itd (heat_capacity)
 
       logical (kind=log_kind), intent(in) :: &
-         calc_Tsfc,        &       ! If T, calculate surface temp
          heat_capacity             ! If T, ice had nonzero heat capacity
 
       integer (kind=int_kind) :: &
