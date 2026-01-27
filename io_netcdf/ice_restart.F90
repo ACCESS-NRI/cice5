@@ -488,11 +488,6 @@
 
       ! local variables
 
-      integer (kind=int_kind) :: &
-        n,     &      ! number of dimensions for variable
-        varid, &      ! variable id
-        status        ! status variable from netCDF routine
-
       real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks) :: &
            work2              ! input array (real, 8-byte)
 
