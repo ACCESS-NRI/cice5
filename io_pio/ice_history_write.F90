@@ -150,7 +150,7 @@
       ! write time_bounds info
       !-----------------------------------------------------------------
 
-      if (hist_avg) then
+      if (hist_avg .and. histfreq(ns) /= '1') then
          time_bounds=(/time_beg(ns),time_end(ns)/)
          call ice_pio_check(pio_inq_varid(File,'time_bounds',varid), &
                      'inq varid time_bounds')
@@ -640,11 +640,23 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
                !---------------------------------------------------------------
                ! Add cell_methods attribute to variables if averaged
                !---------------------------------------------------------------
-               if (hist_avg) then
+               if (hist_avg .and. histfreq(ns) /= '1') then
                   if (TRIM(avail_hist_fields(n)%vname)/='sig1' .or. &
                      TRIM(avail_hist_fields(n)%vname)/='sig2') then
-                     call ice_pio_check(pio_put_att(File,varid,'cell_methods','time: mean'), &
+                     if (avail_hist_fields(n)%avg_ice_present) then
+                        call ice_pio_check(pio_put_att(File,varid,'cell_methods',&
+                           'area: time: mean where sea_ice (mask=siconc)'), &
+                           'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                     else
+                           if (TRIM(avail_hist_fields(n)%vname(1:2))/='si') then !native diags
+                              call ice_pio_check(pio_put_att(File,varid,'cell_methods','time: mean'), &
                               'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                           else !cmip diags
+                              call ice_pio_check(pio_put_att(File,varid,'cell_methods', &
+                              'area: mean where sea time: mean'), &
+                              'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                           endif
+                     endif
                   endif
                endif
 
@@ -1068,7 +1080,7 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
                !---------------------------------------------------------------
                ! Add cell_methods attribute to variables if averaged
                !---------------------------------------------------------------
-               if (hist_avg .and. histfreq(ns) /= '1' ) then
+               if (hist_avg .and. histfreq(ns) /= '1') then
                   status = pio_put_att(File,varid,'cell_methods','time: mean')
                   if (status /= nf90_noerr) call abort_ice( &
                      'Error defining cell methods for '//avail_hist_fields(n)%vname)
