@@ -1460,22 +1460,22 @@
 
          call define_hist_field(n_siflfwdrain,"siflfwdrain","kg m^-2 s^-1",tstr2D, tcstr, &
              "Freshwater Flux from Sea-Ice Surface", &  
-             "area weighted average, positive downward, per unit grid cell area", c1, c0,                            &
+             "area weighted average, positive downward, per sea ice area", c1, c0,                            &
              ns1, f_siflfwdrain, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sipr,"sipr","kg m^-2 s^-1",tstr2D, tcstr, &
              "Rainfall Rate over Sea Ice", &
-             "area weighted average, per unit grid cell area", c1, c0,                            &
+             "area weighted average, per sea ice area", c1, c0,                            &
               ns1, f_sipr, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_siflsaltbot,"siflsaltbot","kg m^-2 s^-1",tstr2D, tcstr, &
              "Salt Flux from Sea Ice", &
-             "area weighted average, positive downward, per unit grid cell area", c1, c0,                            &
+             "area weighted average, positive downward, per sea ice area", c1/dt, c0,                            &
              ns1, f_siflsaltbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_siflfwbot,"siflfwbot","kg m^-2 s^-1",tstr2D, tcstr, &
              "Freshwater Flux from Sea Ice", &
-             "area weighted average, positive downward, per unit grid cell area", c1, c0,                            &
+             "area weighted average, positive downward, per sea ice area", c1, c0,                            &
              ns1, f_siflfwbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sisaltmass,"sisaltmass","kg m^-2",tstr2D, tcstr, &
@@ -2686,15 +2686,8 @@
 
          if (f_sipr(1:1) /= 'x') then
            worka(:,:) = c0
-           do j = jlo, jhi
-           do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
-               ! intensive + grid box mean -> weight frain by aice twice (see f_frain_ai)
-                  worka(i,j) = aice(i,j,iblk)*aice_init(i,j,iblk)*frain(i,j,iblk)
-              endif
-           enddo
-           enddo
-           call accum_hist_field(n_sipr, iblk, worka(:,:), a2D)
+           ! intensive + grid box mean -> weight frain by aice
+           call accum_hist_field(n_sipr, iblk, aice(:,:,iblk)*frain(:,:,iblk), a2D)
          endif
 
          if (f_sifb(1:1) /= 'x') then
@@ -2730,8 +2723,8 @@
          endif
 
          if (f_siflsaltbot(1:1) /= 'x') &
-            ! intensive + grid box mean -> weight by aice again
-            call accum_hist_field(n_siflsaltbot, iblk, aice(:,:,iblk)*fsalt_ai(:,:,iblk), a2D)
+            ! intensive + ice area mean -> use weighted form
+            call accum_hist_field(n_siflsaltbot, iblk, fsalt_ai(:,:,iblk), a2D)
 
          if (f_sisaltmass(1:1) /= 'x') &
             ! extensive -> grid box mean
@@ -2739,19 +2732,16 @@
            call accum_hist_field(n_sisaltmass, iblk, vice(:,:,iblk), a2D) ! 
 
          if (f_siflfwbot(1:1) /= 'x') &
-            ! intensive + grid box mean -> weight by aice again
-            call accum_hist_field(n_siflfwbot, iblk, aice(:,:,iblk)*fresh_ai(:,:,iblk), a2D) 
+            ! intensive + ice area mean -> use weighted form
+            call accum_hist_field(n_siflfwbot, iblk, fresh_ai(:,:,iblk), a2D) 
 
          if (f_siflfwdrain(1:1) /= 'x') then
            worka(:,:) = c0
            do j = jlo, jhi
            do i = ilo, ihi
-              if (aice(i,j,iblk) > puny) then
                 ! to-do : drainage from meltpond
-                  ! intensive + grid box mean -> weight by aice again
-                 worka(i,j) = aice(i,j,iblk)*(melts(i,j,iblk) * rhos &
-                             + meltt(i,j,iblk) * rhoi)/dt
-              endif
+                ! intensive + ice area mean -> use weighted forms
+                worka(i,j) = (melts(i,j,iblk) * rhos + meltt(i,j,iblk) * rhoi)
            enddo
            enddo
            call accum_hist_field(n_siflfwdrain, iblk, worka(:,:), a2D)
