@@ -131,7 +131,7 @@ endif()
 if(CICE_DRIVER MATCHES "auscom")
   add_compile_definitions(AusCOM coupled)
 elseif(CICE_DRIVER MATCHES "access")
-  add_compile_defitions(ACCESS AusCOM coupled)
+  add_compile_definitions(ACCESS AusCOM coupled)
 endif()
 
 #[==============================================================================[
@@ -169,8 +169,12 @@ set(CICE_DRIVER_SOURCE "${CMAKE_SOURCE_DIR}/drivers/${CICE_DRIVER}")
 
 add_executable(cice    ${CICE_DRIVER_SOURCE}/CICE.F90)
 
+if(CICE_DRIVER MATCHES "auscom")
+  find_package(LIBACCESSOM2)
+  target_link_libraries(cice PUBLIC libaccessom2::accessom2 )
+endif()
+
 target_link_libraries(cice 
-  PUBLIC libaccessom2::accessom2
   PRIVATE 
   MPI::MPI_Fortran 
   PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP 
@@ -260,6 +264,7 @@ if(CICE_DRIVER MATCHES "access")
     ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
     ${CICE_DRIVER_SOURCE}/cpl_interface.F90
     ${CICE_DRIVER_SOURCE}/ice_constants.F90
+    ${CICE_DRIVER_SOURCE}/ice_coupling.F90
     ${CICE_DRIVER_SOURCE}/CICE_InitMod.F90
     ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
     ${CICE_DRIVER_SOURCE}/cpl_netcdf_setup.F90

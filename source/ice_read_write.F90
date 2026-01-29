@@ -1137,6 +1137,10 @@
          status = nf90_get_var( fid, varid, work_g1, &
                start=(/1,1,nrec/), & 
                count=(/nx,ny,1/) )
+         if (status /= nf90_noerr) then
+           call abort_ice ( & 
+            'ice_read_nc_xy: Cannot get variable '//trim(varname) )
+         endif
 #else
          if (.not. present(restart_ext)) then
             status = nf90_get_var( fid, varid, work_g2, &
@@ -1222,7 +1226,7 @@
            nrec              ! record number 
 
 #ifndef AusCOM
-     character (char_len) :: &
+      character (len=*), intent(in) :: & 
 #else
      character*(*), intent(in) :: &
 #endif
@@ -1315,6 +1319,10 @@
          status = nf90_get_var( fid, varid, work_g1, &
                start=(/1,1,1,nrec/), & 
                count=(/nx,ny,ncat,1/) )
+         if (status /= nf90_noerr) then
+           call abort_ice ( & 
+               'ice_read_nc_xyz: Cannot get variable '//trim(varname) )
+         endif
 #else
          if (.not. present(restart_ext)) then
             status = nf90_get_var( fid, varid, work_g2, &
@@ -1550,6 +1558,11 @@
                start=(/1,nrec/), & 
                count=(/nilyr,1/) )
 
+          if (status /= nf90_noerr) then
+           call abort_ice ( & 
+               'ice_read_nc_z: Cannot get variable '//trim(varname) )
+         endif
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------
@@ -1657,9 +1670,12 @@
          status = nf90_put_var( fid, varid, work_g1, &
                start=(/1,1,nrec/), & 
                count=(/nx,ny,1/) )
+
          if (status /= nf90_noerr) then
-            call abort_ice('ice: Error nf90_put_var in ice_write_nc_xy')
+           call abort_ice ( & 
+               'ice_write_nc_xy: Cannot put variable '//trim(nf90_strerror(status)) )
          endif
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------
@@ -1775,9 +1791,12 @@
          status = nf90_put_var( fid, varid, work_g1, &
                start=(/1,1,1,nrec/), & 
                count=(/nx,ny,ncat,1/) )
+
          if (status /= nf90_noerr) then
-            call abort_ice('ice: Error nf90_put_var in ice_write_nc_xyz')
+           call abort_ice ( & 
+               'ice_write_nc_xyz: Cannot put variable '//trim(nf90_strerror(status)) )
          endif
+
       endif                     ! my_task = master_task
 
     !-------------------------------------------------------------------
@@ -1929,7 +1948,6 @@
 #endif
       end subroutine ice_read_global_nc
 
-#ifdef AusCOM
 !=======================================================================
 !BOP
 !
@@ -2035,8 +2053,6 @@
 
       end subroutine ice_read_global_nc_3D
 
-#endif
-
 !=======================================================================
 
 ! Closes a netCDF file
@@ -2055,6 +2071,10 @@
 
       if (my_task == master_task) then
          status = nf90_close(fid)
+         if (status /= nf90_noerr) then
+           call abort_ice ( & 
+            'ice_close_nc: Error closing file '//trim(nf90_strerror(status)) )
+         endif
       endif
 #endif
 

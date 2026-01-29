@@ -35,9 +35,6 @@
                                         ! freshwater value needed for enthalpy
 #endif
          depressT  = 0.054_dbl_kind   ,&! Tf:brine salinity ratio (C/ppt)
-#ifndef AusCOM
-         dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
-#endif
          albocn    = 0.06_dbl_kind      ! ocean albedo
 
       real (kind=dbl_kind), parameter, public :: &
@@ -47,12 +44,8 @@
          radius    = 6.371e6_dbl_kind       ! <== mom4 constant
 
       real (kind=dbl_kind), parameter, public :: &
-        secday    = 86400.0_dbl_kind ,&! seconds in calendar day
-        viscosity_dyn = 1.79e-3_dbl_kind, & ! dynamic viscosity of brine (kg/m/s)
-#ifndef AusCOM
-         Tocnfrz   = -1.8_dbl_kind    ,&! freezing temp of seawater (C),
-                                        ! used as Tsfcn for open water
-#endif
+         secday    = 86400.0_dbl_kind ,&! seconds in calendar day
+         viscosity_dyn = 1.79e-3_dbl_kind, & ! dynamic viscosity of brine (kg/m/s)
          rhofresh  = 1000.0_dbl_kind  ,&! density of fresh water (kg/m^3)
          zvir      = 0.606_dbl_kind   ,&! rh2o/rair - 1.0
          vonkar    = 0.4_dbl_kind     ,&! von Karman constant
@@ -64,8 +57,6 @@
          Lfresh    = Lsub-Lvap        ,&! latent heat of melting of fresh ice (J/kg)
          Timelt    = 0.0_dbl_kind     ,&! melting temperature, ice top surface  (C)
          Tsmelt    = 0.0_dbl_kind     ,&! melting temperature, snow top surface (C)
-         !ice_ref_salinity = 4._dbl_kind ,&! (ppt)
-         ice_ref_salinity = 5._dbl_kind ,&! (ppt) <== mom4 ice_salt_concentration constant
 !        ocn_ref_salinity = 34.7_dbl_kind,&! (ppt)
 !        rho_air   = 1.2_dbl_kind     ,&! ambient air density (kg/m^3)
          spval_dbl = 1.0e30_dbl_kind    ! special value (double precision)
@@ -87,21 +78,27 @@
          ! kseaice is used only for zero-layer thermo
          kseaice= 2.00_dbl_kind  ,&! thermal conductivity of sea ice (W/m/deg)
                                    ! (used in zero layer thermodynamics option)
-         ksno   = 0.30_dbl_kind  ,&! thermal conductivity of snow  (W/m/deg)
-         hs_min = 1.e-4_dbl_kind ,&! min snow thickness for computing zTsn (m)
 #ifndef AusCOM
          snowpatch = 0.02_dbl_kind,&! parameter for fractional snow area (m)
 #endif
          zref   = 10._dbl_kind     ! reference height for stability (m)
-                    
-#ifdef AusCOM
-      ! in namelist therefore not parameter, which is counterintuitive,
-      ! since this modules name is ice_constants
-!ars599: 26032014: change to public
+#ifndef AusCOM
+      real (kind=dbl_kind), parameter, public :: &
+         !!! dragio    = 0.00536_dbl_kind ,&! ice-ocn drag coefficient
+         dragio    = 0.01_dbl_kind ,&!!! 20170922 test new value as per spo 
+         Tocnfrz   = -1.8_dbl_kind    ,&! freezing temp of seawater (C),
+                                        ! used as Tsfcn for open water
+         ice_ref_salinity = 5._dbl_kind, & ! reference salinity for ice–ocean exchanges (ppt)
+                                        ! n.b. CICE6 uses 4 ppt
+         ksno   = 0.3_dbl_kind          ! thermal conductivity of snow  (W/m/deg)
+#else
+      ! get these in ice_init from namelist
       real (kind=dbl_kind), public :: &
-         dragio   , & ! ice-ocn drag coefficient
-         Tocnfrz ! freezing temp of seawater (C),
-                 ! used as Tsfcn for open water
+         dragio   ,  & ! ice-ocn drag coefficient
+         Tocnfrz ,   & ! freezing temp of seawater (C),
+                       ! used as Tsfcn for open water
+         ice_ref_salinity, & ! reference salinity for ice–ocean exchanges (ppt)
+         ksno          ! thermal conductivity of snow  (W/m/deg)
 #endif
 
       ! weights for albedos 
@@ -157,6 +154,7 @@
         c20  = 20.0_dbl_kind, &
         c25  = 25.0_dbl_kind, &
 	c30  = 30.0_dbl_kind, &
+        c60  = 60.0_dbl_kind, &
         c100 = 100.0_dbl_kind, &
         c114 = 114.0_dbl_kind, &
         c180 = 180.0_dbl_kind, &

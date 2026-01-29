@@ -57,10 +57,8 @@
          Cdn_atm_ratio   ! ratio drag atm / neutral drag atm
 !ars599: 24092014 (CODE: petteri)
       ! tuning parameters, set in namelist
-#ifdef AusCOM
       real (kind=dbl_kind), public :: &
          iceruf    ! ice surface roughness (m)
-#endif
 
 !=======================================================================
 
@@ -767,20 +765,18 @@
 
       real (kind=dbl_kind), parameter :: &
          ocnruf   = 0.000327_dbl_kind, & ! ocean surface roughness (m)
-!ars599: 24092014 (CODE: petteri)
-#ifdef AusCOM
-         ocnrufi  = c1/ocnruf    ! inverse ocean roughness
-#else
-         ocnrufi  = c1/ocnruf, & ! inverse ocean roughness
-         icerufi  = c1/iceruf    ! inverse ice roughness
-#endif
+         ocnrufi  = c1/ocnruf            ! inverse ocean roughness
+
 
       real (kind=dbl_kind), parameter :: &
          camax    = 0.02_dbl_kind , & ! Maximum for atmospheric drag
          cwmax    = 0.06_dbl_kind     ! Maximum for ocean drag
 
+#if !defined(AusCOM) || defined(ACCESS)
+      real (kind=dbl_kind) :: icerufi                 ! inverse ice roughness
+      icerufi  = c1/iceruf
+#endif
       astar = c1/(c1-(Lmin/Lmax)**(c1/beta))
-
 
       !-----------------------------------------------------------------
       ! Initialize across entire grid
@@ -921,12 +917,11 @@
           if (tmp1 > puny) then
             sca = c1 - exp(-sHGB*distrdg(i,j)/tmp1) ! see Eq. 9
             ctecar = cra*p5
-!ars599: 24092014 (CODE: petteri)
-#ifdef AusCOM
+#if defined(AusCOM) && !defined(ACCESS)
           Cdn_atm_rdg(i,j) = ai * ctecar*tmp1/distrdg(i,j)*sca* &
                      (log(tmp1/iceruf)/log(zref/iceruf))**c2
 #else
-          Cdn_atm_rdg(i,j) = ai * ctecar*tmp1/distrdg(i,j)*sca* &
+          Cdn_atm_rdg(i,j) = ctecar*tmp1/distrdg(i,j)*sca* &
                      (log(tmp1*icerufi)/log(zref*icerufi))**c2
 #endif
             Cdn_atm_rdg(i,j) = min(Cdn_atm_rdg(i,j),camax)
@@ -956,11 +951,11 @@
             ctecwk = crw*p5
 
 !ars599: 24092014 (CODE: petteri)
-#ifdef AusCOM
+#if defined(AusCOM) && !defined(ACCESS)
           Cdn_ocn_keel(i,j) = ctecwk*ai*tmp1/dkeel(i,j)*scw* &
                      (log(tmp1/iceruf)/log(zref/iceruf))**c2  
 #else
-          Cdn_ocn_keel(i,j) = ctecwk*ai*tmp1/dkeel(i,j)*scw* &
+          Cdn_ocn_keel(i,j) = ctecwk*tmp1/dkeel(i,j)*scw* &
                      (log(tmp1*icerufi)/log(zref*icerufi))**c2  
 #endif
             Cdn_ocn_keel(i,j) = max(min(Cdn_ocn_keel(i,j),cwmax),c0)

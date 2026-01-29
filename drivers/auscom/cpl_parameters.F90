@@ -6,6 +6,12 @@ use ice_kinds_mod
 
 implicit none
 
+#ifdef __INTEL_COMPILER
+    ! for intel runtime errors
+    ! see https://www.intel.com/content/www/us/en/docs/fortran-compiler/developer-guide-reference/2025-2/list-of-runtime-error-messages.html
+    include "for_iosdef.for"
+#endif
+
     integer(kind=int_kind) :: nt_cells                   ! nx_global x ny_global 
 
     integer, parameter :: MAX_COUPLING_FIELDS = 32
@@ -94,10 +100,12 @@ contains
 
 subroutine read_namelist_parameters()
 
-    use ice_exit
-    use ice_fileunits
+    use ice_exit, only: abort_ice
+    use ice_fileunits, only: nu_nml, ice_stderr, ice_stdout, get_fileunit, release_fileunit
+    use ice_communicate, only: my_task, master_task
 
     integer (int_kind) :: nml_error, i
+    character (len=256) :: errstr, tmpstr         ! For holding namelist read errors
 
     do i=1, MAX_COUPLING_FIELDS
         fields_from_atm(i) = char(0)
@@ -106,24 +114,53 @@ subroutine read_namelist_parameters()
     enddo
 
     ! all processors read the namelist
-    call get_fileunit(nu_nml)
-    open(unit=nu_nml,file="input_ice.nml",form="formatted",status="old",iostat=nml_error)
 
-    if (nml_error /= 0) then
-       nml_error = -1
-    else
-       nml_error =  1
+    call get_fileunit(nu_nml)
+    open(unit=nu_nml,file="input_ice.nml",form="formatted",status="old",iostat=nml_error, iomsg=errstr)
+    !
+    if (my_task == master_task) then
+    write(ice_stdout,*)'CICE: input_ice.nml opened at unit = ', nu_nml
     endif
+    !
+    if (nml_error /= 0) then
+    write(tmpstr, '(a,i3,a)') 'CICE: ERROR failed to open input_ice.nml. Error code: ', nml_error, &
+                                '  - ' // trim(errstr)
+    call abort_ice(trim(tmpstr))
+    else
+    nml_error =  1
+    endif
+
     do while (nml_error > 0)
-       read(nu_nml, nml=coupling_nml,iostat=nml_error)
-       if (nml_error > 0) read(nu_nml,*)  ! for Nagware compiler
+    read(nu_nml, nml=coupling_nml,iostat=nml_error,iomsg=errstr)
+    ! check if error
+    if (nml_error /= 0) then
+        if (my_task == master_task) then
+            ! backspace and re-read erroneous line
+            backspace(nu_nml)
+            read(nu_nml,fmt=*) tmpstr
+#ifdef __INTEL_COMPILER
+            if (nml_error == FOR$IOS_INVREFVAR) then
+                write(ice_stderr,*)'CICE: Invalid reference to variable '//trim(tmpstr)
+                write(ice_stderr,*)'CICE: is '//trim(tmpstr)//' deprecated ?'
+            endif
+#endif
+            call abort_ice('CICE ERROR in input_ice.nml when' // &
+                ' reading ' // trim(tmpstr) // ' - ' //errstr)
+        endif
+    endif
     end do
     if (nml_error == 0) close(nu_nml)
+
+    if (my_task == master_task) then
+        write(6,coupling_nml)
+    endif
 
     call release_fileunit(nu_nml)
 
     if (nml_error /= 0) then
-        call abort_ice('ice: error reading coupling_nml')
+        if (my_task == master_task) then
+            call abort_ice('ice: error reading coupling namelist in "input_ice.nml"')
+        endif
     endif
 
     num_fields_from_atm = 0

@@ -23,6 +23,9 @@
           restart, restart_ext, input_dir, restart_dir, restart_file, pointer_file, &
           runid, runtype, use_restart_time, restart_format, lenstr
       use ice_restart
+#ifdef ACCESS
+      use cpl_parameters, only: runtime0
+#endif
 
       implicit none
       private
@@ -359,8 +362,7 @@
       call read_restart_field(nu_restart,0,stress12_1,'ruf8', &
            'stress12_1',1,diag,field_loc_center,field_type_scalar) ! stress12_1
       call read_restart_field(nu_restart,0,stress12_3,'ruf8', &
-           'stress12_3',1,diag,field_loc_center,field_type_scalar) ! stress12_1
-
+           'stress12_3',1,diag,field_loc_center,field_type_scalar) ! stress12_3
       call read_restart_field(nu_restart,0,stress12_2,'ruf8', &
            'stress12_2',1,diag,field_loc_center,field_type_scalar) ! stress12_2
       call read_restart_field(nu_restart,0,stress12_4,'ruf8', &
@@ -594,8 +596,11 @@
             read (nu_restart) istep0,time,time_forc
             write(nu_diag,*) 'Restart read at istep=',istep0,time,time_forc
          endif
-      call calendar(time)
-
+#if defined(ACCESS)
+         call calendar(time-runtime0)
+#else
+         call calendar(time)
+#endif
          call broadcast_scalar(istep0,master_task)
          istep1 = istep0
          call broadcast_scalar(time,master_task)

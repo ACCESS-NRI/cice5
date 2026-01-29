@@ -78,16 +78,18 @@
       !---------------------------------------------------------------
 
       type, public :: ice_hist_field
-          character (len=16) :: vname     ! variable name
+          character (len=32) :: vname     ! variable name
           character (len=16) :: vunit     ! variable units
           character (len=25) :: vcoord    ! variable coordinates
-          character (len=16) :: vcellmeas ! variable cell measures
-          character (len=55) :: vdesc     ! variable description
-          character (len=55) :: vcomment  ! variable description
+          character (len=32) :: vcellmeas ! variable cell measures
+          character (len=255) :: vdesc     ! variable description
+          character (len=255) :: vcomment  ! variable description
           real (kind=dbl_kind) :: cona    ! multiplicative conversion factor
           real (kind=dbl_kind) :: conb    ! additive conversion factor
           character (len=1) :: vhistfreq  ! frequency of history output
           integer (kind=int_kind) :: vhistfreq_n ! number of vhistfreq intervals
+          logical (kind=log_kind) :: avg_ice_present ! only average where ice is present
+          logical (kind=log_kind) :: mask_ice_free_points ! mask ice-free points
       end type
 
       integer (kind=int_kind), parameter, public :: &
@@ -199,9 +201,11 @@
 
       character (len=max_nstrm), public :: &
 !          f_example   = 'md', &
-           f_hi        = 'm', f_hs         = 'm', &
+           f_hi        = 'm', f_sivol = 'x', &
+           f_hs        = 'm', &
            f_snowfrac  = 'x', f_snowfracn  = 'x', &
-           f_Tsfc      = 'm', f_aice       = 'm', &
+           f_Tsfc      = 'm', & 
+           f_aice      = 'm', f_siconc    = 'x' , &
            f_uvel      = 'm', f_vvel       = 'm', &
            f_uatm      = 'm', f_vatm       = 'm', &
            f_fswdn     = 'm', f_flwdn      = 'm', &
@@ -224,6 +228,7 @@
            f_fsens     = 'm', f_fsens_ai   = 'm', &
            f_flwup     = 'm', f_flwup_ai   = 'm', &
            f_evap      = 'm', f_evap_ai    = 'm', &
+           f_evap_ice_ai = 'm', f_evap_snow_ai = 'm', &
            f_Tair      = 'm', &
            f_Tref      = 'm', f_Qref       = 'm', &
            f_congel    = 'm', f_frazil     = 'm', &
@@ -243,21 +248,70 @@
            f_divu      = 'm', f_shear      = 'm', &
            f_sig1      = 'm', f_sig2       = 'm', &
            f_dvidtt    = 'm', f_dvidtd     = 'm', &
+           f_dvsdtt    = 'm', f_dvsdtd     = 'm', &
            f_daidtt    = 'm', f_daidtd     = 'm', &
            f_dagedtt   = 'm', f_dagedtd    = 'm', &
            f_mlt_onset = 'm', f_frz_onset  = 'm', &
            f_iage      = 'm', f_FY         = 'm', &
            f_hisnap    = 'm', f_aisnap     = 'm', &
-           f_aicen     = 'x', f_vicen      = 'x', &
-           f_vsnon     = 'x', &
-           f_trsig     = 'm', f_icepresent = 'm', &
+           f_sithick   = 'x', f_sisnthick  = 'x', &
+           f_simass    = 'x', f_sisnmass   = 'x', f_sisnmass_intensive   = 'x',&
+           f_sisnconc  = 'x', f_siage      = 'x', &
+           f_sitemptop = 'x', f_sitempsnic = 'x', &
+           f_sitempbot = 'x', f_sispeed    = 'x', &
+           f_siu       = 'x', f_siv        = 'x', &
+           f_sidmasstranx = 'x', f_sidmasstrany = 'x', &
+           f_sistrxdtop = 'x', f_sistrydtop = 'x', &
+           f_sistrxubot = 'x', f_sistryubot = 'x', &
+           f_siforcetiltx = 'x', f_siforcetilty = 'x', &
+           f_siforcecoriolx = 'x', f_siforcecorioly = 'x', &
+           f_siforceintstrx = 'x', f_siforceintstry = 'x', &
+           f_sicompstren = 'x', &
+           f_sialb     = 'x', &
+           f_sihc      = 'x', f_sisnhc     = 'x', &
+           f_sidconcth = 'x', f_sidconcdyn = 'x', &
+           f_sifb      = 'x', &
+           f_sidmassth = 'x', f_sidmassdyn = 'x', &
+           f_sidmassgrowthwat = 'x', &
+           f_sidmassgrowthbot = 'x', &
+           f_sidmasssi = 'x', f_sidmassgrowthsi = 'x', &
+           f_sidmassevapsubl = 'x', &
+           f_sidmassmelttop = 'x', &
+           f_sidmassmeltbot = 'x', &
+           f_sidmasslat = 'x', f_sidmassmeltlat = 'x', &
+           f_sndmasssnf = 'x', f_sisndmasssnf   = 'x', f_sisndmasssnf_intensive   = 'x', &
+           f_sndmassmelt = 'x', f_sisndmassmelt = 'x', f_sisndmassmelt_intensive = 'x', &
+           f_sndmassdyn = 'x', f_sisndmassdyn = 'x', f_sisndmassdyn_intensive = 'x', &
+           f_sisndmasssi = 'x', f_sisndmasssi_intensive = 'x', &
+           f_sndmasssubl = 'x', f_sisndmasssubl = 'x', f_sisndmasssubl_intensive = 'x', &
+           f_sidivvel = 'x', &
+           f_siflswdtop = 'x', &
+           f_siflswutop = 'x', &
+           f_siflswdbot = 'x', &
+           f_sifllwdtop = 'x', &
+           f_sifllwutop = 'x', &
+           f_siflsenstop = 'x', &
+           f_siflsensupbot = 'x', f_siflsensbot = 'x', &
+           f_sifllatstop = 'x', &
+           f_siflcondtop = 'x', &
+           f_siflcondbot = 'x', &
+           f_sipr = 'x', &
+           f_siflsaltbot = 'x', &
+           f_siflfwbot = 'x', &
+           f_siflfwdrain = 'x', &
+           f_sisaltmass = 'x', &
+           f_aicen     = 'x' , f_siitdconc = 'x', &
+           f_vicen      = 'x', &
+           f_vsnon     = 'x',  &
+           f_trsig     = 'm', &
+           f_icepresent = 'm', f_sitimefrac = 'x',&
            f_fsurf_ai  = 'm', f_fcondtop_ai= 'm', &
            f_fmeltt_ai = 'm',                     &
            f_fsurfn_ai = 'x' ,f_fcondtopn_ai='x', &
            f_fmelttn_ai= 'x', f_flatn_ai   = 'x', &
-           f_fsensn_ai = 'x', &
-!          f_field3dz  = 'x', &
-           f_keffn_top = 'x', &
+           f_fsensn_ai = 'x',                     &
+!          f_field3dz  = 'x',                     &
+           f_Tn_top    = 'x', f_keffn_top  = 'x', &
            f_Tinz      = 'x', f_Sinz       = 'x', &
            f_Tsnz      = 'x', &
            f_a11       = 'x', f_a12        = 'x', & 
@@ -284,9 +338,11 @@
            f_VGRDi    , f_VGRDs    , &
            f_VGRDb    , &
 !          f_example  , &
-           f_hi,        f_hs       , &
+           f_hi       , f_sivol    , &
+           f_hs       , &
            f_snowfrac,  f_snowfracn, &
-           f_Tsfc,      f_aice     , &
+           f_Tsfc     , &
+           f_aice     , f_siconc   , &
            f_uvel,      f_vvel     , &
            f_uatm,      f_vatm     , &
            f_fswdn,     f_flwdn    , &
@@ -309,7 +365,8 @@
            f_fsens,     f_fsens_ai , &
            f_flwup,     f_flwup_ai , &
            f_evap,      f_evap_ai  , &
-           f_Tair,      &
+           f_evap_ice_ai, f_evap_snow_ai, &
+           f_Tair                  , &
            f_Tref,      f_Qref     , &
            f_congel,    f_frazil   , &
            f_snoice,    f_dsnow    , &
@@ -328,30 +385,79 @@
            f_divu,      f_shear    , &
            f_sig1,      f_sig2     , &
            f_dvidtt,    f_dvidtd   , &
+           f_dvsdtt,    f_dvsdtd   , &
            f_daidtt,    f_daidtd   , &
            f_dagedtt,   f_dagedtd  , &
            f_mlt_onset, f_frz_onset, &
            f_iage,      f_FY       , &
            f_hisnap,    f_aisnap   , &
-           f_aicen,     f_vicen    , &
-           f_vsnon,     &
-           f_trsig,     f_icepresent,&
+           f_sithick,   f_sisnthick, &
+           f_simass,    f_sisnmass, f_sisnmass_intensive, &
+           f_sisnconc,  f_siage,     &
+           f_sifb,                   &
+           f_sitemptop, f_sitempsnic,&
+           f_sitempbot, f_sispeed,   &
+           f_siu,       f_siv,       &
+           f_sidmasstranx, f_sidmasstrany, &
+           f_sistrxdtop, f_sistrydtop, &
+           f_sistrxubot, f_sistryubot, &
+           f_siforcetiltx, f_siforcetilty, &
+           f_siforcecoriolx, f_siforcecorioly, &
+           f_siforceintstrx, f_siforceintstry, &
+           f_sicompstren, &
+           f_sialb, &
+           f_sidivvel, &
+           f_sihc,      f_sisnhc,    &
+           f_sidconcth, f_sidconcdyn,&
+           f_sidmassth, f_sidmassdyn,&
+           f_sidmassgrowthwat, &
+           f_sidmassgrowthbot, &
+           f_sidmasssi, f_sidmassgrowthsi , &
+           f_sidmassevapsubl, &
+           f_sidmassmelttop, &
+           f_sidmassmeltbot, &
+           f_sidmasslat, f_sidmassmeltlat,&
+           f_sndmasssubl, f_sisndmasssubl, f_sisndmasssubl_intensive, &
+           f_sndmasssnf, f_sisndmasssnf, f_sisndmasssnf_intensive, &
+           f_sndmassmelt, f_sisndmassmelt, f_sisndmassmelt_intensive, &
+           f_sndmassdyn, f_sisndmassdyn, f_sisndmassdyn_intensive, &
+           f_sisndmasssi, f_sisndmasssi_intensive,  &
+           f_siflswdtop, &
+           f_siflswutop, &
+           f_siflswdbot, &
+           f_sifllwdtop, &
+           f_sifllwutop, &
+           f_siflsenstop, &
+           f_siflsensupbot, f_siflsensbot, &
+           f_sifllatstop, &
+           f_siflcondtop, &
+           f_siflcondbot, &
+           f_sipr, &
+           f_siflsaltbot, &
+           f_siflfwbot, &
+           f_siflfwdrain, &
+           f_sisaltmass, &
+           f_aicen, f_siitdconc, &    
+           f_vicen, &
+           f_vsnon, &
+           f_trsig, &
+           f_icepresent, f_sitimefrac,& !same var, two names
            f_fsurf_ai,  f_fcondtop_ai,&
            f_fmeltt_ai, &
            f_fsurfn_ai,f_fcondtopn_ai,&
            f_fmelttn_ai,f_flatn_ai,  &
-           f_fsensn_ai, &
+           f_fsensn_ai,              &
 !          f_field3dz,  &
-           f_keffn_top, &
+           f_Tn_top,    f_keffn_top, &
            f_Tinz,      f_Sinz,      &
-           f_Tsnz,      &
-           f_a11,       f_a12,       &
-           f_e11,       f_e12,       &
-           f_e22,       &
-           f_s11,       f_s12,       &
-           f_s22,       &
-           f_yieldstress11, &	
-           f_yieldstress12, &
+           f_Tsnz,  &
+           f_a11, 	f_a12 	   , &
+           f_e11, 	f_e12	   , &
+           f_e22                   , &
+           f_s11, 	f_s12	   , &
+           f_s22                   , &
+           f_yieldstress11         , &	
+           f_yieldstress12	   , &
            f_yieldstress22
 
       !---------------------------------------------------------------
@@ -410,6 +516,7 @@
            n_fsens      , n_fsens_ai   , &
            n_flwup      , n_flwup_ai   , &
            n_evap       , n_evap_ai    , &
+           n_evap_ice_ai, n_evap_snow_ai , &
            n_Tair       , &
            n_Tref       , n_Qref       , &
            n_congel     , n_frazil     , &
@@ -418,7 +525,61 @@
            n_meltb      , n_meltl      , &
            n_fresh      , n_fresh_ai   , &
            n_fsalt      , n_fsalt_ai   , &
-           n_vsnon      , &
+           n_sidivvel,                   &
+           n_sithick    , n_sisnthick  , &
+           n_simass     , n_sisnmass, n_sisnmass_intensive, &
+           n_sisnconc,    n_siage,       &
+           n_sifb,                       &
+           n_sitemptop  , n_sitempsnic , &
+           n_sitempbot  , n_sispeed,     &
+           n_siu,         n_siv,         &
+           n_sidmasstranx, n_sidmasstrany, &
+           n_sistrxdtop,  n_sistrydtop,  &
+           n_sistrxubot,  n_sistryubot,  &
+           n_siforcetiltx, n_siforcetilty, &
+           n_siforcecoriolx, n_siforcecorioly, &
+           n_siforceintstrx, n_siforceintstry, &
+           n_sicompstren, &
+           n_sialb, &
+           n_sihc       , n_sisnhc,      &
+           n_siconc, n_sivol, &
+           n_sidconcth  , n_sidconcdyn,  &
+           n_sidmassth  , n_sidmassdyn,  &
+           n_sidmassgrowthwat, &
+           n_sidmassgrowthbot,  &
+           n_sidmasssi,  &
+           n_sidmasssubl, &
+           n_sidmassevapsubl,  &
+           n_sidmassmelttop,  &
+           n_sidmassmeltbot,  &
+           n_sidmasslat, &
+           n_sndmasssnf,  &
+           n_sisndmasssnf_intensive,  &
+           n_sndmassmelt,  &
+           n_sisndmassmelt_intensive,  &
+           n_sndmassdyn,  &
+           n_sisndmassdyn_intensive,  &
+           n_sisndmasssi, &
+           n_sisndmasssi_intensive, &
+           n_sisndmasssubl,  &
+           n_sisndmasssubl_intensive,  &
+           n_siflswdtop,  &
+           n_siflswutop,  &
+           n_siflswdbot,  &
+           n_sifllwdtop,  &
+           n_sifllwutop,  &
+           n_siflsenstop,  &
+           n_siflsensupbot,  &
+           n_sifllatstop,  &
+           n_siflcondtop,  &
+           n_siflcondbot,  &
+           n_sipr,  &
+           n_siflsaltbot,  &
+           n_siflfwbot,  &
+           n_siflfwdrain, &
+           n_sisaltmass, &
+           n_siitdconc, &
+           n_vsnon,                        &
            n_fhocn      , n_fhocn_ai   , &
            n_fswthru    , n_fswthru_ai , &
            n_strairx    , n_strairy    , &
@@ -430,6 +591,7 @@
            n_divu       , n_shear      , &
            n_sig1       , n_sig2       , &
            n_dvidtt     , n_dvidtd     , &
+           n_dvsdtt     , n_dvsdtd     , &
            n_daidtt     , n_daidtd     , &
            n_dagedtt    , n_dagedtd    , &
            n_mlt_onset  , n_frz_onset  , &
@@ -445,15 +607,16 @@
            n_flatn_ai    , &
            n_fsensn_ai   , &
 !          n_field3dz    , &
+           n_Tn_top      , &
            n_keffn_top   , &
            n_Tinz        , n_Sinz      , &
-           n_Tsnz        , &
-	   n_a11         , n_a12       , &
-	   n_e11         , n_e12       , &
-	   n_e22         , &
-	   n_s11         , n_s12       , &
-	   n_s22         , &
-	   n_yieldstress11, n_yieldstress12, &
+           n_Tsnz, &
+	   n_a11	 , n_a12	, &
+	   n_e11	 , n_e12 	, &
+	   n_e22	 , &
+	   n_s11	 , n_s12	, &
+	   n_s22	 , &
+	   n_yieldstress11, n_yieldstress12,  &
 	   n_yieldstress22
 
       interface accum_hist_field ! generic interface
@@ -600,7 +763,7 @@
 
       subroutine define_hist_field(id, vname, vunit, vcoord, vcellmeas, &
                                    vdesc, vcomment, cona, conb, &
-                                   ns, vhistfreq)
+                                   ns, vhistfreq, avg_ice_present, mask_ice_free_points)
 
       use ice_calendar, only: histfreq, histfreq_n, nstreams
       use ice_domain_size, only: max_nstrm
@@ -628,11 +791,27 @@
       integer (kind=int_kind), intent(in) :: &
          ns             ! history file stream index
 
+      logical (kind=log_kind), optional, intent(in) :: &
+         avg_ice_present       , & ! compute average only when ice is present
+         mask_ice_free_points      ! mask ice-free points
+
       integer (kind=int_kind) :: &
          ns1        , & ! variable stream loop index
          lenf           ! length of namelist string
 
       character (len=40) :: stmp
+
+      logical (kind=log_kind) :: &
+         l_avg_ice_present       , & ! compute average only when ice is present
+         l_mask_ice_free_points      ! mask ice-free points
+
+      character(len=*), parameter :: subname = '(define_hist_field)'
+
+      l_avg_ice_present = .false.
+      l_mask_ice_free_points = .false.
+
+      if(present(avg_ice_present)) l_avg_ice_present = avg_ice_present
+      if(present(mask_ice_free_points)) l_mask_ice_free_points = mask_ice_free_points
 
       if (histfreq(ns) == 'x') then
          call abort_ice("define_hist_fields has histfreq x")
@@ -643,6 +822,12 @@
 
       do ns1 = 1, lenf
          if (vhistfreq(ns1:ns1) == histfreq(ns)) then
+
+            if (ns1 > 1 .and. index(vhistfreq(1:ns1-1),'x') /= 0) then
+               call abort_ice(subname// &
+                  ' ERROR: history frequency variable f_' // vname // &
+                  ' can''t contain ''x'' along with active frequencies')
+            endif
 
             num_avail_hist_fields_tot = num_avail_hist_fields_tot + 1
 
@@ -672,16 +857,15 @@
                 num_avail_hist_fields_3Db + &
                 num_avail_hist_fields_4Di + &
                 num_avail_hist_fields_4Ds + &
-                num_avail_hist_fields_4Db)  then
-
+                num_avail_hist_fields_4Db)  &
                call abort_ice("num_avail_hist_fields error")
-            endif
 
             id(ns) = num_avail_hist_fields_tot
 
             stmp = vname
-            if (ns > 1) &
-               write(stmp,'(a,a1,a1)') trim(stmp),'_',vhistfreq(ns1:ns1)
+!            if (ns > 1) &
+!               write(stmp,'(a,a1,a1)') trim(stmp),'_',vhistfreq(ns1:ns1)
+! This was disabled in Met office version by ABK.
 
             avail_hist_fields(id(ns))%vname = trim(stmp)
             avail_hist_fields(id(ns))%vunit = trim(vunit)
@@ -693,6 +877,8 @@
             avail_hist_fields(id(ns))%conb = conb
             avail_hist_fields(id(ns))%vhistfreq = vhistfreq(ns1:ns1)
             avail_hist_fields(id(ns))%vhistfreq_n = histfreq_n(ns)
+            avail_hist_fields(id(ns))%avg_ice_present = l_avg_ice_present
+            avail_hist_fields(id(ns))%mask_ice_free_points = l_mask_ice_free_points
 
          endif
       enddo
@@ -720,7 +906,7 @@
       integer (int_kind), dimension(max_nstrm), intent(in) :: &
          id                ! location in avail_fields array for use in
                            ! later routines
-        
+
       integer (kind=int_kind), intent(in) :: iblk
 
       real (kind=dbl_kind), intent(in) :: &
@@ -791,7 +977,7 @@
       integer (int_kind), dimension(max_nstrm), intent(in) :: &
          id                ! location in avail_fields array for use in
                            ! later routines
-        
+
       integer (kind=int_kind), intent(in) :: iblk
 
       integer (kind=int_kind), intent(in) :: &
@@ -825,7 +1011,7 @@
        do k = 1, ndim
        do j = jlo, jhi
        do i = ilo, ihi
-          if (tmask(i,j,iblk)) then
+         if (tmask(i,j,iblk) .and. abs(field_accum(i,j,k)) < 1.0e+10_dbl_kind) then
              field(i,j,k,idns,iblk) = field(i,j,k,idns,iblk) + field_accum(i,j,k)
           endif
        enddo
@@ -855,7 +1041,7 @@
       integer (int_kind), dimension(max_nstrm), intent(in) :: &
          id                ! location in avail_fields array for use in
                            ! later routines
-        
+
       integer (kind=int_kind), intent(in) :: iblk
 
       integer (kind=int_kind), intent(in) :: &
@@ -891,9 +1077,11 @@
        do n = 1, ndim3
        do j = jlo, jhi
        do i = ilo, ihi
-          if (tmask(i,j,iblk)) then
+         if (tmask(i,j,iblk)) then
+         if (tmask(i,j,iblk) .and. abs(field_accum(i,j,n,k)) < 1.0e+10_dbl_kind) then
              field(i,j,n,k,idns,iblk) = field(i,j,n,k,idns,iblk) + field_accum(i,j,n,k)
           endif
+         endif
        enddo
        enddo
        enddo

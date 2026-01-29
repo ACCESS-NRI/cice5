@@ -29,7 +29,7 @@
       implicit none
       private
       public :: init_fileunits, get_fileunit, flush_fileunit, &
-                release_fileunit, release_all_fileunits
+                release_fileunit, release_all_fileunits, goto_nml
       save
 
       character (len=char_len), public :: &
@@ -105,7 +105,12 @@
 
       subroutine init_fileunits
 
-         nu_diag = ice_stderr  ! default
+#ifndef ACCESS
+         nu_diag = ice_stdout  ! default
+#else
+         nu_diag = 111
+         open(nu_diag,file='ice_diag_out',form='formatted')  ! status='new')
+#endif
 
          ice_IOUnitsInUse = .false.
          ice_IOUnitsInUse(ice_stdin)  = .true. ! reserve unit 5
@@ -217,7 +222,7 @@
          call release_fileunit(nu_rst_pointer)
          call release_fileunit(nu_history)
          call release_fileunit(nu_hdr)
-#ifndef AusCOM
+#if !defined(AusCOM) || defined(ACCESS)
          if (nu_diag /= ice_stdout) call release_fileunit(nu_diag)
 #else
          close(nu_diag)
@@ -242,7 +247,12 @@
 #else
 !  check for proper unit number
    if (iunit < 1 .or. iunit > ice_IOUnitsMaxUnit) then
+#ifdef ACCESS
+      write (*,*) 'XXX Warning -- bad unit: iunit = ', iunit 
+      !stop 'release_fileunit: bad unit'
+#else
       stop 'release_fileunit: bad unit'
+#endif
    endif
 
 !  mark the unit as not in use
@@ -289,6 +299,54 @@
 #endif
 
       end subroutine flush_fileunit
+
+!=======================================================================
+! Namelist error handling ported from https://github.com/CICE-Consortium/CICE/blob/8e3ef7c4cb657705ceff5bfec3e12b49dec4973e/cicecore/shared/ice_fileunits.F90#L328
+      subroutine goto_nml(iunit, nml, status)
+        ! Search to namelist group within ice_in file.
+        ! for compilers that do not allow optional namelists
+
+        ! passed variables
+        integer(kind=int_kind), intent(in) :: &
+             iunit ! namelist file unit
+
+        character(len=*), intent(in) :: &
+             nml ! namelist to search for
+
+        integer(kind=int_kind), intent(out) :: &
+             status ! status of subroutine
+
+        ! local variables
+        character(len=char_len) :: &
+             file_str, & ! string in file
+             nml_str     ! namelist string to test
+
+        integer(kind=int_kind) :: &
+             i, n ! dummy integers
+
+
+        ! rewind file
+        rewind(iunit)
+
+        ! define test string with ampersand
+        nml_str = '&' // trim(adjustl(nml))
+
+        ! search for the record containing the namelist group we're looking for
+        do
+           read(iunit, '(a)', iostat=status) file_str
+           if (status /= 0) then
+              exit ! e.g. end of file
+           else
+              if (index(adjustl(file_str), nml_str) == 1) then
+                 exit ! i.e. found record we're looking for
+              end if
+           end if
+        end do
+
+        ! backspace to namelist name in file
+        backspace(iunit)
+
+      end subroutine goto_nml
 
 !=======================================================================
 
