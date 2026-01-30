@@ -1460,7 +1460,7 @@
 
          call define_hist_field(n_siflfwdrain,"siflfwdrain","kg m^-2 s^-1",tstr2D, tcstr, &
              "Freshwater Flux from Sea-Ice Surface", &  
-             "area weighted average, positive downward, per sea ice area", c1, c0,                            &
+             "area weighted average, positive downward, per sea ice area", c1/dt, c0,                            &
              ns1, f_siflfwdrain, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_sipr,"sipr","kg m^-2 s^-1",tstr2D, tcstr, &
@@ -1470,7 +1470,7 @@
 
          call define_hist_field(n_siflsaltbot,"siflsaltbot","kg m^-2 s^-1",tstr2D, tcstr, &
              "Salt Flux from Sea Ice", &
-             "area weighted average, positive downward, per sea ice area", c1/dt, c0,                            &
+             "area weighted average, positive downward, per sea ice area", c1, c0,                            &
              ns1, f_siflsaltbot, avg_ice_present=.true., mask_ice_free_points=.true.)
 
          call define_hist_field(n_siflfwbot,"siflfwbot","kg m^-2 s^-1",tstr2D, tcstr, &
