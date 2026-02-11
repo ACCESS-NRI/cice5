@@ -75,6 +75,30 @@ set( NBGCLYR 0 )       # number of zbgc layers
 set( NUMIN 11  )      # minimum file unit number
 set( NUMAX 99  )      # maximum file unit number
 
+list(LENGTH CICE_NXGLOB  n)
+list(LENGTH CICE_NYGLOB  ny)
+list(LENGTH CICE_BLCKX   bx)
+list(LENGTH CICE_BLCKY   by)
+list(LENGTH CICE_MXBLCKS mb)
+
+if(NOT n EQUAL ny OR NOT n EQUAL bx OR NOT n EQUAL by OR NOT n EQUAL mb)
+  message(FATAL_ERROR "CICE_* lists must all have the same length")
+endif()
+
+math(EXPR last "${n} - 1")
+
+foreach(i RANGE 0 ${last})
+  list(GET CICE_NXGLOB  ${i} NXGLOB)
+  list(GET CICE_NYGLOB  ${i} NYGLOB)
+  list(GET CICE_BLCKX   ${i} BLCKX)
+  list(GET CICE_BLCKY   ${i} BLCKY)
+  list(GET CICE_MXBLCKS ${i} MXBLCKS)
+
+  set(CONF ${CICE_DRIVER}_${NXGLOB}x${NYGLOB}_${BLCKX}x${BLCKY})
+
+  list(APPEND BuildConfigurations ${CONF})
+endforeach()
+
 #[==============================================================================[
 #                           Project configuration                               #
 #]==============================================================================]
@@ -102,11 +126,6 @@ else()
 endif()
 
 add_compile_definitions(
-  NXGLOB=${CICE_NXGLOB}
-  NYGLOB=${CICE_NYGLOB}
-  BLCKX=${CICE_BLCKX}
-  BLCKY=${CICE_BLCKY}
-  MXBLCKS=${CICE_MXBLCKS}
   NUMIN=${NUMIN}
   NUMAX=${NUMAX}
   TRAGE=${TRAGE}
@@ -167,154 +186,168 @@ set(CICE_SOURCE "${CMAKE_SOURCE_DIR}/source")
 set(CICE_MPI "${CMAKE_SOURCE_DIR}/mpi")
 set(CICE_DRIVER_SOURCE "${CMAKE_SOURCE_DIR}/drivers/${CICE_DRIVER}")
 
-add_executable(cice    ${CICE_DRIVER_SOURCE}/CICE.F90)
+foreach(CONF IN LISTS BuildConfigurations)
 
-if(CICE_DRIVER MATCHES "auscom")
-  find_package(LIBACCESSOM2)
-  target_link_libraries(cice PUBLIC libaccessom2::accessom2 )
-endif()
+  add_executable(cice_${CONF}    ${CICE_DRIVER_SOURCE}/CICE.F90)
 
-target_link_libraries(cice 
-  PRIVATE 
-  MPI::MPI_Fortran 
-  PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP 
-  # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
+  target_compile_definitions(cice_${CONF} PRIVATE
+    NXGLOB=${NXGLOB}
+    NYGLOB=${NYGLOB}
+    BLCKX=${BLCKX}
+    BLCKY=${BLCKY}
+    MXBLCKS=${MXBLCKS}
   )
 
-if(CICE_IO MATCHES "^(NetCDF|PIO)$")
-  target_link_libraries(cice PRIVATE NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
-  if(CICE_IO MATCHES "PIO")
-    target_link_libraries(cice PRIVATE PIO::PIO_Fortran)
+  if(CICE_DRIVER MATCHES "auscom")
+    find_package(LIBACCESSOM2)
+    target_link_libraries(cice_${CONF} PUBLIC libaccessom2::accessom2 )
   endif()
-endif()
 
-target_sources(cice PRIVATE
-  ${CICE_SOURCE}/ice_aerosol.F90
-  ${CICE_SOURCE}/ice_dyn_evp.F90
-  ${CICE_SOURCE}/ice_meltpond_lvl.F90
-  ${CICE_SOURCE}/ice_step_mod.F90
-  ${CICE_SOURCE}/ice_age.F90
-  ${CICE_SOURCE}/ice_dyn_shared.F90
-  ${CICE_SOURCE}/ice_history_mechred.F90
-  ${CICE_SOURCE}/ice_meltpond_topo.F90
-  ${CICE_SOURCE}/ice_therm_0layer.F90
-  ${CICE_SOURCE}/ice_algae.F90
-  ${CICE_SOURCE}/ice_fileunits.F90
-  ${CICE_SOURCE}/ice_history_pond.F90
-  ${CICE_SOURCE}/ice_ocean.F90
-  ${CICE_SOURCE}/ice_therm_bl99.F90
-  ${CICE_SOURCE}/ice_atmo.F90
-  ${CICE_SOURCE}/ice_history_shared.F90
-  ${CICE_SOURCE}/ice_orbital.F90
-  ${CICE_SOURCE}/ice_therm_itd.F90
-  ${CICE_SOURCE}/ice_blocks.F90
-  ${CICE_SOURCE}/ice_read_write.F90
-  ${CICE_SOURCE}/ice_therm_mushy.F90
-  ${CICE_SOURCE}/ice_brine.F90
-  ${CICE_SOURCE}/ice_firstyear.F90
-  ${CICE_SOURCE}/ice_init.F90
-  ${CICE_SOURCE}/ice_restart_driver.F90
-  ${CICE_SOURCE}/ice_therm_shared.F90
-  ${CICE_SOURCE}/ice_calendar.F90
-  ${CICE_SOURCE}/ice_flux.F90
-  ${CICE_SOURCE}/ice_itd.F90
-  ${CICE_SOURCE}/ice_restart_shared.F90
-  ${CICE_SOURCE}/ice_therm_vertical.F90
-  ${CICE_SOURCE}/ice_diagnostics.F90
-  ${CICE_SOURCE}/ice_forcing.F90
-  ${CICE_SOURCE}/ice_kinds_mod.F90
-  ${CICE_SOURCE}/ice_restart_shared.F90
-  ${CICE_SOURCE}/ice_transport_driver.F90
-  ${CICE_SOURCE}/ice_distribution.F90
-  ${CICE_SOURCE}/ice_grid.F90
-  ${CICE_SOURCE}/ice_restoring.F90
-  ${CICE_SOURCE}/ice_transport_remap.F90
-  ${CICE_SOURCE}/ice_domain.F90
-  ${CICE_SOURCE}/ice_history_bgc.F90
-  ${CICE_SOURCE}/ice_lvl.F90
-  ${CICE_SOURCE}/ice_shortwave.F90
-  ${CICE_SOURCE}/ice_zbgc.F90
-  ${CICE_SOURCE}/ice_domain_size.F90
-  ${CICE_SOURCE}/ice_history_drag.F90
-  ${CICE_SOURCE}/ice_mechred.F90
-  ${CICE_SOURCE}/ice_spacecurve.F90
-  ${CICE_SOURCE}/ice_zbgc_shared.F90
-  ${CICE_SOURCE}/ice_dyn_eap.F90
-  ${CICE_SOURCE}/ice_history.F90
-  ${CICE_SOURCE}/ice_meltpond_cesm.F90
-  ${CICE_SOURCE}/ice_state.F90
-  ${CMAKE_SOURCE_DIR}/csm_share/shr_orb_mod.F90
-)
+  target_link_libraries(cice_${CONF} 
+    PRIVATE 
+    MPI::MPI_Fortran 
+    PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP 
+    # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
+    )
 
-target_sources(cice PRIVATE
-  ${CICE_MPI}/ice_boundary.F90
-  ${CICE_MPI}/ice_communicate.F90
-  ${CICE_MPI}/ice_gather_scatter.F90
-  ${CICE_MPI}/ice_global_reductions.F90
-  ${CICE_MPI}/ice_broadcast.F90
-  ${CICE_MPI}/ice_exit.F90
-  ${CICE_MPI}/ice_timers.F90
-)
+  if(CICE_IO MATCHES "^(NetCDF|PIO)$")
+    target_link_libraries(cice_${CONF} PRIVATE NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
+    if(CICE_IO MATCHES "PIO")
+      target_link_libraries(cice_${CONF} PRIVATE PIO::PIO_Fortran)
+    endif()
+  endif()
 
-if(CICE_DRIVER MATCHES "access")
-  target_sources(cice PRIVATE
-    ${CICE_DRIVER_SOURCE}/CICE_RunMod.F90
-    ${CICE_DRIVER_SOURCE}/cpl_forcing_handler.F90
-    ${CICE_DRIVER_SOURCE}/cpl_parameters.F90
-    ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
-    ${CICE_DRIVER_SOURCE}/cpl_interface.F90
-    ${CICE_DRIVER_SOURCE}/ice_constants.F90
-    ${CICE_DRIVER_SOURCE}/ice_coupling.F90
-    ${CICE_DRIVER_SOURCE}/CICE_InitMod.F90
-    ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
-    ${CICE_DRIVER_SOURCE}/cpl_netcdf_setup.F90
+  target_sources(cice_${CONF} PRIVATE
+    ${CICE_SOURCE}/ice_aerosol.F90
+    ${CICE_SOURCE}/ice_dyn_evp.F90
+    ${CICE_SOURCE}/ice_meltpond_lvl.F90
+    ${CICE_SOURCE}/ice_step_mod.F90
+    ${CICE_SOURCE}/ice_age.F90
+    ${CICE_SOURCE}/ice_dyn_shared.F90
+    ${CICE_SOURCE}/ice_history_mechred.F90
+    ${CICE_SOURCE}/ice_meltpond_topo.F90
+    ${CICE_SOURCE}/ice_therm_0layer.F90
+    ${CICE_SOURCE}/ice_algae.F90
+    ${CICE_SOURCE}/ice_fileunits.F90
+    ${CICE_SOURCE}/ice_history_pond.F90
+    ${CICE_SOURCE}/ice_ocean.F90
+    ${CICE_SOURCE}/ice_therm_bl99.F90
+    ${CICE_SOURCE}/ice_atmo.F90
+    ${CICE_SOURCE}/ice_history_shared.F90
+    ${CICE_SOURCE}/ice_orbital.F90
+    ${CICE_SOURCE}/ice_therm_itd.F90
+    ${CICE_SOURCE}/ice_blocks.F90
+    ${CICE_SOURCE}/ice_read_write.F90
+    ${CICE_SOURCE}/ice_therm_mushy.F90
+    ${CICE_SOURCE}/ice_brine.F90
+    ${CICE_SOURCE}/ice_firstyear.F90
+    ${CICE_SOURCE}/ice_init.F90
+    ${CICE_SOURCE}/ice_restart_driver.F90
+    ${CICE_SOURCE}/ice_therm_shared.F90
+    ${CICE_SOURCE}/ice_calendar.F90
+    ${CICE_SOURCE}/ice_flux.F90
+    ${CICE_SOURCE}/ice_itd.F90
+    ${CICE_SOURCE}/ice_restart_shared.F90
+    ${CICE_SOURCE}/ice_therm_vertical.F90
+    ${CICE_SOURCE}/ice_diagnostics.F90
+    ${CICE_SOURCE}/ice_forcing.F90
+    ${CICE_SOURCE}/ice_kinds_mod.F90
+    ${CICE_SOURCE}/ice_restart_shared.F90
+    ${CICE_SOURCE}/ice_transport_driver.F90
+    ${CICE_SOURCE}/ice_distribution.F90
+    ${CICE_SOURCE}/ice_grid.F90
+    ${CICE_SOURCE}/ice_restoring.F90
+    ${CICE_SOURCE}/ice_transport_remap.F90
+    ${CICE_SOURCE}/ice_domain.F90
+    ${CICE_SOURCE}/ice_history_bgc.F90
+    ${CICE_SOURCE}/ice_lvl.F90
+    ${CICE_SOURCE}/ice_shortwave.F90
+    ${CICE_SOURCE}/ice_zbgc.F90
+    ${CICE_SOURCE}/ice_domain_size.F90
+    ${CICE_SOURCE}/ice_history_drag.F90
+    ${CICE_SOURCE}/ice_mechred.F90
+    ${CICE_SOURCE}/ice_spacecurve.F90
+    ${CICE_SOURCE}/ice_zbgc_shared.F90
+    ${CICE_SOURCE}/ice_dyn_eap.F90
+    ${CICE_SOURCE}/ice_history.F90
+    ${CICE_SOURCE}/ice_meltpond_cesm.F90
+    ${CICE_SOURCE}/ice_state.F90
+    ${CMAKE_SOURCE_DIR}/csm_share/shr_orb_mod.F90
   )
-elseif(CICE_DRIVER MATCHES "auscom")
-  target_sources(cice PRIVATE
-    ${CICE_DRIVER_SOURCE}/cpl_forcing_handler.F90
-    ${CICE_DRIVER_SOURCE}/sat_vapor_pres_k_mod.F90
-    ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
-    ${CICE_DRIVER_SOURCE}/cpl_interface.F90
-    ${CICE_DRIVER_SOURCE}/monin_obukhov_kernel.F90
-    ${CICE_DRIVER_SOURCE}/sat_vapor_pres_mod.F90
-    ${CICE_DRIVER_SOURCE}/CICE_InitMod.F90
-    ${CICE_DRIVER_SOURCE}/cpl_netcdf_setup.F90
-    ${CICE_DRIVER_SOURCE}/monin_obukhov_mod.F90
-    ${CICE_DRIVER_SOURCE}/surface_flux_mod.F90
-    ${CICE_DRIVER_SOURCE}/CICE_RunMod.F90
-    ${CICE_DRIVER_SOURCE}/cpl_parameters.F90
-    ${CICE_DRIVER_SOURCE}/ocean_rough_mod.F90
-    ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
-    ${CICE_DRIVER_SOURCE}/ice_constants.F90
+
+  target_sources(cice_${CONF} PRIVATE
+    ${CICE_MPI}/ice_boundary.F90
+    ${CICE_MPI}/ice_communicate.F90
+    ${CICE_MPI}/ice_gather_scatter.F90
+    ${CICE_MPI}/ice_global_reductions.F90
+    ${CICE_MPI}/ice_broadcast.F90
+    ${CICE_MPI}/ice_exit.F90
+    ${CICE_MPI}/ice_timers.F90
   )
-else()
-  message(FATAL_ERROR "CICE_DRIVER: ${CICE_DRIVER} is currently not supported by the CMake build system")
-endif()
 
-# Select IO source files based on CICE_IO
-if(CICE_IO MATCHES "NetCDF")
-  target_sources(cice PRIVATE
-    ${CMAKE_SOURCE_DIR}/io_netcdf/ice_history_write.F90
-    ${CMAKE_SOURCE_DIR}/io_netcdf/ice_restart.F90
+  if(CICE_DRIVER MATCHES "access")
+    target_sources(cice_${CONF} PRIVATE
+      ${CICE_DRIVER_SOURCE}/CICE_RunMod.F90
+      ${CICE_DRIVER_SOURCE}/cpl_forcing_handler.F90
+      ${CICE_DRIVER_SOURCE}/cpl_parameters.F90
+      ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
+      ${CICE_DRIVER_SOURCE}/cpl_interface.F90
+      ${CICE_DRIVER_SOURCE}/ice_constants.F90
+      ${CICE_DRIVER_SOURCE}/ice_coupling.F90
+      ${CICE_DRIVER_SOURCE}/CICE_InitMod.F90
+      ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
+      ${CICE_DRIVER_SOURCE}/cpl_netcdf_setup.F90
+    )
+  elseif(CICE_DRIVER MATCHES "auscom")
+    target_sources(cice_${CONF} PRIVATE
+      ${CICE_DRIVER_SOURCE}/cpl_forcing_handler.F90
+      ${CICE_DRIVER_SOURCE}/sat_vapor_pres_k_mod.F90
+      ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
+      ${CICE_DRIVER_SOURCE}/cpl_interface.F90
+      ${CICE_DRIVER_SOURCE}/monin_obukhov_kernel.F90
+      ${CICE_DRIVER_SOURCE}/sat_vapor_pres_mod.F90
+      ${CICE_DRIVER_SOURCE}/CICE_InitMod.F90
+      ${CICE_DRIVER_SOURCE}/cpl_netcdf_setup.F90
+      ${CICE_DRIVER_SOURCE}/monin_obukhov_mod.F90
+      ${CICE_DRIVER_SOURCE}/surface_flux_mod.F90
+      ${CICE_DRIVER_SOURCE}/CICE_RunMod.F90
+      ${CICE_DRIVER_SOURCE}/cpl_parameters.F90
+      ${CICE_DRIVER_SOURCE}/ocean_rough_mod.F90
+      ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
+      ${CICE_DRIVER_SOURCE}/ice_constants.F90
+    )
+  else()
+    message(FATAL_ERROR "CICE_DRIVER: ${CICE_DRIVER} is currently not supported by the CMake build system")
+  endif()
+
+  # Select IO source files based on CICE_IO
+  if(CICE_IO MATCHES "NetCDF")
+    target_sources(cice_${CONF} PRIVATE
+      ${CMAKE_SOURCE_DIR}/io_netcdf/ice_history_write.F90
+      ${CMAKE_SOURCE_DIR}/io_netcdf/ice_restart.F90
+    )
+  elseif(CICE_IO MATCHES "PIO")
+    target_sources(cice_${CONF} PRIVATE
+      ${CMAKE_SOURCE_DIR}/io_pio/ice_history_write.F90
+      ${CMAKE_SOURCE_DIR}/io_pio/ice_pio.F90
+      ${CMAKE_SOURCE_DIR}/io_pio/ice_restart.F90
+    )
+  endif()
+
+endforeach()
+
+
+
+foreach(CONF IN LISTS BuildConfigurations)
+
+  set_target_properties(cice_${CONF} PROPERTIES
+    LINKER_LANGUAGE Fortran
+    OUTPUT_NAME "cice_${CONF}.exe"
   )
-elseif(CICE_IO MATCHES "PIO")
-  target_sources(cice PRIVATE
-    ${CMAKE_SOURCE_DIR}/io_pio/ice_history_write.F90
-    ${CMAKE_SOURCE_DIR}/io_pio/ice_pio.F90
-    ${CMAKE_SOURCE_DIR}/io_pio/ice_restart.F90
+
+  install(TARGETS cice_${CONF}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT IO_${CICE_IO}
   )
-endif()
 
-#[==============================================================================[
-#                             Install                                           #
-#]==============================================================================]
-
-set_target_properties(cice PROPERTIES
-  LINKER_LANGUAGE Fortran
-  OUTPUT_NAME "cice_${CICE_DRIVER}_${CICE_NXGLOB}x${CICE_NYGLOB}_${CICE_BLCKX}x${CICE_BLCKY}.exe"
-)
-
-install(TARGETS cice
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT IO_${CICE_IO}
-)
+endforeach()
