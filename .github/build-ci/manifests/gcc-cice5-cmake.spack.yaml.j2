@@ -2,9 +2,17 @@ spack:
   specs:
   - 'cice5@git.{{ ref }}=stable {{ om2_1deg }}'
   packages:
-    all:
+    c:
       require:
-      - '%{{ gcc_compiler }}'
+      - {{ gcc_compiler }}
+    cxx:
+      require:
+      - {{ gcc_compiler }}
+    fortran:
+      require:
+      - {{ gcc_compiler }}
+    all:
+      prefer:
       - 'target={{ target }}'
   concretizer:
     unify: false

@@ -3,9 +3,17 @@ spack:
   - 'cice5@git.{{ ref }}=stable {{ om2_1deg }}'
   - 'cice5@git.{{ ref }}=stable build_type=Debug {{ om2_1deg }}'
   packages:
-    all:
+    c:
       require:
-      - '%{{ intel_compiler }}'
+      - {{ intel_compiler }}
+    cxx:
+      require:
+      - {{ intel_compiler }}
+    fortran:
+      require:
+      - {{ intel_compiler }}
+    all:
+      prefer:
       - 'target={{ target }}'
   concretizer:
     unify: false

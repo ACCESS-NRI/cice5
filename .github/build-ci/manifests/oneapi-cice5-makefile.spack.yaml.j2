@@ -3,12 +3,17 @@ spack:
   - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@4'
   - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@5'
   packages:
-    gcc-runtime:
+    c:
       require:
-        '%gcc'
+      - {{ oneapi_compiler }}
+    cxx:
+      require:
+      - {{ oneapi_compiler }}
+    fortran:
+      require:
+      - {{ oneapi_compiler }}
     all:
-      require:
-      - '%{{ oneapi_compiler }}'
+      prefer:
       - 'target={{ target }}'
   concretizer:
     unify: false

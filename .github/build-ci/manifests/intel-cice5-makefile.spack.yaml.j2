@@ -2,9 +2,17 @@ spack:
   specs:
   - 'cice5@git.{{ ref }}=stable model=access-om2'
   packages:
-    all:
+    c:
       require:
-      - '%{{ intel_compiler }}'
+      - {{ intel_compiler }}
+    cxx:
+      require:
+      - {{ intel_compiler }}
+    fortran:
+      require:
+      - {{ intel_compiler }}
+    all:
+      prefer:
       - 'target={{ target }}'
   concretizer:
     unify: false

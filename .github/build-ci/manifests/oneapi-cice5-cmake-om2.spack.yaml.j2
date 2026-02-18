@@ -4,12 +4,17 @@ spack:
   - 'cice5@git.{{ ref }}=stable {{ om2_1deg }} io_type=NetCDF ^openmpi@5'
   - 'cice5@git.{{ ref }}=stable build_type=Debug {{ om2_1deg }}'
   packages:
-    gcc-runtime:
+    c:
       require:
-        '%gcc'
+      - {{ oneapi_compiler }}
+    cxx:
+      require:
+      - {{ oneapi_compiler }}
+    fortran:
+      require:
+      - {{ oneapi_compiler }}
     all:
-      require:
-      - '%{{ oneapi_compiler }}'
+      prefer:
       - 'target={{ target }}'
   concretizer:
     unify: false
