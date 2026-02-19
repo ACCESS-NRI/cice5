@@ -2,17 +2,12 @@ spack:
   specs:
   - 'cice5@git.{{ ref }}=stable model=access-om2'
   packages:
-    c:
+    intel-oneapi-compilers-classic:
       require:
-      - {{ intel_compiler }}
-    cxx:
-      require:
-      - {{ intel_compiler }}
-    fortran:
-      require:
-      - {{ intel_compiler }}
+      - '{{ intel_compiler_ver }}'
     all:
       prefer:
+      - '%access_intel'
       - 'target={{ target }}'
   concretizer:
     unify: false
