@@ -3,12 +3,12 @@ spack:
   - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@4'
   - 'cice5@git.{{ ref }}=stable model=access-om2 ^openmpi@5'
   packages:
-    gcc-runtime:
+    intel-oneapi-compilers:
       require:
-        '%gcc'
+      - '{{ oneapi_compiler_ver }}'
     all:
-      require:
-      - '%{{ oneapi_compiler }}'
+      prefer:
+      - '%access_oneapi'
       - 'target={{ target }}'
   concretizer:
     unify: false

@@ -4,12 +4,12 @@ spack:
   - 'cice5@git.{{ ref }}=stable {{ esm1p6 }} ^openmpi@5'
   - 'cice5@git.{{ ref }}=stable build_type=Debug {{ esm1p6 }}'
   packages:
-    gcc-runtime:
+    intel-oneapi-compilers:
       require:
-        '%gcc'
+      - '{{ oneapi_compiler_ver }}'
     all:
-      require:
-      - '%{{ oneapi_compiler }}'
+      prefer:
+      - '%access_oneapi'
       - 'target={{ target }}'
   concretizer:
     unify: false

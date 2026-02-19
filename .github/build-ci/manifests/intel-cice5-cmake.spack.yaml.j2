@@ -3,9 +3,12 @@ spack:
   - 'cice5@git.{{ ref }}=stable {{ om2_1deg }}'
   - 'cice5@git.{{ ref }}=stable build_type=Debug {{ om2_1deg }}'
   packages:
-    all:
+    intel-oneapi-compilers-classic:
       require:
-      - '%{{ intel_compiler }}'
+      - '{{ intel_compiler_ver }}'
+    all:
+      prefer:
+      - '%access_intel'
       - 'target={{ target }}'
   concretizer:
     unify: false
