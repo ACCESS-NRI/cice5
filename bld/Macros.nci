@@ -21,7 +21,7 @@ ifeq ($(DEBUG), 1)
     FFLAGS          := $(NCI_INTEL_FLAGS) $(NCI_REPRO_FLAGS) $(NCI_DEBUG_FLAGS)
     CPPDEFS         := $(CPPDEFS) -DDEBUG=$(DEBUG)
 else
-    NCI_OPTIM_FLAGS := -g3 -O2 -axCORE-AVX2 -debug all -check none -qopt-report=5 -qopt-report-annotate -assume buffered_io
+    NCI_OPTIM_FLAGS := -g3 -O2 -mavx2 -debug all -check none -qopt-report=5 -qopt-report-annotate -assume buffered_io
     FFLAGS          := $(NCI_INTEL_FLAGS) $(NCI_REPRO_FLAGS) $(NCI_OPTIM_FLAGS)
 endif
 
