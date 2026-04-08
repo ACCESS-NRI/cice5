@@ -962,7 +962,7 @@ ia_snown(:,:,:,:) = msnown(:,:,:,:)
 
 !(19-20) co2 flux stuff
 ia_co2 = mco2
-ia_co2fx = mco2fx
+ia_co2fx = 1.0e-8
 
 return
 end subroutine get_i2a_fields
