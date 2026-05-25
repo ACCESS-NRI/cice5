@@ -23,7 +23,7 @@ module ice_history_write
     use mpi, only: MPI_INFO_NULL, MPI_COMM_WORLD
 
     use ice_kinds_mod
-    use ice_constants, only: c0, c360, secday, spval, rad_to_deg
+    use ice_constants, only: c0, p5, c360, secday, spval, rad_to_deg
     use ice_blocks, only: nx_block, ny_block, block, get_block
     use ice_exit, only: abort_ice
     use ice_domain, only: distrb_info, nblocks, blocks_ice
@@ -38,6 +38,7 @@ module ice_history_write
     use ice_history_shared
     use ice_itd, only: hin_max
     use ice_calendar, only: write_ic, histfreq
+    use cpl_parameters, only : il_out
 
 
     implicit none
@@ -86,6 +87,7 @@ subroutine ice_write_hist (ns)
       ! local variables
 
       real (kind=dbl_kind) :: ltime                 !history timestamp in days
+      real (kind=dbl_kind) :: mtime                 !middle of averaging period calculated from bounds
       character (char_len_long) :: ncfile(max_nstrm) !filenames
       character (char_len) :: time_string            !model time for logging
       logical :: file_exists
@@ -114,6 +116,8 @@ subroutine ice_write_hist (ns)
             ltime=time/int(secday)
         endif
 
+        mtime = p5 * (time_beg(ns) + time_end(ns))
+
         call construct_filename(ncfile(ns),'nc',ns,time_string)
 
         ! add local directory path name to ncfile
@@ -141,6 +145,20 @@ subroutine ice_write_hist (ns)
       !-----------------------------------------------------------------
       ! write time variable
       !-----------------------------------------------------------------
+        if (histfreq(ns) == 'y' .or. histfreq(ns) == 'Y') then
+            write(il_out, *) "Stream: y"
+        else if (histfreq(ns) == 'm' .or. histfreq(ns) == 'M') then
+            write(il_out, *) "Stream: m"
+        else if (histfreq(ns) == 'd' .or. histfreq(ns) == 'D') then
+            write(il_out, *) "Stream: d"
+        else if (histfreq(ns) == 'h' .or. histfreq(ns) == 'H') then
+            write(il_out, *) "Stream: h"
+        else if (histfreq(ns) == '1') then
+            write(il_out, *) "Stream: 1"
+        endif
+        write(il_out, *), "writing ltime: ", ltime 
+        write(il_out, *), "mtime: ", mtime
+
         call check(nf90_inq_dimid(ncid, 'time', timid), &
                     'inq dimid time')
         call check(nf90_inquire_dimension(ncid, timid, len=i_time), &

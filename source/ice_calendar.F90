@@ -339,6 +339,14 @@
            end select
 
         enddo ! nstreams
+        
+        write(il_out, *) "istep: ", istep
+        do ns = 1, nstreams
+            if ((histfreq(ns) == "h") .or. (histfreq(ns) == "H")) then
+                write(il_out, *) "write_history for h stream: ", write_history(ns)
+            end if
+        end do
+        write(il_out, *)
 
         select case (dumpfreq)
         case ("y", "Y")

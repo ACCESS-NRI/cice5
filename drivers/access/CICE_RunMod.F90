@@ -180,6 +180,7 @@
           time = time + dt       ! determine the time and date
  
           time_sec = time_sec + dt
+          write(il_out, *)  "Calendar call during timestepping"
           call calendar(time-runtime0) 
 
           !initialize fluxes sent to coupler 

@@ -209,6 +209,7 @@
 #else
 !ars599: 26032014 original code
 !         call calendar(time)    ! at the end of the first timestep
+        write(il_out, *) "Final calendar call before starting integration"
       call calendar(time-runtime0)
       if (my_task == master_task) then
          write(il_out,*) 'CICE (cice_init) 3     time = ', my_task, time
