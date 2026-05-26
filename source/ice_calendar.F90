@@ -339,14 +339,7 @@
            end select
 
         enddo ! nstreams
-        
-        write(il_out, *) "istep: ", istep
-        do ns = 1, nstreams
-            if ((histfreq(ns) == "h") .or. (histfreq(ns) == "H")) then
-                write(il_out, *) "write_history for h stream: ", write_history(ns)
-            end if
-        end do
-        write(il_out, *)
+
 
         select case (dumpfreq)
         case ("y", "Y")
@@ -362,6 +355,14 @@
 
         if (force_restart_now) write_restart = 1
       endif !  istep > 1
+
+      write(il_out, *) "istep: ", istep
+        do ns = 1, nstreams
+            if ((histfreq(ns) == "h") .or. (histfreq(ns) == "H")) then
+                write(il_out, *) "write_history for h stream: ", write_history(ns)
+            end if
+        end do
+        write(il_out, *)
 
       if (my_task == master_task .and. mod(istep,diagfreq) == 0 &
                                  .and. stop_now /= 1) then
