@@ -638,7 +638,7 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
                            'put att _FillValue '//avail_hist_fields(n)%vname)
 
                !---------------------------------------------------------------
-               ! Add cell_methods attribute to variables if averaged
+               ! Add cell_methods and time_rep attributes
                !---------------------------------------------------------------
                if (hist_avg .and. histfreq(ns) /= '1') then
                   if (TRIM(avail_hist_fields(n)%vname)/='sig1' .or. &
@@ -668,6 +668,20 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
                   .or. n==n_hisnap(ns)    .or. n==n_aisnap(ns)) then
                   call ice_pio_check(pio_put_att(File,varid,'time_rep','instantaneous'), &
                               'put att time_rep instantaneous')
+                  if (avail_hist_fields(n)%avg_ice_present) then
+                     call ice_pio_check(pio_put_att(File,varid,'cell_methods',&
+                        'area: mean where sea_ice (mask=siconc) time: point'), &
+                        'put att cell methods '//avail_hist_fields(n)%vname)
+                  else
+                     if (TRIM(avail_hist_fields(n)%vname(1:2))/='si') then !native diags
+                        call ice_pio_check(pio_put_att(File,varid,'cell_methods','time: point'), &
+                        'put att cell methods '//avail_hist_fields(n)%vname)
+                     else !cmip diags
+                        call ice_pio_check(pio_put_att(File,varid,'cell_methods', &
+                        'area: mean where sea time: point'), &
+                        'put att cell methods  '//avail_hist_fields(n)%vname)
+                     endif
+                  endif
                else
                   call ice_pio_check(pio_put_att(File,varid,'time_rep','averaged'), &
                               'put att time_rep averaged')
