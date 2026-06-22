@@ -3,11 +3,14 @@ This repository contains the access/auscom fork of cice5 used in the ACCESS-ESM1
 
 ACCESS-ESM1.6 related code came from https://code.metoffice.gov.uk/trac/cice/browser/main/branches/pkg/Config/vn5.1.2_GSI8.1_package_branch/cice?order=name&rev=334#source (MOSRS account required)
 
-More recent versions are found in the [CICE](https://github.com/CICE-Consortium/CICE) and [Icepack](https://github.com/CICE-Consortium/Icepack) repositories, which are maintained by the CICE Consortium.  
-
-If you expect to make any changes to the code, we recommend that you work in the CICE and Icepack repositories.  Changes made to code in this repository will not be accepted, other than critical bug fixes.
+More recent versions are found in the [CICE](https://github.com/CICE-Consortium/CICE) and [Icepack](https://github.com/CICE-Consortium/Icepack) repositories, which are maintained by the CICE Consortium.
 
 There is [PDF documentation](https://github.com/ACCESS-NRI/cice5/blob/master/doc/cicedoc.pdf)([DOI](https://doi.org/10.5281/zenodo.19207490)) available for CICE 5.1.2, however some changes were made to this fork to support coupling with ACCESS-OM2 and ACCESS-ESM1.6, Parallel IO, ERA5 Forcing, BGC modelling and for other updates. Some of these changes are described in the [ACCESS-OM2 Technical Report](https://github.com/COSIMA/ACCESS-OM2-1-025-010deg-report).
+
+
+### Build Systems
+
+We recommend and support using CMake to build cice5, however the Makefile build is kept in this repository for any legacy models still using these files.
 
 ## Useful links
 

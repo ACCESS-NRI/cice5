@@ -1,0 +1,17 @@
+spack:
+  specs:
+  - 'cice5@git.{{ ref }}=stable {{ esm1p6_0p5deg }} ^openmpi@4'
+  - 'cice5@git.{{ ref }}=stable {{ esm1p6_0p5deg }} ^openmpi@5'
+  - 'cice5@git.{{ ref }}=stable build_type=Debug {{ esm1p6_0p5deg }}'
+  - 'cice5@git.{{ ref }}=stable model=access-esm1.6'
+  packages:
+    intel-oneapi-compilers:
+      require:
+      - '{{ oneapi_compiler_ver }}'
+    all:
+      prefer:
+      - '%access_oneapi'
+      - 'target={{ target }}'
+  concretizer:
+    unify: false
+  view: false
