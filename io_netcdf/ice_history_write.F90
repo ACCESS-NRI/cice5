@@ -160,7 +160,7 @@ subroutine ice_write_hist (ns)
       ! write time_bounds info
       !-----------------------------------------------------------------
 
-        if (hist_avg) then
+        if (hist_avg .and. histfreq(ns) /= '1') then
             call check(nf90_inq_varid(ncid,'time_bounds',varid), &
                        'inq varid time_bounds')
             if (history_parallel_io) then
@@ -335,7 +335,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
           call abort_ice( 'ice Error: invalid calendar settings')
       endif
 
-      if (hist_avg) then
+      if (hist_avg .and. histfreq(ns) /= '1') then
           call check(nf90_put_att(ncid,varid,'bounds','time_bounds'), &
                       'att time bounds')
       endif
@@ -344,7 +344,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
     ! Define attributes for time bounds if hist_avg is true
     !-----------------------------------------------------------------
 
-      if (hist_avg) then
+      if (hist_avg .and. histfreq(ns) /= '1') then
         dimid(1) = boundid
         dimid(2) = timid
         call check(nf90_def_var(ncid, 'time_bounds', &
