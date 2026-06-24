@@ -1893,7 +1893,6 @@
            avgct(ns) = avgct(ns) + c1
            if (avgct(ns) == c1) then
               time_beg(ns) = (time-dt)/int(secday)
-              time_beg(ns) = real(time_beg(ns),kind=real_kind)
            endif
          endif
       enddo  ! ns
@@ -3321,7 +3320,6 @@
         !$OMP END PARALLEL DO
 
         time_end(ns) = time/int(secday)
-        time_end(ns) = real(time_end(ns),kind=real_kind)
 
       !---------------------------------------------------------------
       ! write file
