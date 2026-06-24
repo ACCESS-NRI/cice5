@@ -348,7 +348,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
         dimid(1) = boundid
         dimid(2) = timid
         call check(nf90_def_var(ncid, 'time_bounds', &
-                              nf90_float,dimid(1:2),varid), &
+                              nf90_double,dimid(1:2),varid), &
                     'def var time_bounds')
 
         call check(nf90_put_att(ncid,varid,'long_name', &
