@@ -657,6 +657,8 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
                               'put att cell methods time mean '//avail_hist_fields(n)%vname)
                            endif
                      endif
+                     call ice_pio_check(pio_put_att(File,varid,'time_rep','averaged'), &
+                          'put att time_rep averaged')
                   endif
                endif
 
@@ -682,9 +684,7 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
                         'put att cell methods  '//avail_hist_fields(n)%vname)
                      endif
                   endif
-               else
-                  call ice_pio_check(pio_put_att(File,varid,'time_rep','averaged'), &
-                              'put att time_rep averaged')
+
                endif
             endif
       enddo  ! num_avail_hist_fields_2D
@@ -743,20 +743,53 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
                if (status /= nf90_noerr) call abort_ice( &
                   'Error defining _FillValue for '//avail_hist_fields(n)%vname)
 
+
                !---------------------------------------------------------------
-               ! Add cell_methods attribute to variables if averaged
+               ! Add cell_methods and time_rep attributes
                !---------------------------------------------------------------
                if (hist_avg .and. histfreq(ns) /= '1') then
-                  status = pio_put_att(File,varid,'cell_methods','time: mean')
-                  if (status /= nf90_noerr) call abort_ice( &
-                     'Error defining cell methods for '//avail_hist_fields(n)%vname)
+                   if (TRIM(avail_hist_fields(n)%vname)/='Tn_top' .or. &
+                        TRIM(avail_hist_fields(n)%vname)/='keffn_top') then
+                     if (avail_hist_fields(n)%avg_ice_present) then
+                        call ice_pio_check(pio_put_att(File,varid,'cell_methods',&
+                           'area: time: mean where sea_ice (mask=siitdconc)'), &
+                           'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                     else
+                           if (TRIM(avail_hist_fields(n)%vname(1:2))/='si') then !native diags
+                              call ice_pio_check(pio_put_att(File,varid,'cell_methods','time: mean'), &
+                              'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                           else !cmip diags
+                              call ice_pio_check(pio_put_att(File,varid,'cell_methods', &
+                              'area: mean where sea time: mean'), &
+                              'put att cell methods time mean '//avail_hist_fields(n)%vname)
+                           endif
+                     endif
+                        call ice_pio_check(pio_put_att(File,varid,'time_rep','averaged'), &
+                             'put att time_rep averaged')
+                  endif
                endif
 
-               if (histfreq(ns) == '1' .or. .not. hist_avg) then
-                  status = pio_put_att(File,varid,'time_rep','instantaneous')
-               else
-                  status = pio_put_att(File,varid,'time_rep','averaged')
+               if (histfreq(ns) == '1' .or. .not. hist_avg         &
+                  .or. n==n_Tn_top(ns) .or. n==n_keffn_top(ns)) then ! snapshots
+                  call ice_pio_check(pio_put_att(File,varid,'time_rep','instantaneous'), &
+                              'put att time_rep instantaneous')
+                  if (avail_hist_fields(n)%avg_ice_present) then
+                     call ice_pio_check(pio_put_att(File,varid,'cell_methods',&
+                        'area: mean where sea_ice (mask=siitdconc) time: point'), &
+                        'put att cell methods '//avail_hist_fields(n)%vname)
+                  else
+                     if (TRIM(avail_hist_fields(n)%vname(1:2))/='si') then !native diags
+                        call ice_pio_check(pio_put_att(File,varid,'cell_methods','time: point'), &
+                        'put att cell methods '//avail_hist_fields(n)%vname)
+                     else !cmip diags
+                        call ice_pio_check(pio_put_att(File,varid,'cell_methods', &
+                        'area: mean where sea time: point'), &
+                        'put att cell methods  '//avail_hist_fields(n)%vname)
+                     endif
+                  endif
                endif
+
+
             endif
       enddo  ! num_avail_hist_fields_3Dc
 
