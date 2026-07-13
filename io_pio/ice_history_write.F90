@@ -748,7 +748,7 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
                ! Add cell_methods and time_rep attributes
                !---------------------------------------------------------------
                if (hist_avg .and. histfreq(ns) /= '1') then
-                   if (TRIM(avail_hist_fields(n)%vname)/='Tn_top' .or. &
+                   if (TRIM(avail_hist_fields(n)%vname)/='Tn_top' .and. &
                         TRIM(avail_hist_fields(n)%vname)/='keffn_top') then
                      if (avail_hist_fields(n)%avg_ice_present) then
                         call ice_pio_check(pio_put_att(File,varid,'cell_methods',&

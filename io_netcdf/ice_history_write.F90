@@ -764,7 +764,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                 ! Add cell_methods attribute to variables if averaged
                 !---------------------------------------------------------------
                 if (hist_avg .and. histfreq(ns) /= '1') then
-                    if (TRIM(avail_hist_fields(n)%vname)/='Tn_top' .or. &
+                    if (TRIM(avail_hist_fields(n)%vname)/='Tn_top' .and. &
                         TRIM(avail_hist_fields(n)%vname)/='keffn_top') then
                         if (avail_hist_fields(n)%avg_ice_present) then
                             call check(nf90_put_att(ncid,varid,'cell_methods',&
