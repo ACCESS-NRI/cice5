@@ -3095,7 +3095,7 @@
               if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then
 
                 ! Only average for timesteps when ice present
-                if (avail_hist_fields(n)%avg_ice_present) then
+                if (avail_hist_fields(nn)%avg_ice_present) then
                     a3Dc(:,:,:,n,iblk) = a3Dc(:,:,:,n,iblk)*ravgipn(:,:,:)
                 else
                     a3Dc(:,:,:,n,iblk) = a3Dc(:,:,:,n,iblk)*ravgct
@@ -3115,7 +3115,7 @@
                 enddo             ! k
 
                 ! Mask ice-free points by aicen
-                if (avail_hist_fields(n)%mask_ice_free_points) then
+                if (avail_hist_fields(nn)%mask_ice_free_points) then
                   where(ravgipn(:,:,:) == c0) a3Dc(:,:,:,n,iblk) = spval_dbl
                 endif
 
