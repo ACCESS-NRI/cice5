@@ -2797,6 +2797,10 @@
          if (f_siitdconc   (1:1) /= 'x') &
              call accum_hist_field(n_siitdconc-n2D, iblk, ncat_hist, &
                                    aicen(:,:,1:ncat_hist,iblk), a3Dc)
+        if (f_siitdthick   (1:1) /= 'x') &
+            ! intensive + category area mean -> use weighted form
+             call accum_hist_field(n_siitdthick-n2D, iblk, ncat_hist, &
+                                   vicen(:,:,1:ncat_hist,iblk), a3Dc)
 ! example for 3D field (x,y,z)
 !         if (f_field3dz   (1:1) /= 'x') &
 !             call accum_hist_field(n_field3dz-n3Dccum, iblk, nzilyr, &
