@@ -461,6 +461,7 @@
       call broadcast_scalar (f_siforceintstrx, master_task)
       call broadcast_scalar (f_siforceintstry, master_task)
       call broadcast_scalar (f_siitdconc, master_task)
+      call broadcast_scalar (f_siitdthick, master_task)
       call broadcast_scalar (f_aicen, master_task)
       call broadcast_scalar (f_vicen, master_task)
       call broadcast_scalar (f_vsnon, master_task)
