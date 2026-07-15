@@ -2970,7 +2970,7 @@
            do k=1,ncat_hist
            do j = jlo, jhi
            do i = ilo, ihi
-              if (a3Dc(i,j,k,n_aicen(ns)-n2D,iblk) > puny) then
+              if (a3Dc(i,j,k,n_aicen(ns)-n2D,iblk) * ravgct > area_threshold) then
                  ravgipn(i,j,k) = c1/(a3Dc(i,j,k,n_aicen(ns)-n2D,iblk))
               else
                  ravgipn(i,j,k) = c0
