@@ -301,7 +301,7 @@
            f_siflfwdrain = 'x', &
            f_sisaltmass = 'x', &
            f_aicen     = 'x' , f_siitdconc = 'x', &
-           f_vicen      = 'x', &
+           f_vicen      = 'x', f_siitdthick = 'x',&
            f_vsnon     = 'x',  &
            f_trsig     = 'm', &
            f_icepresent = 'm', f_sitimefrac = 'x',&
@@ -438,7 +438,7 @@
            f_siflfwdrain, &
            f_sisaltmass, &
            f_aicen, f_siitdconc, &    
-           f_vicen, &
+           f_vicen, f_siitdthick, &
            f_vsnon, &
            f_trsig, &
            f_icepresent, f_sitimefrac,& !same var, two names
@@ -579,6 +579,7 @@
            n_siflfwdrain, &
            n_sisaltmass, &
            n_siitdconc, &
+           n_siitdthick, &
            n_vsnon,                        &
            n_fhocn      , n_fhocn_ai   , &
            n_fswthru    , n_fswthru_ai , &

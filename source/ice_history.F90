@@ -461,6 +461,7 @@
       call broadcast_scalar (f_siforceintstrx, master_task)
       call broadcast_scalar (f_siforceintstry, master_task)
       call broadcast_scalar (f_siitdconc, master_task)
+      call broadcast_scalar (f_siitdthick, master_task)
       call broadcast_scalar (f_aicen, master_task)
       call broadcast_scalar (f_vicen, master_task)
       call broadcast_scalar (f_vsnon, master_task)
@@ -1557,6 +1558,11 @@
               "Sea-Ice Area Percentage in Ice Thickness Categories", &
               "none", c100, c0,                  &
               ns1, f_siitdconc)
+
+            call define_hist_field(n_siitdthick,"siitdthick","m",tstr3Dc, tcstr, &
+              "Sea-Ice thickness in ice thickness categories", &
+              "area weighted average of volume divided by ice area in each thickness category", c1, c0,                  &
+              ns1, f_siitdthick, avg_ice_present=.true., mask_ice_free_points=.true.)
 
             ! siitdthick, siitdsnconc, siitdsnthick are not implemented because it's not clear how to 
             ! mask them when ice free (e.g. by aice or aicen ? )
@@ -2792,6 +2798,10 @@
          if (f_siitdconc   (1:1) /= 'x') &
              call accum_hist_field(n_siitdconc-n2D, iblk, ncat_hist, &
                                    aicen(:,:,1:ncat_hist,iblk), a3Dc)
+        if (f_siitdthick   (1:1) /= 'x') &
+            ! intensive + category area mean -> use weighted form
+             call accum_hist_field(n_siitdthick-n2D, iblk, ncat_hist, &
+                                   vicen(:,:,1:ncat_hist,iblk), a3Dc)
 ! example for 3D field (x,y,z)
 !         if (f_field3dz   (1:1) /= 'x') &
 !             call accum_hist_field(n_field3dz-n3Dccum, iblk, nzilyr, &
@@ -2960,7 +2970,7 @@
            do k=1,ncat_hist
            do j = jlo, jhi
            do i = ilo, ihi
-              if (a3Dc(i,j,k,n_aicen(ns)-n2D,iblk) > puny) then
+              if (a3Dc(i,j,k,n_aicen(ns)-n2D,iblk) * ravgct > area_threshold) then
                  ravgipn(i,j,k) = c1/(a3Dc(i,j,k,n_aicen(ns)-n2D,iblk))
               else
                  ravgipn(i,j,k) = c0
@@ -3090,7 +3100,7 @@
               if (avail_hist_fields(nn)%vhistfreq == histfreq(ns)) then
 
                 ! Only average for timesteps when ice present
-                if (avail_hist_fields(n)%avg_ice_present) then
+                if (avail_hist_fields(nn)%avg_ice_present) then
                     a3Dc(:,:,:,n,iblk) = a3Dc(:,:,:,n,iblk)*ravgipn(:,:,:)
                 else
                     a3Dc(:,:,:,n,iblk) = a3Dc(:,:,:,n,iblk)*ravgct
@@ -3109,8 +3119,10 @@
                 enddo             ! j
                 enddo             ! k
 
-                ! To-do: if (avail_hist_fields(n)%mask_ice_free_points) returns true, would 
-                ! we mask by aice or aicen ?
+                ! Mask ice-free points by aicen
+                if (avail_hist_fields(nn)%mask_ice_free_points) then
+                  where(ravgipn(:,:,:) == c0) a3Dc(:,:,:,n,iblk) = spval_dbl
+                endif
 
               endif
 
