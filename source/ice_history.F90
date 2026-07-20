@@ -1561,7 +1561,7 @@
 
             call define_hist_field(n_siitdthick,"siitdthick","m",tstr3Dc, tcstr, &
               "Sea-Ice thickness in ice thickness categories", &
-              "none", c1, c0,                  &
+              "area weighted average of volume divided by ice area in each thickness category", c1, c0,                  &
               ns1, f_siitdthick, avg_ice_present=.true., mask_ice_free_points=.true.)
 
             ! siitdthick, siitdsnconc, siitdsnthick are not implemented because it's not clear how to 
