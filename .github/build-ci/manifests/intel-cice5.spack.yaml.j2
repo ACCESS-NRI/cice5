@@ -8,7 +8,7 @@ spack:
       require:
       - '{{ intel_compiler_ver }}'
     all:
-      prefer:
+      require:
       - '%access_intel'
       - 'target={{ target }}'
   concretizer:

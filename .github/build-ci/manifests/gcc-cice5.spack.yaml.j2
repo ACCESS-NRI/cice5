@@ -7,7 +7,7 @@ spack:
       require:
       - '{{ gcc_compiler_ver }}'
     all:
-      prefer:
+      require:
       - '%access_gcc'
       - 'target={{ target }}'
   concretizer:

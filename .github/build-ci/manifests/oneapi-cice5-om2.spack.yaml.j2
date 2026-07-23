@@ -4,13 +4,12 @@ spack:
   - 'cice5@git.{{ ref }}=stable {{ om2_1deg }} io_type=NetCDF ^openmpi@5'
   - 'cice5@git.{{ ref }}=stable build_type=Debug {{ om2_1deg }}'
   - 'cice5@git.{{ ref }}=stable model=access-om2'
-  - 'cice5@git.{{ ref }}=stable model=access-om2'
   packages:
     intel-oneapi-compilers:
       require:
       - '{{ oneapi_compiler_ver }}'
     all:
-      prefer:
+      require:
       - '%access_oneapi'
       - 'target={{ target }}'
   concretizer:
