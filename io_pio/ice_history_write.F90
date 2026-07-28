@@ -323,7 +323,7 @@ subroutine ice_hist_create(ns, ncfile, File, var, coord_var, var_nverts, var_nz)
             dimid(1) = boundid
             dimid(2) = timid
             call ice_pio_check(pio_def_var(File, 'time_bounds', &
-                                 pio_real,dimid(1:2),varid), &
+                                 pio_double,dimid(1:2),varid), &
                         'def var time_bounds')
 
             call ice_pio_check(pio_put_att(File,varid,'long_name', &
