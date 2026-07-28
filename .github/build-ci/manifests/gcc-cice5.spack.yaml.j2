@@ -2,12 +2,13 @@ spack:
   specs:
   - 'cice5@git.{{ ref }}=stable {{ om2_2deg }}'
   - 'cice5@git.{{ ref }}=stable model=access-om2'
+  - 'cice5@git.{{ ref }}=stable model=access-esm1.6'
   packages:
     gcc:
       require:
       - '{{ gcc_compiler_ver }}'
     all:
-      prefer:
+      require:
       - '%access_gcc'
       - 'target={{ target }}'
   concretizer:
