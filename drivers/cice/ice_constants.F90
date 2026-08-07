@@ -74,9 +74,8 @@
                                    ! (used in zero layer thermodynamics option)
          ksno   = 0.30_dbl_kind  ,&! thermal conductivity of snow  (W/m/deg)
          zref   = 10._dbl_kind   ,&! reference height for stability (m)
-         hs_min = 1.e-4_dbl_kind ,&! min snow thickness for computing zTsn (m)
          snowpatch = 0.02_dbl_kind ! parameter for fractional snow area (m)
-                    
+
       ! weights for albedos 
       ! 4 Jan 2007 BPB  Following are appropriate for complete cloud
       ! in a summer polar atmosphere with 1.5m bare sea ice surface:
@@ -119,12 +118,13 @@
         c16  = 16.0_dbl_kind, &
         c20  = 20.0_dbl_kind, &
         c25  = 25.0_dbl_kind, &
-	c30  = 30.0_dbl_kind, &
+        c30  = 30.0_dbl_kind, &
+        c60  = 60.0_dbl_kind, &
         c100 = 100.0_dbl_kind, &
         c180 = 180.0_dbl_kind, &
         c360 = 360.0_dbl_kind, &
         c365 = 365.0_dbl_kind, &
-	c400 = 400.0_dbl_kind, &
+        c400 = 400.0_dbl_kind, &
         c3600= 3600.0_dbl_kind, &
         c1000= 1000.0_dbl_kind, &
         p001 = 0.001_dbl_kind, &

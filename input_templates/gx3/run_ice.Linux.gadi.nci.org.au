@@ -1,0 +1,41 @@
+#!/usr/bin/env sh
+#
+#PBS -S /bin/bash
+#PBS -q normal
+#PBS -l walltime=01:30:00
+#PBS -l ncpus=6
+#PBS -l mem=15GB
+#PBS -N ACCICE
+#PBS -l wd
+#PBS -l storage=gdata/ik11+gdata/tm70+gdata/vk83
+
+# source $MODULESHOME/init/bash
+module purge
+module load openmpi/4.1.7
+module list
+
+
+
+export LD_LIBRARY_PATH=/g/data/vk83/prerelease/apps/spack/1.1/release/linux-x86_64_v4/netcdf-fortran-4.6.2-fmicbyh4frwgvxgmbwvxo6xi55mnwqjy/lib/:/g/data/vk83/prerelease/apps/spack/0.22/release/linux-rocky8-x86_64_v4/oneapi-2025.2.0/netcdf-c-4.9.2-t2t46hwpfaofaffmzgg5invuqhjcqisf/lib64:$LD_LIBRARY_PATH
+
+
+if [ ! -d history ]; then
+    mkdir history
+fi
+if [ ! -d restart ]; then
+    mkdir restart
+fi
+
+# export F_RECLUNIT=BYTE
+
+stamp=`date -u '+%y%m%d%H%M%S'`
+export ICE_LOG_FILE=ice.log.${stamp}
+
+# export MPI_DSM_DISTRIBUTE
+# mpirun -np 4 /g/data/tm70/as2285/model-code/cice5/Release/bin/cice_cice_100x116_10x116.exe > $ICE_LOG_FILE 2>&1
+mpirun -np 4 /g/data/tm70/as2285/model-code/cice5/Debug/bin/cice_cice_100x116_10x116.exe > $ICE_LOG_FILE 2>&1
+
+cp -p -f ice_diag.d ice_diag.d.${stamp}
+
+exit 0
+
