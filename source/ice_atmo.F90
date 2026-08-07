@@ -57,8 +57,10 @@
          Cdn_atm_ratio   ! ratio drag atm / neutral drag atm
 !ars599: 24092014 (CODE: petteri)
       ! tuning parameters, set in namelist
+#if defined(AusCOM)
       real (kind=dbl_kind), public :: &
          iceruf    ! ice surface roughness (m)
+#endif
 
 !=======================================================================
 

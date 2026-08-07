@@ -83,8 +83,8 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 include(CMakePackageConfigHelpers)
 
 # https://github.com/ACCESS-NRI/access-spack-packages/blob/d8b48b18a1400cf2a6850af0bf038af55804d92f/packages/cice5/package.py#L197C1-L198C65
-set (NCI_INTEL_FLAGS "-r8 -i4 -w -fpe0 -ftz -convert big_endian -assume byterecl -check noarg_temp_created")
-set (NCI_REPRO_FLAGS "-fp-model precise -fp-model source -align all")
+set (NCI_INTEL_FLAGS "-r8 -i4 -w -fpe0 -ftz -convert big_endian -assume byterecl -check noarg_temp_created -grecord-gcc-switches")
+set (NCI_REPRO_FLAGS "-fp-model precise -fp-model source -align all ")
 if (CICE_DETERMINISTIC)
   set (NCI_OPTIM_FLAGS "-g0 -O0 -axCORE-AVX2 -debug none -check none -assume buffered_io")
 else ()
@@ -93,7 +93,7 @@ else ()
 endif ()
 
 if(CMAKE_Fortran_COMPILER_ID MATCHES "GNU")
-  set(CMAKE_Fortran_FLAGS_RELEASE "-Wall -fdefault-real-8 -fdefault-double-8 -ffpe-trap=invalid,zero,overflow -fallow-argument-mismatch")
+  set(CMAKE_Fortran_FLAGS_RELEASE "-Wall -fdefault-real-8 -fdefault-double-8 -ffpe-trap=invalid,zero,overflow -fallow-argument-mismatch -grecord-gcc-switches")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "Intel")
   set(CMAKE_Fortran_FLAGS_RELEASE "${NCI_INTEL_FLAGS} ${NCI_REPRO_FLAGS} ${NCI_OPTIM_FLAGS}")
   set(CMAKE_Fortran_FLAGS_DEBUG "${NCI_INTEL_FLAGS} ${NCI_REPRO_FLAGS} ${NCI_DEBUG_FLAGS}")
@@ -122,7 +122,11 @@ add_compile_definitions(
   NSNWLYR=${NSNWLYR}
 )
 
-add_compile_definitions( gather_scatter_barrier ncdf OASIS3_MCT )
+if(CICE_DRIVER MATCHES "(auscom|access)")
+  add_compile_definitions( OASIS3_MCT )
+endif()
+
+add_compile_definitions( gather_scatter_barrier ncdf )
 
 if (CICE_IO MATCHES PIO)
   add_compile_definitions(PIO)
@@ -138,13 +142,16 @@ endif()
 #                              External packages                                #
 #]==============================================================================]
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(OASIS3PSMILE REQUIRED IMPORTED_TARGET "oasis3-psmile.MPI1")
-pkg_check_modules(OASIS3MCT REQUIRED IMPORTED_TARGET "oasis3-mct")
-pkg_check_modules(OASIS3MPEU REQUIRED IMPORTED_TARGET "oasis3-mpeu")
-pkg_check_modules(OASIS3SCRIP REQUIRED IMPORTED_TARGET "oasis3-scrip")
-
 find_package(MPI REQUIRED COMPONENTS Fortran)
+
+if(CICE_DRIVER MATCHES "(auscom|access)")
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(OASIS3PSMILE REQUIRED IMPORTED_TARGET "oasis3-psmile.MPI1")
+  pkg_check_modules(OASIS3MCT REQUIRED IMPORTED_TARGET "oasis3-mct")
+  pkg_check_modules(OASIS3MPEU REQUIRED IMPORTED_TARGET "oasis3-mpeu")
+  pkg_check_modules(OASIS3SCRIP REQUIRED IMPORTED_TARGET "oasis3-scrip")
+endif()
+
 if(CICE_DRIVER MATCHES "auscom")
   find_package(LIBACCESSOM2)
 endif()
@@ -174,12 +181,18 @@ if(CICE_DRIVER MATCHES "auscom")
   target_link_libraries(cice PUBLIC libaccessom2::accessom2 )
 endif()
 
+if(CICE_DRIVER MATCHES "(auscom|access)")
+  target_link_libraries(cice
+    PRIVATE
+    # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
+    PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP 
+  )
+endif()
+
 target_link_libraries(cice 
   PRIVATE 
   MPI::MPI_Fortran 
-  PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP 
-  # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
-  )
+)
 
 if(CICE_IO MATCHES "^(NetCDF|PIO)$")
   target_link_libraries(cice PRIVATE NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
@@ -285,6 +298,13 @@ elseif(CICE_DRIVER MATCHES "auscom")
     ${CICE_DRIVER_SOURCE}/cpl_parameters.F90
     ${CICE_DRIVER_SOURCE}/ocean_rough_mod.F90
     ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
+    ${CICE_DRIVER_SOURCE}/ice_constants.F90
+  )
+elseif(CICE_DRIVER MATCHES "cice")
+  target_sources(cice PRIVATE
+    ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
+    ${CICE_DRIVER_SOURCE}/CICE_InitMod.F90
+    ${CICE_DRIVER_SOURCE}/CICE_RunMod.F90
     ${CICE_DRIVER_SOURCE}/ice_constants.F90
   )
 else()

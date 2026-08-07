@@ -1166,7 +1166,7 @@ subroutine ice_hist_create(ns, ncfile, ncid, var, coord_var, var_nverts, var_nz)
                             'global attribute time_period_freq')
 
 
-#if defined(AUSCOM) && !defined(ACCESS)
+#if defined(AusCOM) && !defined(ACCESS)
         write(title,'(a,i3,a)') 'This Year Has ',int(dayyr),' days'
 #else
         if (use_leap_years) then

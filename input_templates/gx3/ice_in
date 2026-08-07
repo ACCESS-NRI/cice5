@@ -7,18 +7,17 @@
   , npt            = 744
   , ndtd           = 1
   , runtype        = 'initial'
-  , ice_ic         = './restart/iced_gx3_v5.nc'
+  , ice_ic         = './iced_gx3_v5.nc'
   , restart        = .true.
   , restart_ext    = .false.
-  , use_restart_time = .true.
+  , use_restart_time = .false.
   , restart_format = 'nc'
-  , lcdf64         = .false.
   , restart_dir    = './restart/'
   , restart_file   = 'iced'
-  , pointer_file   = './restart/ice.restart_file'
-  , dumpfreq       = 'y'
+  , pointer_file   = './ice.restart_file'
+  , dumpfreq       = 'm'
   , dumpfreq_n     = 1
-  , dump_last      = .false.
+  , dump_last      = .true.
   , bfbflag        = .false.
   , diagfreq       = 24
   , diag_type      = 'stdout'
@@ -41,10 +40,10 @@
 /
 
 &grid_nml
-    grid_format  = 'bin'
+    grid_format  = 'nc'
   , grid_type    = 'displaced_pole'
-  , grid_file    = 'grid'
-  , kmt_file     = 'kmt'
+  , grid_file    = 'global_gx3.grid.nc'
+  , kmt_file     = 'global_gx3.kmt.nc'
   , gridcpl_file = 'unknown_gridcpl_file'
   , kcatbound    = 0
 /
@@ -62,17 +61,17 @@
 /
 
 &tracer_nml
-    tr_iage      = .true.
+    tr_iage      = .false.
   , restart_age  = .false.
   , tr_FY        = .false.
   , restart_FY   = .false.
-  , tr_lvl       = .true.
+  , tr_lvl       = .false.
   , restart_lvl  = .false.
   , tr_pond_cesm = .false.
   , restart_pond_cesm = .false.
   , tr_pond_topo = .false.
   , restart_pond_topo = .false.
-  , tr_pond_lvl  = .true.
+  , tr_pond_lvl  = .false.
   , restart_pond_lvl  = .false.
   , tr_aero      = .false.
   , restart_aero = .false.
@@ -156,7 +155,7 @@
   , ycycle          = 1
   , atm_data_format = 'bin'
   , atm_data_type   = 'ncar'
-  , atm_data_dir    = '/usr/projects/climate/eclare/DATA/atm/gx3v2m/NCAR_bulk/'
+  , atm_data_dir    = '/g/data/ik11/inputs/CICE_data/forcing/gx3/NCAR_bulk/'
   , calc_strair     = .true.
   , highfreq        = .false.
   , natmiter        = 5

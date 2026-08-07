@@ -1785,35 +1785,35 @@
            yr                   ! current forcing year
 
       fsw_file = &
-           trim(atm_data_dir)//'ISCCPM/MONTHLY/RADFLX/swdn.1996.dat'
+           trim(atm_data_dir)//'/MONTHLY/swdn.1996.dat'
       call file_year(fsw_file,yr)
 
       flw_file = &
-           trim(atm_data_dir)//'ISCCPM/MONTHLY/RADFLX/cldf.1996.dat'
+           trim(atm_data_dir)//'/MONTHLY/cldf.1996.dat'
       call file_year(flw_file,yr)
 
       rain_file = &
-           trim(atm_data_dir)//'MXA/MONTHLY/PRECIP/prec.1996.dat'
+           trim(atm_data_dir)//'/MONTHLY/prec.1996.dat'
       call file_year(rain_file,yr)
 
       uwind_file = &
-           trim(atm_data_dir)//'NCEP/4XDAILY/STATES/u_10.1996.dat'
+           trim(atm_data_dir)//'/4XDAILY/u_10.1996.dat'
       call file_year(uwind_file,yr)
 
       vwind_file = &
-           trim(atm_data_dir)//'NCEP/4XDAILY/STATES/v_10.1996.dat'
+           trim(atm_data_dir)//'/4XDAILY/v_10.1996.dat'
       call file_year(vwind_file,yr)
 
       tair_file = &
-           trim(atm_data_dir)//'NCEP/4XDAILY/STATES/t_10.1996.dat'
+           trim(atm_data_dir)//'/4XDAILY/t_10.1996.dat'
       call file_year(tair_file,yr)
 
       humid_file = &
-           trim(atm_data_dir)//'NCEP/4XDAILY/STATES/q_10.1996.dat'
+           trim(atm_data_dir)//'/4XDAILY/q_10.1996.dat'
       call file_year(humid_file,yr)
 
       rhoa_file = &
-           trim(atm_data_dir)//'NCEP/4XDAILY/STATES/dn10.1996.dat'
+           trim(atm_data_dir)//'/4XDAILY/dn10.1996.dat'
       call file_year(rhoa_file,yr)
 
       if (my_task == master_task) then
