@@ -150,9 +150,9 @@ if(CICE_DRIVER MATCHES "auscom")
 endif()
 
 if(CICE_IO MATCHES "PIO" AND NOT TARGET PIO::PIO_Fortran)
-  # Code has not been tested with versions older than 2.5.3, but probably still works fine
-  # For multiple timesteps per history file, needs latest from main (>=2.6.7)
-  find_package(PIO 2.5.3 REQUIRED COMPONENTS Fortran)
+  # For multiple timesteps per history file (runtime setting `hist_file_freq`), needs 2.6.8
+  # otherwise older versions are ok (>=2.5.3 has been used)
+  find_package(PIO 2.6.8 REQUIRED COMPONENTS Fortran)
 endif()
 if(CICE_IO MATCHES "^(NetCDF|PIO)$" AND NOT TARGET NetCDF::NetCDF_Fortran)
   # Code has not been tested with versions older than 4.7.3, but probably still works fine 
