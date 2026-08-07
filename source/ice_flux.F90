@@ -364,7 +364,7 @@
       use ice_therm_shared, only: ktherm
       use ice_zbgc_shared, only: flux_bio
       use ice_atmo, only: Cdn_atm
-#ifdef ACCESS || AusCOM
+#if defined(ACCESS) || defined(AUSCOM)
       use ice_atmo, only: iceruf
 #else
       use ice_constants, only: iceruf
@@ -604,7 +604,7 @@
                           Cdn_ocn_floe, Cdn_ocn_skin, formdrag
       use ice_constants, only: vonkar,zref
       use ice_state, only: aice, vice, vsno, trcr, tr_iage, nt_iage
-#ifdef ACCESS || AusCOM
+#if defined(ACCESS) || defined(AUSCOM)
       use ice_atmo, only: iceruf
 #else
       use ice_constants, only: iceruf
@@ -912,7 +912,7 @@
                                fsens,    flat,     &
                                fswabs,   flwout,   &
                                evap,               &
-#ifdef ACCESS || AUSCOM
+#if defined(ACCESS) || defined(AUSCOM)
                                evap_ice, evap_snow,&
 #endif
                                Tref,     Qref,     &
@@ -954,7 +954,7 @@
           fswabs  , & ! shortwave absorbed heat flx     (W/m**2)
           flwout  , & ! upwd lw emitted heat flx        (W/m**2)
           evap    , & ! evaporation                     (kg/m2/s)
-#ifdef ACCESS || AUSCOM
+#if defined(ACCESS) || defined(AUSCOM)
           evap_ice, & ! evaporation over ice only       (kg/m2/s)
           evap_snow,& ! evaporation over snow only     (kg/m2/s)
 #endif
@@ -1008,7 +1008,7 @@
             fswabs  (i,j) = fswabs  (i,j) * ar
             flwout  (i,j) = flwout  (i,j) * ar
             evap    (i,j) = evap    (i,j) * ar
-#ifdef ACCESS || AUSCOM
+#if defined(ACCESS) || defined(AUSCOM)
             evap_ice(i,j) = evap_ice(i,j) * ar
             evap_snow(i,j) = evap_snow(i,j) * ar
 #endif
