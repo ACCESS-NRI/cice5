@@ -278,7 +278,8 @@
           fresh_ai, fsalt_ai, fsalt, &
           fswthru_ai, fhocn, fswthru, scale_factor, &
           swvdr, swidr, swvdf, swidf, Tf, Tair, Qa, strairxT, strairyt, &
-          fsens, flat, fswabs, flwout, evap, Tref, Qref, faero_ocn, &
+          fsens, flat, fswabs, flwout, evap, evap_ice, evap_snow, &
+          Tref, Qref, faero_ocn, &
           fsurfn_f, flatn_f, scale_fluxes, frzmlt_init, frzmlt, snowfrac
       use ice_grid, only: tmask
       use ice_ocean, only: oceanmixed_ice, ocean_mixed_layer
@@ -431,6 +432,7 @@
                             fsens    (:,:,iblk), flat    (:,:,iblk), &
                             fswabs   (:,:,iblk), flwout  (:,:,iblk), &
                             evap     (:,:,iblk),                     &
+                            evap_ice (:,:,iblk), evap_snow(:,:,iblk),&
                             Tref     (:,:,iblk), Qref    (:,:,iblk), &
                             fresh    (:,:,iblk), fsalt   (:,:,iblk), &
                             fhocn    (:,:,iblk), fswthru (:,:,iblk), &

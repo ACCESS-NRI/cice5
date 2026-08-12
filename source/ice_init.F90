@@ -90,8 +90,10 @@
       use ice_dyn_shared, only: cosw, sinw
       use ice_shortwave, only: snowpatch, dT_mlt, dalb_mlt
       use ice_therm_vertical, only: chio
-      use ice_atmo, only: iceruf
 #endif
+      ! iceruf is declared unconditionally in ice_atmo, so it is needed here
+      ! on every path -- see the default assignment below.
+      use ice_atmo, only: iceruf
       use ice_atmo, only: atmbndy, calc_strair, formdrag, highfreq, natmiter
       use ice_transport_driver, only: advection
       use ice_state, only: tr_iage, tr_FY, tr_lvl, tr_pond, &
@@ -344,14 +346,19 @@
       Tocnfrz  = -1.8_dbl_kind   ! freezing temp of seawater (C),
                                  ! used as Tsfcn for open water
       chio     = 0.006_dbl_kind  ! unitless param for basal heat flx ala McPhee and Maykut
-      iceruf   = 0.0005_dbl_kind ! ice surface roughness (m)
       ice_ref_salinity = 5._dbl_kind ! (ppt)
       ksno   = 0.30_dbl_kind     ! thermal conductivity of snow (W/m/deg) 
                                  ! (use 0.2 for cm2)
+#endif
+
+      ! iceruf (ice_atmo) and aicenmin (ice_itd) are declared unconditionally,
+      ! unlike the quantities above which are compile-time parameters in
+      ! ice_constants when AusCOM is not defined.  Their defaults therefore
+      ! have to be set unconditionally too, otherwise an uncoupled build
+      ! reads them uninitialised -- init_coupler_flux divides by iceruf.
+      iceruf   = 0.0005_dbl_kind ! ice surface roughness (m)
       aicenmin = 99              ! maximum ice concentration to zap
                                  ! we set a sensible default after namelist read
-
-#endif
       atmbndy   = 'default'       ! or 'constant'
 
       fyear_init = 1900           ! first year of forcing cycle
@@ -925,10 +932,10 @@
       call broadcast_scalar(chio,               master_task)
       call broadcast_scalar(ice_ref_salinity,   master_task)
       call broadcast_scalar(ksno,               master_task)
-      call broadcast_scalar(aicenmin,           master_task)
       call broadcast_scalar(Tocnfrz,            master_task)
-      call broadcast_scalar(iceruf,             master_task)
 #endif
+      call broadcast_scalar(aicenmin,           master_task)
+      call broadcast_scalar(iceruf,             master_task)
       call broadcast_scalar(atmbndy,            master_task)
       call broadcast_scalar(fyear_init,         master_task)
       call broadcast_scalar(ycycle,             master_task)

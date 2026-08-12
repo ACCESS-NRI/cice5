@@ -1,0 +1,188 @@
+#!/bin/bash
+#
+# Run the STANDALONE (uncoupled) CICE5 executable on NCI Gadi.
+#
+# Replaces run_ice.Linux.raijin.nci.org.au, which targeted Raijin (retired in
+# 2019) and loaded intel-fc/12.1.9.293, intel-cc/12.1.9.293 and openmpi/1.6.3,
+# none of which exist on Gadi.
+#
+# This exercises the sea-ice model on its own.  It is NOT how ACCESS-OM2 or
+# ACCESS-ESM1.6 are run; those are coupled configurations driven by payu.
+#
+# Build the executable first, e.g. for the gx3 test grid:
+#
+#   cmake -S . -B build \
+#         -DCICE_DRIVER=cice -DCICE_IO=NetCDF -DCMAKE_BUILD_TYPE=Release \
+#         -DCICE_NXGLOB=100 -DCICE_NYGLOB=116
+#   cmake --build build -j
+#
+# which produces build/cice_cice_100x116.exe.  No block size is baked in: the
+# same executable runs at any task count, because block_size_x, block_size_y
+# and max_blocks are read from domain_nml at run time.  That is why the ncpus
+# request below is the only thing you need to change to rescale the run.
+#
+#PBS -q normal
+#PBS -l ncpus=4
+#PBS -l mem=16GB
+#PBS -l walltime=00:30:00
+#PBS -l wd
+#PBS -N cice5_standalone
+#PBS -j oe
+#
+# Add your own -P <project> and -l storage=... when you submit, e.g.
+#   qsub -P $PROJECT -l storage=gdata/$PROJECT+scratch/$PROJECT run_ice.gadi.nci.org.au
+
+set -eu
+
+#-----------------------------------------------------------------------------
+# Environment.
+#
+# CHECK THESE AGAINST `module avail` ON GADI BEFORE FIRST USE -- NCI updates
+# its module set periodically and these pins go stale.  The build and the run
+# must use the SAME compiler and MPI modules.
+#-----------------------------------------------------------------------------
+module purge
+module load intel-compiler-llvm/2025.2.0
+module load openmpi/5.0.8
+module load netcdf/4.9.2
+module list
+
+#-----------------------------------------------------------------------------
+# What to run
+#-----------------------------------------------------------------------------
+# Executable, as produced by the CMake build above.
+CICE_EXE=${CICE_EXE:-./cice_cice_100x116.exe}
+
+# Global grid size.  Must match the CICE_NXGLOB/CICE_NYGLOB the executable was
+# built with -- unlike the block size, the grid size IS still compile-time.
+NXGLOB=${NXGLOB:-100}
+NYGLOB=${NYGLOB:-116}
+
+# Task count, taken from the PBS request so there is a single source of truth.
+NTASK=${PBS_NCPUS:-4}
+
+if [ ! -x "$CICE_EXE" ]; then
+    echo "ERROR: executable not found or not executable: $CICE_EXE" >&2
+    exit 1
+fi
+
+#-----------------------------------------------------------------------------
+# Derive a block decomposition for this task count.
+#
+# One block per task, split along i, matching processor_shape = 'slenderX1'.
+# block_size_x is rounded up so the blocks cover the domain; CICE pads the last
+# block when the division is not exact.  max_blocks = -1 asks the model to work
+# it out, and to abort telling you the required value if this choice needs more.
+#-----------------------------------------------------------------------------
+BLOCK_X=$(( (NXGLOB + NTASK - 1) / NTASK ))
+BLOCK_Y=$NYGLOB
+
+echo "=============================================================="
+echo " executable    : $CICE_EXE"
+echo " global grid   : ${NXGLOB} x ${NYGLOB}"
+echo " tasks         : ${NTASK}"
+echo " block_size_x  : ${BLOCK_X}"
+echo " block_size_y  : ${BLOCK_Y}"
+echo " max_blocks    : -1 (derived at run time)"
+echo "=============================================================="
+
+#-----------------------------------------------------------------------------
+# Run directories
+#-----------------------------------------------------------------------------
+mkdir -p history restart
+
+#-----------------------------------------------------------------------------
+# Namelist.
+#
+# Seed from the gx3 template on first use, then rewrite &domain_nml so nprocs
+# and the block decomposition always agree with the PBS request above.  nprocs
+# MUST equal the task count or the model aborts in init_domain_blocks.
+#
+# You still need to point grid_nml and forcing_nml at real input data; the grid,
+# kmt and forcing files are not in this repository.  See the CICE-Consortium
+# input data for CICE 5.
+#-----------------------------------------------------------------------------
+if [ ! -f ice_in ]; then
+    cp -p "$(dirname "$0")/gx3/ice_in" ice_in
+    echo "NOTE: seeded ice_in from the gx3 template -- edit grid_nml and"
+    echo "      forcing_nml to point at your input data before running."
+fi
+
+python3 - "$NTASK" "$BLOCK_X" "$BLOCK_Y" <<'PYEOF'
+import re, sys
+
+ntask, bx, by = sys.argv[1:4]
+
+# Keys this script owns.  Anything the namelist previously said about them --
+# set or commented out -- is discarded, so there is exactly one source of
+# truth and repeated runs cannot accumulate contradictory entries.
+OWNED = ('nprocs', 'processor_shape', 'block_size_x', 'block_size_y',
+         'max_blocks')
+
+s = open('ice_in').read()
+m = re.search(r'(^&domain_nml\n)(.*?)(^/\s*$)', s, re.S | re.M)
+if not m:
+    sys.exit('ice_in: no &domain_nml group found')
+
+kept = []
+for line in m.group(2).split('\n'):
+    stripped = line.strip()
+    if not stripped or stripped.startswith('!'):
+        continue                      # blank and comment lines are dropped
+    key = stripped.lstrip(',').lstrip().split('=')[0].strip().lower()
+    if key in OWNED:
+        continue
+    kept.append(stripped.lstrip(',').lstrip())
+
+body = ("    nprocs            = %s\n"
+        "  , processor_shape   = 'slenderX1'\n"
+        "  , block_size_x      = %s\n"
+        "  , block_size_y      = %s\n"
+        "  , max_blocks        = -1\n" % (ntask, bx, by))
+body += ''.join('  , ' + k + '\n' for k in kept)
+
+open('ice_in', 'w').write(s[:m.start(2)] + body + s[m.start(3):])
+print('ice_in &domain_nml is now:')
+print(body, end='')
+PYEOF
+
+#-----------------------------------------------------------------------------
+# Pre-flight: the grid and kmt files named in ice_in must exist, otherwise the
+# model aborts in init_grid1 with a bare NetCDF error that is hard to read.
+#-----------------------------------------------------------------------------
+missing=0
+for key in grid_file kmt_file; do
+    f=$(sed -n "s/^[[:space:],]*${key}[[:space:]]*=[[:space:]]*'\([^']*\)'.*/\1/p" ice_in | tail -1)
+    if [ -n "${f:-}" ] && [ ! -f "$f" ]; then
+        echo "ERROR: ${key} = '${f}' does not exist" >&2
+        missing=1
+    fi
+done
+if [ "$missing" -ne 0 ]; then
+    echo "Edit grid_nml in ice_in to point at your CICE 5 gx3 input data." >&2
+    exit 1
+fi
+
+#-----------------------------------------------------------------------------
+# Go.  Note the explicit `|| rc=$?`: `set -e` would otherwise abort the script
+# before the diagnostics below ever ran.
+#-----------------------------------------------------------------------------
+stamp=$(date -u '+%Y%m%dT%H%M%SZ')
+LOG=ice.log.${stamp}
+
+rc=0
+mpirun -np "$NTASK" "$CICE_EXE" > "$LOG" 2>&1 || rc=$?
+
+# The decomposition actually used is echoed by init_domain_blocks.
+if [ -f ice_diag.d ]; then
+    sed -n '/Domain Information/,/Number of ghost cells/p' ice_diag.d
+    cp -p ice_diag.d "ice_diag.d.${stamp}"
+fi
+
+if [ "$rc" -ne 0 ]; then
+    echo "run FAILED with exit status $rc; tail of $LOG:" >&2
+    tail -30 "$LOG" >&2
+else
+    echo "run completed; log in $LOG"
+fi
+exit $rc
