@@ -31,6 +31,19 @@
 
       subroutine CICE_Finalize(accessom2)
 
+      use ice_atmo, only: dealloc_atmo
+      use ice_brine, only: dealloc_brine
+      use ice_dyn_eap, only: dealloc_dyn_eap
+      use ice_dyn_shared, only: dealloc_dyn_shared
+      use ice_flux, only: dealloc_flux
+      use ice_forcing, only: dealloc_forcing
+      use ice_grid, only: dealloc_grid
+      use ice_meltpond_lvl, only: dealloc_meltpond_lvl
+      use ice_shortwave, only: dealloc_shortwave
+      use ice_state, only: dealloc_state
+      use ice_therm_shared, only: dealloc_therm_shared
+      use ice_zbgc_shared, only: dealloc_zbgc_shared
+
       use ice_exit, only: end_run
       use ice_fileunits, only: nu_diag, release_all_fileunits
       use ice_restart_shared, only: runid
@@ -50,6 +63,25 @@
       call ice_timer_print_all(stats=.true.) ! print timing information
 
 !echmod      if (nu_diag /= 6) close (nu_diag) ! diagnostic output
+
+      !-----------------------------------------------------------------
+      ! Release the run-time-sized module arrays allocated in cice_init.
+      ! Each dealloc_* is a no-op if the matching alloc_* never ran, so
+      ! this is safe on an aborted or partial initialisation.
+      !-----------------------------------------------------------------
+      call dealloc_grid
+      call dealloc_state
+      call dealloc_flux
+      call dealloc_forcing
+      call dealloc_shortwave
+      call dealloc_atmo
+      call dealloc_brine
+      call dealloc_dyn_shared
+      call dealloc_dyn_eap
+      call dealloc_meltpond_lvl
+      call dealloc_therm_shared
+      call dealloc_zbgc_shared
+
       call release_all_fileunits
 
    !-------------------------------------------------------------------

@@ -27,7 +27,7 @@
          bgc_data_dir   ! directory for biogeochemistry data
 
       logical (kind=log_kind), &
-         dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          first_ice      ! distinguishes ice that disappears (e.g. melts)
                         ! and reappears (e.g. transport) in a grid cell
                         ! during a single time step from ice that was
@@ -35,7 +35,7 @@
 
       ! coupling fluxes
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,max_nbtrcr,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          flux_bio   , & ! all bio fluxes to ocean
          ocean_bio  , & ! contains all the ocean bgc tracer concentrations
          flux_bio_ai    ! all bio fluxes to ocean, averaged over grid cell
@@ -48,7 +48,7 @@
          bgc_tracer_type ! 1  dissolved tracers: mix like salinity
                          ! 0  tracers that cling: resist brine motion (algae)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          nit        , & ! ocean nitrate (mmol/m^3)          
          amm        , & ! ammonia/um (mmol/m^3)
          sil        , & ! silicate (mmol/m^3)
@@ -130,12 +130,12 @@
          flood_frac     ! fraction of ocean/meltwater that floods
 
       real (kind=dbl_kind), & 
-         dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          dhbr_top     , & ! brine top change
          dhbr_bot         ! brine bottom change
 
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,max_blocks), public :: &
+         dimension (:,:,:), allocatable, public :: &
          grow_net       , & ! Specific growth rate (/s) per grid cell
          PP_net         , & ! Total production (mg C/m^2/s) per grid cell
          hbri               ! brine height, area-averaged for comparison with hi (m)
@@ -150,17 +150,85 @@
          cgrid              ! CICE vertical coordinate   
 
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,nblyr+2,ncat,max_blocks), public :: &
+         dimension (:,:,:,:,:), allocatable, public :: &
          bphi           , & ! porosity of layers    
          bTiz               ! layer temperatures interpolated on bio grid (C)
 
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          darcy_V            ! darcy velocity positive up (m/s)
     
 !=======================================================================
 
+
+      public :: alloc_zbgc_shared, dealloc_zbgc_shared
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of zbgc_shared.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_zbgc_shared
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         first_ice(nx_block,ny_block,ncat,max_blocks), &
+         flux_bio(nx_block,ny_block,max_nbtrcr,max_blocks), &
+         ocean_bio(nx_block,ny_block,max_nbtrcr,max_blocks), &
+         flux_bio_ai(nx_block,ny_block,max_nbtrcr,max_blocks), &
+         nit(nx_block,ny_block,max_blocks), &
+         amm(nx_block,ny_block,max_blocks), &
+         sil(nx_block,ny_block,max_blocks), &
+         dmsp(nx_block,ny_block,max_blocks), &
+         dms(nx_block,ny_block,max_blocks), &
+         algalN(nx_block,ny_block,max_blocks), &
+         dhbr_top(nx_block,ny_block,ncat,max_blocks), &
+         dhbr_bot(nx_block,ny_block,ncat,max_blocks), &
+         grow_net(nx_block,ny_block,max_blocks), &
+         PP_net(nx_block,ny_block,max_blocks), &
+         hbri(nx_block,ny_block,max_blocks), &
+         bphi(nx_block,ny_block,nblyr+2,ncat,max_blocks), &
+         bTiz(nx_block,ny_block,nblyr+2,ncat,max_blocks), &
+         darcy_V(nx_block,ny_block,ncat,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_zbgc_shared): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      first_ice = .false.
+      flux_bio = c0; ocean_bio = c0; flux_bio_ai = c0; nit = c0; amm = c0
+      sil = c0; dmsp = c0; dms = c0; algalN = c0; dhbr_top = c0
+      dhbr_bot = c0; grow_net = c0; PP_net = c0; hbri = c0; bphi = c0
+      bTiz = c0; darcy_V = c0
+
+      end subroutine alloc_zbgc_shared
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of zbgc_shared.  Safe to call when
+! alloc_zbgc_shared was never reached.
+!
+      subroutine dealloc_zbgc_shared
+
+      if (.not. allocated(first_ice)) return
+
+      deallocate( &
+         first_ice, flux_bio, ocean_bio, flux_bio_ai, nit, amm, sil, dmsp, &
+         dms, algalN, dhbr_top, dhbr_bot, grow_net, PP_net, hbri, bphi, &
+         bTiz, darcy_V)
+
+      end subroutine dealloc_zbgc_shared
+
 
 !=======================================================================
 !

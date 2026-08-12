@@ -31,10 +31,52 @@ use ice_calendar, only: month
 
 implicit none
 
-real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks) :: &
+real (kind=dbl_kind), dimension (:,:,:), allocatable :: &
   aiiu       ! ice fraction on u-grid 
 
 contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of cpl_forcing_handler.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_cpl_forcing_handler
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         aiiu(nx_block,ny_block,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_cpl_forcing_handler): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      aiiu = c0
+
+      end subroutine alloc_cpl_forcing_handler
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of cpl_forcing_handler.  Safe to call when
+! alloc_cpl_forcing_handler was never reached.
+!
+      subroutine dealloc_cpl_forcing_handler
+
+      if (.not. allocated(aiiu)) return
+
+      deallocate( &
+         aiiu)
+
+      end subroutine dealloc_cpl_forcing_handler
+
 
 !=================================================
 subroutine get_core_runoff(fname, vname, nrec)

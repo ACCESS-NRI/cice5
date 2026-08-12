@@ -45,7 +45,7 @@
          grid_type        !  current options are rectangular (default),
                           !  displaced_pole, tripole, regional
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public, save :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public, save :: &
          dxt    , & ! width of T-cell through the middle (m)
          dyt    , & ! height of T-cell through the middle (m)
          dxu    , & ! width of U-cell through the middle (m)
@@ -68,7 +68,7 @@
          ocn_gridcell_frac   ! only relevant for lat-lon grids
                              ! gridcell value of [1 - (land fraction)] (T-cell)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public, save :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public, save :: &
          cyp    , & ! 1.5*HTE - 0.5*HTE
          cxp    , & ! 1.5*HTN - 0.5*HTN
          cym    , & ! 0.5*HTE - 1.5*HTE
@@ -77,14 +77,14 @@
          dyhx       ! 0.5*(HTN - HTN)
 
       ! Corners of grid boxes for history output
-      real (kind=dbl_kind), dimension (4,nx_block,ny_block,max_blocks), public, save :: &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable, public, save :: &
          lont_bounds, & ! longitude of gridbox corners for T point
          latt_bounds, & ! latitude of gridbox corners for T point
          lonu_bounds, & ! longitude of gridbox corners for U point
          latu_bounds    ! latitude of gridbox corners for U point       
 
       ! geometric quantities used for remapping transport
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public, save :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public, save :: &
          xav  , & ! mean T-cell value of x
          yav  , & ! mean T-cell value of y
          xxav , & ! mean T-cell value of xx
@@ -97,20 +97,20 @@
 !         yyyav    ! mean T-cell value of yyy
 
       real (kind=dbl_kind), &
-         dimension (2,2,nx_block,ny_block,max_blocks), public, save :: &
+         dimension (:,:,:,:,:), allocatable, public, save :: &
          mne, & ! matrices used for coordinate transformations in remapping
          mnw, & ! ne = northeast corner, nw = northwest, etc.
          mse, & 
          msw
 
       ! masks
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public, save :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public, save :: &
          hm     , & ! land/boundary mask, thickness (T-cell)
          bm     , & ! task/block id
          uvm        ! land/boundary mask, velocity (U-cell)
 
       logical (kind=log_kind), &
-         dimension (nx_block,ny_block,max_blocks), public, save :: &
+         dimension (:,:,:), allocatable, public, save :: &
          tmask  , & ! land/boundary mask, thickness (T-cell)
          umask  , & ! land/boundary mask, velocity (U-cell)
          lmask_n, & ! northern hemisphere mask
@@ -121,12 +121,115 @@
          dxrect = 30.e5_dbl_kind   ,&! uniform HTN (cm)
          dyrect = 30.e5_dbl_kind     ! uniform HTE (cm)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public, save :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public, save :: &
          rndex_global       ! global index for local subdomain (dbl)
 
 !=======================================================================
 
+
+      public :: alloc_grid, dealloc_grid
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of grid.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_grid
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         dxt(nx_block,ny_block,max_blocks), &
+         dyt(nx_block,ny_block,max_blocks), &
+         dxu(nx_block,ny_block,max_blocks), &
+         dyu(nx_block,ny_block,max_blocks), &
+         HTE(nx_block,ny_block,max_blocks), &
+         HTN(nx_block,ny_block,max_blocks), &
+         tarea(nx_block,ny_block,max_blocks), &
+         uarea(nx_block,ny_block,max_blocks), &
+         tarear(nx_block,ny_block,max_blocks), &
+         uarear(nx_block,ny_block,max_blocks), &
+         tinyarea(nx_block,ny_block,max_blocks), &
+         tarean(nx_block,ny_block,max_blocks), &
+         tareas(nx_block,ny_block,max_blocks), &
+         ULON(nx_block,ny_block,max_blocks), &
+         ULAT(nx_block,ny_block,max_blocks), &
+         TLON(nx_block,ny_block,max_blocks), &
+         TLAT(nx_block,ny_block,max_blocks), &
+         ANGLE(nx_block,ny_block,max_blocks), &
+         ANGLET(nx_block,ny_block,max_blocks), &
+         ocn_gridcell_frac(nx_block,ny_block,max_blocks), &
+         cyp(nx_block,ny_block,max_blocks), &
+         cxp(nx_block,ny_block,max_blocks), &
+         cym(nx_block,ny_block,max_blocks), &
+         cxm(nx_block,ny_block,max_blocks), &
+         dxhy(nx_block,ny_block,max_blocks), &
+         dyhx(nx_block,ny_block,max_blocks), &
+         lont_bounds(4,nx_block,ny_block,max_blocks), &
+         latt_bounds(4,nx_block,ny_block,max_blocks), &
+         lonu_bounds(4,nx_block,ny_block,max_blocks), &
+         latu_bounds(4,nx_block,ny_block,max_blocks), &
+         xav(nx_block,ny_block,max_blocks), &
+         yav(nx_block,ny_block,max_blocks), &
+         xxav(nx_block,ny_block,max_blocks), &
+         yyav(nx_block,ny_block,max_blocks), &
+         mne(2,2,nx_block,ny_block,max_blocks), &
+         mnw(2,2,nx_block,ny_block,max_blocks), &
+         mse(2,2,nx_block,ny_block,max_blocks), &
+         msw(2,2,nx_block,ny_block,max_blocks), &
+         hm(nx_block,ny_block,max_blocks), &
+         bm(nx_block,ny_block,max_blocks), &
+         uvm(nx_block,ny_block,max_blocks), &
+         tmask(nx_block,ny_block,max_blocks), &
+         umask(nx_block,ny_block,max_blocks), &
+         lmask_n(nx_block,ny_block,max_blocks), &
+         lmask_s(nx_block,ny_block,max_blocks), &
+         rndex_global(nx_block,ny_block,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_grid): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      dxt = c0; dyt = c0; dxu = c0; dyu = c0; HTE = c0; HTN = c0; tarea = c0
+      uarea = c0; tarear = c0; uarear = c0; tinyarea = c0; tarean = c0
+      tareas = c0; ULON = c0; ULAT = c0; TLON = c0; TLAT = c0; ANGLE = c0
+      ANGLET = c0; ocn_gridcell_frac = c0; cyp = c0; cxp = c0; cym = c0
+      cxm = c0; dxhy = c0; dyhx = c0; lont_bounds = c0; latt_bounds = c0
+      lonu_bounds = c0; latu_bounds = c0; xav = c0; yav = c0; xxav = c0
+      yyav = c0; mne = c0; mnw = c0; mse = c0; msw = c0; hm = c0; bm = c0
+      uvm = c0; rndex_global = c0
+      tmask = .false.; umask = .false.; lmask_n = .false.; lmask_s = .false.
+
+      end subroutine alloc_grid
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of grid.  Safe to call when
+! alloc_grid was never reached.
+!
+      subroutine dealloc_grid
+
+      if (.not. allocated(dxt)) return
+
+      deallocate( &
+         dxt, dyt, dxu, dyu, HTE, HTN, tarea, uarea, tarear, uarear, &
+         tinyarea, tarean, tareas, ULON, ULAT, TLON, TLAT, ANGLE, ANGLET, &
+         ocn_gridcell_frac, cyp, cxp, cym, cxm, dxhy, dyhx, lont_bounds, &
+         latt_bounds, lonu_bounds, latu_bounds, xav, yav, xxav, yyav, mne, &
+         mnw, mse, msw, hm, bm, uvm, tmask, umask, lmask_n, lmask_s, &
+         rndex_global)
+
+      end subroutine dealloc_grid
+
 
 !=======================================================================
 
@@ -1512,15 +1615,15 @@
          enddo
       enddo
       ! extrapolate to obtain dyu along j=ny_global
-      ! for CESM: use NYGLOB to prevent a compile time out of bounds 
-      ! error when ny_global=1 as in the se dycore; this code is not 
-      ! exersized in prescribed mode.
-#if (NYGLOB>2)
+      ! guarded at run time rather than by the NYGLOB CPP macro, to avoid
+      ! an out of bounds reference when ny_global=1 as in the CESM se
+      ! dycore; this code is not exercised in prescribed mode.
+      if (ny_global > 2) then
       do i = 1, nx_global
          work_g2(i,ny_global) = c2*work_g(i,ny_global-1) &
                                  - work_g(i,ny_global-2) ! dyu
       enddo
-#endif
+      endif
       endif
       call scatter_global(HTE, work_g, master_task, distrb_info, &
                           field_loc_Eface, field_type_scalar)

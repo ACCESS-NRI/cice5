@@ -42,7 +42,7 @@
          conduct         ! 'MU71' or 'bubbly'
 
       real (kind=dbl_kind), &
-         dimension(nx_block,ny_block,max_blocks), &
+         dimension (:,:,:), allocatable, &
          public :: &
            Tsnice, & ! snow ice interface temperature (deg C), (diagnostic)
            Ti_bot
@@ -67,7 +67,53 @@
 
 !=======================================================================
 
+
+      public :: alloc_therm_shared, dealloc_therm_shared
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of therm_shared.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_therm_shared
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         Tsnice(nx_block,ny_block,max_blocks), &
+         Ti_bot(nx_block,ny_block,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_therm_shared): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      Tsnice = c0; Ti_bot = c0
+
+      end subroutine alloc_therm_shared
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of therm_shared.  Safe to call when
+! alloc_therm_shared was never reached.
+!
+      subroutine dealloc_therm_shared
+
+      if (.not. allocated(Tsnice)) return
+
+      deallocate( &
+         Tsnice, Ti_bot)
+
+      end subroutine dealloc_therm_shared
+
 
 !=======================================================================
 !

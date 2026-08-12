@@ -42,9 +42,13 @@
    integer (int_kind), parameter, public :: &
       nghost = 1       ! number of ghost cells around each block
 
-   integer (int_kind), parameter, public :: &! size of block domain in
-      nx_block = block_size_x + 2*nghost,   &!  x,y dir including ghost
-      ny_block = block_size_y + 2*nghost     !  cells 
+   ! Size of block domain in x,y dir including ghost cells.  Derived from
+   ! the run-time block_size_x/block_size_y in create_blocks below, so
+   ! these are variables rather than parameters.  They are undefined until
+   ! create_blocks has been called from init_domain_blocks.
+   integer (int_kind), public :: &
+      nx_block = -1, &
+      ny_block = -1
 
    ! predefined directions for neighbor id routine
    ! Note: the directions that are commented out are implemented in 
@@ -145,6 +149,8 @@ contains
 !
 !----------------------------------------------------------------------
 
+   nx_block    = block_size_x + 2*nghost ! size of block domain in x,y dir
+   ny_block    = block_size_y + 2*nghost !  including ghost cells
    nblocks_x   = (nx_global-1)/block_size_x + 1
    nblocks_y   = (ny_global-1)/block_size_y + 1
    nblocks_tot = nblocks_x*nblocks_y
