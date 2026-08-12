@@ -67,7 +67,8 @@ message(STATUS "  - CICE_NYGLOB   ${CICE_NYGLOB} (default for domain_nml ny_glob
 #
 # Set any of them to -1 to compile in no default, which makes the matching
 # domain_nml entry mandatory at run time.  max_blocks = -1 additionally
-# means "derive it from block_size_x/block_size_y and nprocs".
+# means "derive it from the actual block distribution", which is the
+# recommended setting.
 #
 # defaults from https://github.com/ACCESS-NRI/access-spack-packages/blob/d8b48b18a1400cf2a6850af0bf038af55804d92f/packages/cice5/spack-build.sh#L89-L91
 # BLCKX = 360/24 = 15 , BLCKY = 300/1  = 300

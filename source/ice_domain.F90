@@ -232,19 +232,12 @@
       call abort_ice('ice: block_size_x/block_size_y exceed the global domain')
    endif
 
-   if (max_blocks < 1) then
-      !***
-      !*** derive a first guess; init_domain_distribution below aborts if
-      !*** this turns out to be too small for the chosen distribution
-      !***
-      max_blocks = ((nx_global-1)/block_size_x + 1) * &
-                   ((ny_global-1)/block_size_y + 1) / nprocs
-      max_blocks = max(max_blocks, 1)
-      if (my_task == master_task) then
-         write(nu_diag,'(/,a,i6,/)') &
-            '(ice_domain): max_blocks < 1, estimated as ', max_blocks
-      endif
-   endif
+   !*** max_blocks < 1 means "work it out".  It is NOT estimated here: a
+   !*** formula based on nx_global/block_size_x/nprocs cannot know how the
+   !*** chosen distribution actually lands blocks on tasks, and gets it
+   !*** wrong for anything but an even cartesian split.  It is instead set
+   !*** from the real per-task block count in init_domain_distribution,
+   !*** below, once the distribution exists.
 
 !----------------------------------------------------------------------
 !
@@ -288,7 +281,11 @@
                                   maskhalo_bound
      write(nu_diag,'(a26,i6)') '  block_size_x =          ', block_size_x
      write(nu_diag,'(a26,i6)') '  block_size_y =          ', block_size_y
-     write(nu_diag,'(a26,i6)') '  max_blocks =            ', max_blocks
+     if (max_blocks < 1) then
+       write(nu_diag,'(a26,a6)') '  max_blocks =            ', ' auto'
+     else
+       write(nu_diag,'(a26,i6)') '  max_blocks =            ', max_blocks
+     endif
      write(nu_diag,'(a26,i6,/)')'  Number of ghost cells:  ', nghost
    endif
 
@@ -335,7 +332,11 @@
       work_unit          ,&! size of quantized work unit
       tblocks_tmp        ,&! total number of blocks
       nblocks_tmp        ,&! temporary value of nblocks
-      nblocks_max          ! max blocks on proc
+      nblocks_max        , & ! max blocks on any proc
+      nblocks_min            ! min blocks on any proc
+
+   logical (log_kind) :: &
+      derive_max_blocks      ! true when max_blocks is to be worked out here
 
    integer (int_kind), dimension(:), allocatable :: &
       nocn               ,&! number of ocean points per block
@@ -528,6 +529,13 @@
 !
 !----------------------------------------------------------------------
 
+   !*** max_blocks < 1 asks us to derive it from the finished distribution.
+   !*** No distribution needs max_blocks up front any more: the three that
+   !*** keep an internal blockIndex work array (roundrobin, sectrobin,
+   !*** sectcart) size it from their own estimate and grow it on demand,
+   !*** see estimate_max_blocks in ice_distribution.
+   derive_max_blocks = (max_blocks < 1)
+
    distrb_info = create_distribution(distribution_type, &
                                      nprocs, work_per_block)
 
@@ -547,11 +555,13 @@
       nblocks = 0
    endif
    nblocks_max = 0
+   nblocks_min = huge(nblocks_min)
    tblocks_tmp = 0
    do n=0,distrb_info%nprocs - 1
      nblocks_tmp = nblocks
      call broadcast_scalar(nblocks_tmp, n)
      nblocks_max = max(nblocks_max,nblocks_tmp)
+     nblocks_min = min(nblocks_min,nblocks_tmp)
      tblocks_tmp = tblocks_tmp + nblocks_tmp
    end do
 
@@ -560,11 +570,24 @@
           'ice: total number of blocks is', tblocks_tmp
    endif
 
-   if (nblocks_max > max_blocks) then
+   !*** Set max_blocks from the blocks this task actually owns.  It is a
+   !*** per-task value: an uneven distribution gives different tasks
+   !*** different max_blocks, and each allocates only what it needs.  The
+   !*** floor of 1 avoids zero-extent arrays on a task that owns no blocks.
+   if (derive_max_blocks) then
+      max_blocks = max(nblocks, 1)
+      if (my_task == master_task) then
+         write(nu_diag,'(a,i6,a,i6)') &
+            ' ice: max_blocks derived per task; min =', max(nblocks_min,1), &
+            ', max =', max(nblocks_max,1)
+      endif
+   endif
+
+   if (nblocks > max_blocks) then
      write(outstring,*) &
          'ice: no. blocks exceed max: increase max to', nblocks_max
      call abort_ice(trim(outstring))
-   else if (nblocks_max < max_blocks) then
+   else if (.not. derive_max_blocks .and. nblocks_max < max_blocks) then
      write(outstring,*) &
          'ice: no. blocks too large: decrease max to', nblocks_max
      if (my_task == master_task) then

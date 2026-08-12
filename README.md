@@ -60,7 +60,7 @@ rebuilding:
   , ny_global    = 300       ! global grid size, j
   , block_size_x = 15        ! block size in i, excluding ghost cells
   , block_size_y = 300       ! block size in j, excluding ghost cells
-  , max_blocks   = -1        ! -1 => derive from the above and nprocs
+  , max_blocks   = -1        ! -1 => derive from the actual distribution
 /
 ```
 
@@ -69,11 +69,20 @@ Notes:
 * `block_size_x` and `block_size_y` need not divide `nx_global`/`ny_global`
   evenly — the decomposition is padded — but choosing sizes that do avoids
   wasted work.
-* `max_blocks = -1` derives
-  `((nx_global-1)/block_size_x + 1) * ((ny_global-1)/block_size_y + 1) / nprocs`.
-  If the chosen distribution then needs more blocks on some task than that, the
-  model aborts and reports the value required; set `max_blocks` explicitly in
-  that case. A value larger than necessary only wastes memory.
+* `max_blocks = -1` is the recommended setting. Each task sets it to the
+  number of blocks that task actually owns, once the distribution has been
+  built, so it is exact and needs no guessing. It is a **per-task** value: an
+  uneven distribution gives different tasks different `max_blocks`, and each
+  allocates only what it needs. The minimum and maximum across tasks are
+  reported to the diagnostic log.
+  Setting it explicitly still works, and still aborts if a task turns out to
+  need more blocks than that; a value larger than necessary only wastes
+  memory.
+* There is nothing to tune for the `roundrobin`, `sectrobin` and `sectcart`
+  distributions. They build an internal `blockIndex` work array before the
+  per-task block count is known, so it is sized from an estimate and grown
+  on demand if that estimate is too small; no run can fail because of it.
+  `cartesian`, `rake` and `spacecurve` do not use that array at all.
 * The values in effect are echoed to the ice diagnostic log under
   `Domain Information`.
 * **The ESM (`access`) driver requires `max_blocks == 1`**, i.e. exactly one
