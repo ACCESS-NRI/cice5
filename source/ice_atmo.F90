@@ -35,7 +35,7 @@
       integer (kind=int_kind), public :: &
          natmiter        ! number of iterations for boundary layer calculations
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          Cdn_atm     , & ! atm drag coefficient
          Cdn_ocn     , & ! ocn drag coefficient
                          ! form drag
@@ -62,7 +62,76 @@
 
 !=======================================================================
 
+
+      public :: alloc_atmo, dealloc_atmo
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of atmo.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_atmo
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         Cdn_atm(nx_block,ny_block,max_blocks), &
+         Cdn_ocn(nx_block,ny_block,max_blocks), &
+         hfreebd(nx_block,ny_block,max_blocks), &
+         hdraft(nx_block,ny_block,max_blocks), &
+         hridge(nx_block,ny_block,max_blocks), &
+         distrdg(nx_block,ny_block,max_blocks), &
+         hkeel(nx_block,ny_block,max_blocks), &
+         dkeel(nx_block,ny_block,max_blocks), &
+         lfloe(nx_block,ny_block,max_blocks), &
+         dfloe(nx_block,ny_block,max_blocks), &
+         Cdn_atm_skin(nx_block,ny_block,max_blocks), &
+         Cdn_atm_floe(nx_block,ny_block,max_blocks), &
+         Cdn_atm_pond(nx_block,ny_block,max_blocks), &
+         Cdn_atm_rdg(nx_block,ny_block,max_blocks), &
+         Cdn_ocn_skin(nx_block,ny_block,max_blocks), &
+         Cdn_ocn_floe(nx_block,ny_block,max_blocks), &
+         Cdn_ocn_keel(nx_block,ny_block,max_blocks), &
+         Cdn_atm_ratio(nx_block,ny_block,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_atmo): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      Cdn_atm = c0; Cdn_ocn = c0; hfreebd = c0; hdraft = c0; hridge = c0
+      distrdg = c0; hkeel = c0; dkeel = c0; lfloe = c0; dfloe = c0
+      Cdn_atm_skin = c0; Cdn_atm_floe = c0; Cdn_atm_pond = c0
+      Cdn_atm_rdg = c0; Cdn_ocn_skin = c0; Cdn_ocn_floe = c0
+      Cdn_ocn_keel = c0; Cdn_atm_ratio = c0
+
+      end subroutine alloc_atmo
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of atmo.  Safe to call when
+! alloc_atmo was never reached.
+!
+      subroutine dealloc_atmo
+
+      if (.not. allocated(Cdn_atm)) return
+
+      deallocate( &
+         Cdn_atm, Cdn_ocn, hfreebd, hdraft, hridge, distrdg, hkeel, dkeel, &
+         lfloe, dfloe, Cdn_atm_skin, Cdn_atm_floe, Cdn_atm_pond, &
+         Cdn_atm_rdg, Cdn_ocn_skin, Cdn_ocn_floe, Cdn_ocn_keel, &
+         Cdn_atm_ratio)
+
+      end subroutine dealloc_atmo
+
 
 !=======================================================================
 

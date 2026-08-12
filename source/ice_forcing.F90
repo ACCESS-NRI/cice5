@@ -82,10 +82,10 @@
       integer (kind=int_kind) :: &
            oldrecnum = 0      ! old record number (save between steps)
 
-      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks) :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable :: &
           cldf                ! cloud fraction
 
-      real (kind=dbl_kind), dimension(nx_block,ny_block,2,max_blocks) :: &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable :: &
             fsw_data, & ! field values at 2 temporal data points
            cldf_data, &
           fsnow_data, &
@@ -108,7 +108,7 @@
           frain_data
 
       real (kind=dbl_kind), & 
-           dimension(nx_block,ny_block,2,max_blocks,ncat) :: &
+           dimension (:,:,:,:,:), allocatable :: &
         topmelt_data, &
         botmelt_data
 
@@ -138,7 +138,7 @@
          frcidf = 0.17_dbl_kind    ! frac of incoming sw in near IR diffuse band
 
       real (kind=dbl_kind), &
-       dimension (nx_block,ny_block,max_blocks,nfld,12) :: & 
+       dimension (:,:,:,:,:), allocatable :: & 
          ocn_frc_m   ! ocn data for 12 months
 
       logical (kind=log_kind), public :: &
@@ -155,7 +155,84 @@
 
 !=======================================================================
 
+
+      public :: alloc_forcing, dealloc_forcing
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of forcing.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_forcing
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         cldf(nx_block,ny_block,max_blocks), &
+         fsw_data(nx_block,ny_block,2,max_blocks), &
+         cldf_data(nx_block,ny_block,2,max_blocks), &
+         fsnow_data(nx_block,ny_block,2,max_blocks), &
+         Tair_data(nx_block,ny_block,2,max_blocks), &
+         uatm_data(nx_block,ny_block,2,max_blocks), &
+         vatm_data(nx_block,ny_block,2,max_blocks), &
+         wind_data(nx_block,ny_block,2,max_blocks), &
+         strax_data(nx_block,ny_block,2,max_blocks), &
+         stray_data(nx_block,ny_block,2,max_blocks), &
+         Qa_data(nx_block,ny_block,2,max_blocks), &
+         rhoa_data(nx_block,ny_block,2,max_blocks), &
+         potT_data(nx_block,ny_block,2,max_blocks), &
+         zlvl_data(nx_block,ny_block,2,max_blocks), &
+         flw_data(nx_block,ny_block,2,max_blocks), &
+         sst_data(nx_block,ny_block,2,max_blocks), &
+         sss_data(nx_block,ny_block,2,max_blocks), &
+         uocn_data(nx_block,ny_block,2,max_blocks), &
+         vocn_data(nx_block,ny_block,2,max_blocks), &
+         sublim_data(nx_block,ny_block,2,max_blocks), &
+         frain_data(nx_block,ny_block,2,max_blocks), &
+         topmelt_data(nx_block,ny_block,2,max_blocks,ncat), &
+         botmelt_data(nx_block,ny_block,2,max_blocks,ncat), &
+         ocn_frc_m(nx_block,ny_block,max_blocks,nfld,12), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_forcing): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      cldf = c0; fsw_data = c0; cldf_data = c0; fsnow_data = c0
+      Tair_data = c0; uatm_data = c0; vatm_data = c0; wind_data = c0
+      strax_data = c0; stray_data = c0; Qa_data = c0; rhoa_data = c0
+      potT_data = c0; zlvl_data = c0; flw_data = c0; sst_data = c0
+      sss_data = c0; uocn_data = c0; vocn_data = c0; sublim_data = c0
+      frain_data = c0; topmelt_data = c0; botmelt_data = c0; ocn_frc_m = c0
+
+      end subroutine alloc_forcing
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of forcing.  Safe to call when
+! alloc_forcing was never reached.
+!
+      subroutine dealloc_forcing
+
+      if (.not. allocated(cldf)) return
+
+      deallocate( &
+         cldf, fsw_data, cldf_data, fsnow_data, Tair_data, uatm_data, &
+         vatm_data, wind_data, strax_data, stray_data, Qa_data, rhoa_data, &
+         potT_data, zlvl_data, flw_data, sst_data, sss_data, uocn_data, &
+         vocn_data, sublim_data, frain_data, topmelt_data, botmelt_data, &
+         ocn_frc_m)
+
+      end subroutine dealloc_forcing
+
 
 !=======================================================================
 

@@ -83,13 +83,59 @@
       real (kind=dbl_kind), allocatable, public :: & 
          fcor_blk(:,:,:)   ! Coriolis parameter (1/s)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: & 
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: & 
          uvel_init, & ! x-component of velocity (m/s), beginning of timestep
          vvel_init    ! y-component of velocity (m/s), beginning of timestep
 
 !=======================================================================
 
+
+      public :: alloc_dyn_shared, dealloc_dyn_shared
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of dyn_shared.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_dyn_shared
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         uvel_init(nx_block,ny_block,max_blocks), &
+         vvel_init(nx_block,ny_block,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_dyn_shared): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      uvel_init = c0; vvel_init = c0
+
+      end subroutine alloc_dyn_shared
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of dyn_shared.  Safe to call when
+! alloc_dyn_shared was never reached.
+!
+      subroutine dealloc_dyn_shared
+
+      if (.not. allocated(uvel_init)) return
+
+      deallocate( &
+         uvel_init, vvel_init)
+
+      end subroutine dealloc_dyn_shared
+
 
 !=======================================================================
 

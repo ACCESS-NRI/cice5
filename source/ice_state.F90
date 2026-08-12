@@ -49,14 +49,14 @@
       ! state of the ice aggregated over all categories
       !-----------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks), &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, &
          public :: &
          aice  , & ! concentration of ice
          vice  , & ! volume per unit area of ice          (m)
          vsno      ! volume per unit area of snow         (m)
 
       real (kind=dbl_kind), &
-         dimension(nx_block,ny_block,max_ntrcr,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          trcr      ! ice tracers
                    ! 1: surface temperature of ice/snow (C)
 
@@ -64,18 +64,18 @@
       ! state of the ice for each category
       !-----------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, &
          public:: &
          aice0     ! concentration of open water
 
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          aicen , & ! concentration of ice
          vicen , & ! volume per unit area of ice          (m)
          vsnon     ! volume per unit area of snow         (m)
 
       real (kind=dbl_kind), public, &
-         dimension (nx_block,ny_block,max_ntrcr,ncat,max_blocks) :: &
+         dimension (:,:,:,:,:), allocatable :: &
          trcrn     ! tracers
                    ! 1: surface temperature of ice/snow (C)
 
@@ -138,7 +138,7 @@
       ! dynamic variables closely related to the state of the ice
       !-----------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks), &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, &
          public :: &
          uvel     , & ! x-component of velocity (m/s)
          vvel     , & ! y-component of velocity (m/s)
@@ -150,18 +150,83 @@
       ! ice state at start of time step, saved for later in the step 
       !-----------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks), &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, &
          public :: &
          aice_init       ! initial concentration of ice, for diagnostics
 
       real (kind=dbl_kind), &
-         dimension(nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          aicen_init  , & ! initial ice concentration, for linear ITD
          vicen_init      ! initial ice volume (m), for linear ITD
 
 !=======================================================================
 
+
+      public :: alloc_state, dealloc_state
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of state.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_state
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         aice(nx_block,ny_block,max_blocks), &
+         vice(nx_block,ny_block,max_blocks), &
+         vsno(nx_block,ny_block,max_blocks), &
+         trcr(nx_block,ny_block,max_ntrcr,max_blocks), &
+         aice0(nx_block,ny_block,max_blocks), &
+         aicen(nx_block,ny_block,ncat,max_blocks), &
+         vicen(nx_block,ny_block,ncat,max_blocks), &
+         vsnon(nx_block,ny_block,ncat,max_blocks), &
+         trcrn(nx_block,ny_block,max_ntrcr,ncat,max_blocks), &
+         uvel(nx_block,ny_block,max_blocks), &
+         vvel(nx_block,ny_block,max_blocks), &
+         divu(nx_block,ny_block,max_blocks), &
+         shear(nx_block,ny_block,max_blocks), &
+         strength(nx_block,ny_block,max_blocks), &
+         aice_init(nx_block,ny_block,max_blocks), &
+         aicen_init(nx_block,ny_block,ncat,max_blocks), &
+         vicen_init(nx_block,ny_block,ncat,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_state): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      aice = c0; vice = c0; vsno = c0; trcr = c0; aice0 = c0; aicen = c0
+      vicen = c0; vsnon = c0; trcrn = c0; uvel = c0; vvel = c0; divu = c0
+      shear = c0; strength = c0; aice_init = c0; aicen_init = c0
+      vicen_init = c0
+
+      end subroutine alloc_state
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of state.  Safe to call when
+! alloc_state was never reached.
+!
+      subroutine dealloc_state
+
+      if (.not. allocated(aice)) return
+
+      deallocate( &
+         aice, vice, vsno, trcr, aice0, aicen, vicen, vsnon, trcrn, uvel, &
+         vvel, divu, shear, strength, aice_init, aicen_init, vicen_init)
+
+      end subroutine dealloc_state
+
 
 !=======================================================================
 !

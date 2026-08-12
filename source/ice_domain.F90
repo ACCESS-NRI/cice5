@@ -86,7 +86,9 @@
 
    use ice_distribution, only: processor_shape
    use ice_domain_size, only: ncat, nilyr, nslyr, max_blocks, &
-       nx_global, ny_global
+       nx_global, ny_global, block_size_x, block_size_y, &
+       default_nx_global, default_ny_global, &
+       default_block_size_x, default_block_size_y, default_max_blocks
    use ice_exit, only: abort_ice
    use ice_fileunits, only: nu_nml, nml_filename, nu_diag, &
        get_fileunit, release_fileunit
@@ -107,6 +109,11 @@
 !----------------------------------------------------------------------
 
    namelist /domain_nml/ nprocs, &
+                         nx_global,         &
+                         ny_global,         &
+                         block_size_x,      &
+                         block_size_y,      &
+                         max_blocks,        &
                          processor_shape,   &
                          distribution_type, &
                          distribution_wght, &
@@ -124,6 +131,16 @@
 !----------------------------------------------------------------------
 
    nprocs = -1
+   ! Grid size and block decomposition defaults come from the
+   ! NXGLOB/NYGLOB/BLCKX/BLCKY/MXBLCKS CPP macros so that a namelist without
+   ! these entries reproduces the behaviour of the previous,
+   ! compile-time-only build.  Any of them may be overridden from
+   ! domain_nml; max_blocks = -1 means "derive it".
+   nx_global         = default_nx_global
+   ny_global         = default_ny_global
+   block_size_x      = default_block_size_x
+   block_size_y      = default_block_size_y
+   max_blocks        = default_max_blocks
    processor_shape   = 'slenderX2'
    distribution_type = 'cartesian'
    distribution_wght = 'latitude'
@@ -155,6 +172,11 @@
    endif
 
    call broadcast_scalar(nprocs,            master_task)
+   call broadcast_scalar(nx_global,         master_task)
+   call broadcast_scalar(ny_global,         master_task)
+   call broadcast_scalar(block_size_x,      master_task)
+   call broadcast_scalar(block_size_y,      master_task)
+   call broadcast_scalar(max_blocks,        master_task)
    call broadcast_scalar(processor_shape,   master_task)
    call broadcast_scalar(distribution_type, master_task)
    call broadcast_scalar(distribution_wght, master_task)
@@ -173,9 +195,12 @@
 
    if (nx_global < 1 .or. ny_global < 1 .or. ncat < 1) then
       !***
-      !*** domain size zero or negative
+      !*** domain size zero or negative; nx_global/ny_global come from
+      !*** domain_nml, defaulting to the NXGLOB/NYGLOB CPP macros
       !***
-      call abort_ice('ice: Invalid domain: size < 1') ! no domain
+      call abort_ice('ice: Invalid domain: nx_global and ny_global must be '// &
+                     '> 0; set them in domain_nml or build with '// &
+                     '-DNXGLOB/-DNYGLOB')
    else if (nprocs /= get_num_procs()) then
       !***
       !*** input nprocs does not match system (eg MPI) request
@@ -190,6 +215,35 @@
       !*** must have at least 1 layer of ghost cells
       !***
       call abort_ice('ice: Not enough ghost cells allocated')
+   endif
+
+!----------------------------------------------------------------------
+!
+!  check and, where requested, derive the run-time block decomposition
+!
+!----------------------------------------------------------------------
+
+   if (block_size_x < 1 .or. block_size_y < 1) then
+      call abort_ice('ice: block_size_x and block_size_y must be > 0; '// &
+                     'set them in domain_nml or build with -DBLCKX/-DBLCKY')
+   endif
+
+   if (block_size_x > nx_global .or. block_size_y > ny_global) then
+      call abort_ice('ice: block_size_x/block_size_y exceed the global domain')
+   endif
+
+   if (max_blocks < 1) then
+      !***
+      !*** derive a first guess; init_domain_distribution below aborts if
+      !*** this turns out to be too small for the chosen distribution
+      !***
+      max_blocks = ((nx_global-1)/block_size_x + 1) * &
+                   ((ny_global-1)/block_size_y + 1) / nprocs
+      max_blocks = max(max_blocks, 1)
+      if (my_task == master_task) then
+         write(nu_diag,'(/,a,i6,/)') &
+            '(ice_domain): max_blocks < 1, estimated as ', max_blocks
+      endif
    endif
 
 !----------------------------------------------------------------------
@@ -232,6 +286,8 @@
                                   maskhalo_remap
      write(nu_diag,'(a26,l6)') '  maskhalo_bound        = ', &
                                   maskhalo_bound
+     write(nu_diag,'(a26,i6)') '  block_size_x =          ', block_size_x
+     write(nu_diag,'(a26,i6)') '  block_size_y =          ', block_size_y
      write(nu_diag,'(a26,i6)') '  max_blocks =            ', max_blocks
      write(nu_diag,'(a26,i6,/)')'  Number of ghost cells:  ', nghost
    endif
