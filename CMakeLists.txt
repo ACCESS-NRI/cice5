@@ -35,7 +35,20 @@ else()
 endif()
 
 set(CICE_DRIVER "auscom" CACHE STRING "CICE driver code to use")
-message(STATUS "  - CICE_DRIVER   ${CICE_DRIVER}")
+if(NOT CICE_DRIVER MATCHES "^(auscom|access|cice)$")
+  message(FATAL_ERROR " CICE_DRIVER   ${CICE_DRIVER} not valid, choose auscom|access|cice")
+else()
+  message(STATUS "  - CICE_DRIVER   ${CICE_DRIVER}")
+endif()
+
+# The 'cice' driver is the standalone (uncoupled) executable: no OASIS, no
+# libaccessom2, and neither AusCOM nor coupled defined.  It is intended for
+# testing the sea-ice model on its own, not for ACCESS-OM2 or ACCESS-ESM1.6.
+if(CICE_DRIVER MATCHES "^cice$")
+  set(CICE_COUPLED FALSE)
+else()
+  set(CICE_COUPLED TRUE)
+endif()
 
 # The global grid size is chosen at RUN time too, in domain_nml (nx_global,
 # ny_global).  As with the block settings below, these only supply the
@@ -141,7 +154,10 @@ add_compile_definitions(
   NSNWLYR=${NSNWLYR}
 )
 
-add_compile_definitions( gather_scatter_barrier ncdf OASIS3_MCT )
+add_compile_definitions( gather_scatter_barrier ncdf )
+if(CICE_COUPLED)
+  add_compile_definitions( OASIS3_MCT )
+endif()
 
 if (CICE_IO MATCHES PIO)
   add_compile_definitions(PIO)
@@ -157,11 +173,13 @@ endif()
 #                              External packages                                #
 #]==============================================================================]
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(OASIS3PSMILE REQUIRED IMPORTED_TARGET "oasis3-psmile.MPI1")
-pkg_check_modules(OASIS3MCT REQUIRED IMPORTED_TARGET "oasis3-mct")
-pkg_check_modules(OASIS3MPEU REQUIRED IMPORTED_TARGET "oasis3-mpeu")
-pkg_check_modules(OASIS3SCRIP REQUIRED IMPORTED_TARGET "oasis3-scrip")
+if(CICE_COUPLED)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(OASIS3PSMILE REQUIRED IMPORTED_TARGET "oasis3-psmile.MPI1")
+  pkg_check_modules(OASIS3MCT REQUIRED IMPORTED_TARGET "oasis3-mct")
+  pkg_check_modules(OASIS3MPEU REQUIRED IMPORTED_TARGET "oasis3-mpeu")
+  pkg_check_modules(OASIS3SCRIP REQUIRED IMPORTED_TARGET "oasis3-scrip")
+endif()
 
 find_package(MPI REQUIRED COMPONENTS Fortran)
 if(CICE_DRIVER MATCHES "auscom")
@@ -193,12 +211,15 @@ if(CICE_DRIVER MATCHES "auscom")
   target_link_libraries(cice PUBLIC libaccessom2::accessom2 )
 endif()
 
-target_link_libraries(cice 
-  PRIVATE 
-  MPI::MPI_Fortran 
-  PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP 
-  # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
-  )
+target_link_libraries(cice PRIVATE MPI::MPI_Fortran)
+
+if(CICE_COUPLED)
+  target_link_libraries(cice
+    PRIVATE
+    PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP
+    # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
+    )
+endif()
 
 if(CICE_IO MATCHES "^(NetCDF|PIO)$")
   target_link_libraries(cice PRIVATE NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
@@ -304,6 +325,13 @@ elseif(CICE_DRIVER MATCHES "auscom")
     ${CICE_DRIVER_SOURCE}/cpl_parameters.F90
     ${CICE_DRIVER_SOURCE}/ocean_rough_mod.F90
     ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
+    ${CICE_DRIVER_SOURCE}/ice_constants.F90
+  )
+elseif(CICE_DRIVER MATCHES "^cice$")
+  target_sources(cice PRIVATE
+    ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
+    ${CICE_DRIVER_SOURCE}/CICE_InitMod.F90
+    ${CICE_DRIVER_SOURCE}/CICE_RunMod.F90
     ${CICE_DRIVER_SOURCE}/ice_constants.F90
   )
 else()

@@ -12,7 +12,7 @@
   , restart_ext    = .false.
   , use_restart_time = .true.
   , restart_format = 'nc'
-  , lcdf64         = .false.
+  ! lcdf64         = .false.   ! removed from this fork
   , restart_dir    = './restart/'
   , restart_file   = 'iced'
   , pointer_file   = './restart/ice.restart_file'
@@ -130,7 +130,7 @@
   , hs1             = 0.03
   , dpscale         = 1.e-3
   , frzpnd          = 'hlid'
-  , snowinfil       = .true.
+  ! snowinfil       = .true.   ! removed from this fork
   , rfracmin        = 0.15
   , rfracmax        = 1.
   , pndaspect       = 0.8

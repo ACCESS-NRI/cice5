@@ -12,7 +12,7 @@
   , restart_ext    = .false.
   , use_restart_time = .true.
   , restart_format = 'nc'
-  , lcdf64         = .false.
+  ! lcdf64         = .false.   ! removed from this fork
   , restart_dir    = './restart/'
   , restart_file   = 'iced'
   , pointer_file   = './restart/ice.restart_file'

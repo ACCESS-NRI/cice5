@@ -12,6 +12,39 @@ There is [PDF documentation](https://github.com/ACCESS-NRI/cice5/blob/master/doc
 
 We recommend and support using CMake to build cice5, however the Makefile build is kept in this repository for any legacy models still using these files.
 
+Three drivers are supported by the CMake build, selected with `CICE_DRIVER`:
+
+| `CICE_DRIVER` | Used by | Coupling |
+| --- | --- | --- |
+| `auscom` (default) | ACCESS-OM2 | OASIS3-MCT + libaccessom2 |
+| `access` | ACCESS-ESM1.6 | OASIS3-MCT |
+| `cice` | standalone / testing | none |
+
+The `cice` driver builds an uncoupled executable for exercising the sea-ice
+model on its own. It requires neither OASIS nor libaccessom2, and defines
+neither `AusCOM` nor `coupled`:
+
+```bash
+cmake -S . -B build \
+      -DCICE_DRIVER=cice -DCICE_IO=NetCDF -DCMAKE_BUILD_TYPE=Release \
+      -DCICE_NXGLOB=100 -DCICE_NYGLOB=116
+cmake --build build -j
+```
+
+See `input_templates/run_ice.gadi.nci.org.au` for a Gadi PBS script that runs
+it. Note that the standalone driver is not part of any ACCESS configuration and
+is not covered by the CI, so treat it as a development and testing aid.
+
+For a smoke test that needs **no input data at all**, set `grid_type =
+'rectangular'` in `grid_nml` and `atm_data_type = 'default'` in `forcing_nml`.
+The grid is then generated analytically and the forcing is synthetic, so the
+model runs from the namelist alone. This is a convenient way to check that a
+build works and that results are independent of the block decomposition: run
+the same executable at several `block_size_x`/`block_size_y`/`nprocs`
+combinations and compare the restart files, which should be bitwise identical.
+(The history field `blkmask` is expected to differ — it records which task and
+block each cell belongs to.)
+
 ### Grid size, block decomposition and task count
 
 The global grid size and the block decomposition are both chosen at **run
