@@ -55,6 +55,16 @@
   , maskhalo_dyn      = .false.
   , maskhalo_remap    = .false.
   , maskhalo_bound    = .false.
+! Grid size and block decomposition, set at run time.  Uncomment to
+! override the -DNXGLOB / -DNYGLOB / -DBLCKX / -DBLCKY / -DMXBLCKS values
+! compiled into the executable; the same executable can then be run at any
+! resolution and task count.
+! max_blocks = -1 asks the model to derive it.
+!  , nx_global         = 320
+!  , ny_global         = 384
+!  , block_size_x      = 40
+!  , block_size_y      = 48
+!  , max_blocks        = -1
 /
 
 &tracer_nml

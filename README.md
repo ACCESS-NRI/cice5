@@ -12,6 +12,52 @@ There is [PDF documentation](https://github.com/ACCESS-NRI/cice5/blob/master/doc
 
 We recommend and support using CMake to build cice5, however the Makefile build is kept in this repository for any legacy models still using these files.
 
+### Grid size, block decomposition and task count
+
+The global grid size and the block decomposition are both chosen at **run
+time**, in the `domain_nml` group of the namelist (`cice_in.nml` for the
+`auscom` and `access` drivers, `ice_in` otherwise). A single executable can
+therefore be run at any resolution and any number of MPI tasks, without
+rebuilding:
+
+```fortran
+&domain_nml
+    nprocs       = 24        ! must equal the MPI task count
+  , nx_global    = 360       ! global grid size, i
+  , ny_global    = 300       ! global grid size, j
+  , block_size_x = 15        ! block size in i, excluding ghost cells
+  , block_size_y = 300       ! block size in j, excluding ghost cells
+  , max_blocks   = -1        ! -1 => derive from the above and nprocs
+/
+```
+
+Notes:
+
+* `block_size_x` and `block_size_y` need not divide `nx_global`/`ny_global`
+  evenly — the decomposition is padded — but choosing sizes that do avoids
+  wasted work.
+* `max_blocks = -1` derives
+  `((nx_global-1)/block_size_x + 1) * ((ny_global-1)/block_size_y + 1) / nprocs`.
+  If the chosen distribution then needs more blocks on some task than that, the
+  model aborts and reports the value required; set `max_blocks` explicitly in
+  that case. A value larger than necessary only wastes memory.
+* The values in effect are echoed to the ice diagnostic log under
+  `Domain Information`.
+* **The ESM (`access`) driver requires `max_blocks == 1`**, i.e. exactly one
+  block per task, because its atmosphere coupling unpacks directly into block
+  index 1. It aborts at startup otherwise. The OM2 (`auscom`) driver has no
+  such restriction.
+
+`CICE_NXGLOB`, `CICE_NYGLOB`, `CICE_BLCKX`, `CICE_BLCKY` and `CICE_MXBLCKS`
+are retained in the CMake build, but only as the **defaults** applied when the
+corresponding `domain_nml` entry is absent, so existing namelists keep their
+previous behaviour. Set any of them to `-1` to compile in no default and make
+that namelist entry mandatory. Since nothing about the domain is baked into
+the executable any more, it is simply `cice_<driver>.exe`.
+
+Note that the vertical and tracer dimensions (`NICECAT`, `NICELYR`,
+`NSNWLYR`, the tracer counts) are still compile-time.
+
 ## Useful links
 
 * **Wiki**: https://github.com/CICE-Consortium/CICE-svn-trunk/wiki
