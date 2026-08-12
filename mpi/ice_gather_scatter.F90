@@ -1297,10 +1297,16 @@
 
    if (field_loc == field_loc_noupdate) then
       do n=1,nblocks_tot
+         !*** blockLocalID(n) is the local index of block n on whichever
+         !*** task owns it, so testing it alone makes every task zero the
+         !*** halo of slots belonging to other tasks.  That was merely
+         !*** redundant while max_blocks was identical everywhere; now that
+         !*** it is per-task it can index past the end of ARRAY.  Zero each
+         !*** block exactly once, on its owner.
          dst_block = dst_dist%blockLocalID(n)
          this_block = get_block(n,n)
 
-         if (dst_block > 0) then
+         if (dst_dist%blockLocation(n) == my_task+1 .and. dst_block > 0) then
 
          ! north edge
          do j = this_block%jhi+1,ny_block
@@ -1686,10 +1692,16 @@
 
    if (field_loc == field_loc_noupdate) then
       do n=1,nblocks_tot
+         !*** blockLocalID(n) is the local index of block n on whichever
+         !*** task owns it, so testing it alone makes every task zero the
+         !*** halo of slots belonging to other tasks.  That was merely
+         !*** redundant while max_blocks was identical everywhere; now that
+         !*** it is per-task it can index past the end of ARRAY.  Zero each
+         !*** block exactly once, on its owner.
          dst_block = dst_dist%blockLocalID(n)
          this_block = get_block(n,n)
 
-         if (dst_block > 0) then
+         if (dst_dist%blockLocation(n) == my_task+1 .and. dst_block > 0) then
 
          ! north edge
          do j = this_block%jhi+1,ny_block
@@ -2075,10 +2087,16 @@
 
    if (field_loc == field_loc_noupdate) then
       do n=1,nblocks_tot
+         !*** blockLocalID(n) is the local index of block n on whichever
+         !*** task owns it, so testing it alone makes every task zero the
+         !*** halo of slots belonging to other tasks.  That was merely
+         !*** redundant while max_blocks was identical everywhere; now that
+         !*** it is per-task it can index past the end of ARRAY.  Zero each
+         !*** block exactly once, on its owner.
          dst_block = dst_dist%blockLocalID(n)
          this_block = get_block(n,n)
 
-         if (dst_block > 0) then
+         if (dst_dist%blockLocation(n) == my_task+1 .and. dst_block > 0) then
 
          ! north edge
          do j = this_block%jhi+1,ny_block
