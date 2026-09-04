@@ -38,12 +38,57 @@
          b1      = 1000.0_dbl_kind, & ! (kg/m^3)  
          b2      = 0.8_dbl_kind       ! (kg/m^3/ppt)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,ncat,max_blocks) :: &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable :: &
          first_ice_real     ! .true. = c1, .false. = c0
 
 !=======================================================================
 
+
+      public :: alloc_brine, dealloc_brine
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of brine.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_brine
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         first_ice_real(nx_block,ny_block,ncat,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_brine): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      first_ice_real = c0
+
+      end subroutine alloc_brine
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of brine.  Safe to call when
+! alloc_brine was never reached.
+!
+      subroutine dealloc_brine
+
+      if (.not. allocated(first_ice_real)) return
+
+      deallocate( &
+         first_ice_real)
+
+      end subroutine dealloc_brine
+
 
 !=======================================================================
 

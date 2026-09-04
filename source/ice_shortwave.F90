@@ -89,7 +89,7 @@
 
       ! category albedos
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,ncat,max_blocks), public, save :: &
+         dimension (:,:,:,:), allocatable, public, save :: &
          alvdrn      , & ! visible direct albedo           (fraction)
          alidrn      , & ! near-ir direct albedo           (fraction)
          alvdfn      , & ! visible diffuse albedo          (fraction)
@@ -97,7 +97,7 @@
 
       ! albedo components for history
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,ncat,max_blocks), public, save :: &
+         dimension (:,:,:,:), allocatable, public, save :: &
          albicen, &   ! bare ice 
          albsnon, &   ! snow 
          albpndn, &   ! pond 
@@ -105,24 +105,24 @@
 
       ! shortwave components
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,nilyr,ncat,max_blocks), public, save :: &
+         dimension (:,:,:,:,:), allocatable, public, save :: &
          Iswabsn         ! SW radiation absorbed in ice layers (W m-2)
 
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,nslyr,ncat,max_blocks), public, save :: &
+         dimension (:,:,:,:,:), allocatable, public, save :: &
          Sswabsn         ! SW radiation absorbed in snow layers (W m-2)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,ncat,max_blocks), &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable, &
          public, save :: &
          fswsfcn     , & ! SW absorbed at ice/snow surface (W m-2)
          fswthrun    , & ! SW through ice to ocean            (W/m^2)
          fswintn         ! SW absorbed in ice interior, below surface (W m-2)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,nilyr+1,ncat,max_blocks), &
+      real (kind=dbl_kind), dimension (:,:,:,:,:), allocatable, &
          public, save :: &
          fswpenln        ! visible SW entering ice layers (W m-2)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,ncat,max_blocks), &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable, &
          public, save :: &
          snowfracn       ! Category snow fraction used in radiation
 
@@ -149,13 +149,86 @@
 
 #ifdef AusCOM
 !ars599: 26032014: change to public
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          ocn_albedo2D
 #endif
 
 !=======================================================================
 
+
+      public :: alloc_shortwave, dealloc_shortwave
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of shortwave.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_shortwave
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         alvdrn(nx_block,ny_block,ncat,max_blocks), &
+         alidrn(nx_block,ny_block,ncat,max_blocks), &
+         alvdfn(nx_block,ny_block,ncat,max_blocks), &
+         alidfn(nx_block,ny_block,ncat,max_blocks), &
+         albicen(nx_block,ny_block,ncat,max_blocks), &
+         albsnon(nx_block,ny_block,ncat,max_blocks), &
+         albpndn(nx_block,ny_block,ncat,max_blocks), &
+         apeffn(nx_block,ny_block,ncat,max_blocks), &
+         Iswabsn(nx_block,ny_block,nilyr,ncat,max_blocks), &
+         Sswabsn(nx_block,ny_block,nslyr,ncat,max_blocks), &
+         fswsfcn(nx_block,ny_block,ncat,max_blocks), &
+         fswthrun(nx_block,ny_block,ncat,max_blocks), &
+         fswintn(nx_block,ny_block,ncat,max_blocks), &
+         fswpenln(nx_block,ny_block,nilyr+1,ncat,max_blocks), &
+         snowfracn(nx_block,ny_block,ncat,max_blocks), &
+#ifdef AusCOM
+         ocn_albedo2D(nx_block,ny_block,max_blocks), &
+#endif
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_shortwave): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      alvdrn = c0; alidrn = c0; alvdfn = c0; alidfn = c0; albicen = c0
+      albsnon = c0; albpndn = c0; apeffn = c0; Iswabsn = c0; Sswabsn = c0
+      fswsfcn = c0; fswthrun = c0; fswintn = c0; fswpenln = c0
+      snowfracn = c0
+#ifdef AusCOM
+      ocn_albedo2D = c0
+#endif
+
+      end subroutine alloc_shortwave
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of shortwave.  Safe to call when
+! alloc_shortwave was never reached.
+!
+      subroutine dealloc_shortwave
+
+      if (.not. allocated(alvdrn)) return
+
+      deallocate( &
+         alvdrn, alidrn, alvdfn, alidfn, albicen, albsnon, albpndn, apeffn, &
+         Iswabsn, Sswabsn, fswsfcn, fswthrun, fswintn, fswpenln, &
+#ifdef AusCOM
+         ocn_albedo2D, &
+#endif
+         snowfracn)
+
+      end subroutine dealloc_shortwave
+
 
 !=======================================================================
 !

@@ -12,6 +12,94 @@ There is [PDF documentation](https://github.com/ACCESS-NRI/cice5/blob/master/doc
 
 We recommend and support using CMake to build cice5, however the Makefile build is kept in this repository for any legacy models still using these files.
 
+Three drivers are supported by the CMake build, selected with `CICE_DRIVER`:
+
+| `CICE_DRIVER` | Used by | Coupling |
+| --- | --- | --- |
+| `auscom` (default) | ACCESS-OM2 | OASIS3-MCT + libaccessom2 |
+| `access` | ACCESS-ESM1.6 | OASIS3-MCT |
+| `cice` | standalone / testing | none |
+
+The `cice` driver builds an uncoupled executable for exercising the sea-ice
+model on its own. It requires neither OASIS nor libaccessom2, and defines
+neither `AusCOM` nor `coupled`:
+
+```bash
+cmake -S . -B build \
+      -DCICE_DRIVER=cice -DCICE_IO=NetCDF -DCMAKE_BUILD_TYPE=Release \
+      -DCICE_NXGLOB=100 -DCICE_NYGLOB=116
+cmake --build build -j
+```
+
+See `input_templates/run_ice.gadi.nci.org.au` for a Gadi PBS script that runs
+it. Note that the standalone driver is not part of any ACCESS configuration and
+is not covered by the CI, so treat it as a development and testing aid.
+
+For a smoke test that needs **no input data at all**, set `grid_type =
+'rectangular'` in `grid_nml` and `atm_data_type = 'default'` in `forcing_nml`.
+The grid is then generated analytically and the forcing is synthetic, so the
+model runs from the namelist alone. This is a convenient way to check that a
+build works and that results are independent of the block decomposition: run
+the same executable at several `block_size_x`/`block_size_y`/`nprocs`
+combinations and compare the restart files, which should be bitwise identical.
+(The history field `blkmask` is expected to differ — it records which task and
+block each cell belongs to.)
+
+### Grid size, block decomposition and task count
+
+The global grid size and the block decomposition are both chosen at **run
+time**, in the `domain_nml` group of the namelist (`cice_in.nml` for the
+`auscom` and `access` drivers, `ice_in` otherwise). A single executable can
+therefore be run at any resolution and any number of MPI tasks, without
+rebuilding:
+
+```fortran
+&domain_nml
+    nprocs       = 24        ! must equal the MPI task count
+  , nx_global    = 360       ! global grid size, i
+  , ny_global    = 300       ! global grid size, j
+  , block_size_x = 15        ! block size in i, excluding ghost cells
+  , block_size_y = 300       ! block size in j, excluding ghost cells
+  , max_blocks   = -1        ! -1 => derive from the actual distribution
+/
+```
+
+Notes:
+
+* `block_size_x` and `block_size_y` need not divide `nx_global`/`ny_global`
+  evenly — the decomposition is padded — but choosing sizes that do avoids
+  wasted work.
+* `max_blocks = -1` is the recommended setting. Each task sets it to the
+  number of blocks that task actually owns, once the distribution has been
+  built, so it is exact and needs no guessing. It is a **per-task** value: an
+  uneven distribution gives different tasks different `max_blocks`, and each
+  allocates only what it needs. The minimum and maximum across tasks are
+  reported to the diagnostic log.
+  Setting it explicitly still works, and still aborts if a task turns out to
+  need more blocks than that; a value larger than necessary only wastes
+  memory.
+* There is nothing to tune for the `roundrobin`, `sectrobin` and `sectcart`
+  distributions. They build an internal `blockIndex` work array before the
+  per-task block count is known, so it is sized from an estimate and grown
+  on demand if that estimate is too small; no run can fail because of it.
+  `cartesian`, `rake` and `spacecurve` do not use that array at all.
+* The values in effect are echoed to the ice diagnostic log under
+  `Domain Information`.
+* **The ESM (`access`) driver requires `max_blocks == 1`**, i.e. exactly one
+  block per task, because its atmosphere coupling unpacks directly into block
+  index 1. It aborts at startup otherwise. The OM2 (`auscom`) driver has no
+  such restriction.
+
+`CICE_NXGLOB`, `CICE_NYGLOB`, `CICE_BLCKX`, `CICE_BLCKY` and `CICE_MXBLCKS`
+are retained in the CMake build, but only as the **defaults** applied when the
+corresponding `domain_nml` entry is absent, so existing namelists keep their
+previous behaviour. Set any of them to `-1` to compile in no default and make
+that namelist entry mandatory. Since nothing about the domain is baked into
+the executable any more, it is simply `cice_<driver>.exe`.
+
+Note that the vertical and tracer dimensions (`NICECAT`, `NICELYR`,
+`NSNWLYR`, the tracer counts) are still compile-time.
+
 ## Useful links
 
 * **Wiki**: https://github.com/CICE-Consortium/CICE-svn-trunk/wiki

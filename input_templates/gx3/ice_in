@@ -12,7 +12,7 @@
   , restart_ext    = .false.
   , use_restart_time = .true.
   , restart_format = 'nc'
-  , lcdf64         = .false.
+  ! lcdf64         = .false.   ! removed from this fork
   , restart_dir    = './restart/'
   , restart_file   = 'iced'
   , pointer_file   = './restart/ice.restart_file'
@@ -59,6 +59,16 @@
   , maskhalo_dyn      = .false.
   , maskhalo_remap    = .false.
   , maskhalo_bound    = .false.
+! Grid size and block decomposition, set at run time.  Uncomment to
+! override the -DNXGLOB / -DNYGLOB / -DBLCKX / -DBLCKY / -DMXBLCKS values
+! compiled into the executable; the same executable can then be run at any
+! resolution and task count.
+! max_blocks = -1 sets it per task from the actual block distribution.
+!  , nx_global         = 100
+!  , ny_global         = 116
+!  , block_size_x      = 25
+!  , block_size_y      = 29
+!  , max_blocks        = -1
 /
 
 &tracer_nml

@@ -680,10 +680,13 @@
 
    if (field_loc == field_loc_noupdate) then
       do n=1,nblocks_tot
+         !*** Only zero blocks that were actually assigned; matches the
+         !*** guard in mpi/ice_gather_scatter.F90 (there it also has to
+         !*** test the owning task, which does not arise with one task).
          dst_block = dst_dist%blockLocalID(n)
          this_block = get_block(n,n)
 
-         if (dst_block > 0) then
+         if (dst_dist%blockLocation(n) /= 0 .and. dst_block > 0) then
 
          ! north edge
          do j = this_block%jhi+1,ny_block
@@ -926,10 +929,13 @@
 
    if (field_loc == field_loc_noupdate) then
       do n=1,nblocks_tot
+         !*** Only zero blocks that were actually assigned; matches the
+         !*** guard in mpi/ice_gather_scatter.F90 (there it also has to
+         !*** test the owning task, which does not arise with one task).
          dst_block = dst_dist%blockLocalID(n)
          this_block = get_block(n,n)
 
-         if (dst_block > 0) then
+         if (dst_dist%blockLocation(n) /= 0 .and. dst_block > 0) then
 
          ! north edge
          do j = this_block%jhi+1,ny_block
@@ -1172,10 +1178,13 @@
 
    if (field_loc == field_loc_noupdate) then
       do n=1,nblocks_tot
+         !*** Only zero blocks that were actually assigned; matches the
+         !*** guard in mpi/ice_gather_scatter.F90 (there it also has to
+         !*** test the owning task, which does not arise with one task).
          dst_block = dst_dist%blockLocalID(n)
          this_block = get_block(n,n)
 
-         if (dst_block > 0) then
+         if (dst_dist%blockLocation(n) /= 0 .and. dst_block > 0) then
 
          ! north edge
          do j = this_block%jhi+1,ny_block

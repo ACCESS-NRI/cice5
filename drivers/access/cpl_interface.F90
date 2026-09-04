@@ -195,6 +195,22 @@
   integer (int_kind) :: nprocs
   integer (int_kind),dimension(:), allocatable :: vilo, vjlo 
 
+  ! The from_atm unpacking below writes into block index 1 directly, so
+  ! this driver only works with exactly one block per processor.  This
+  ! used to be enforced with `#if (MXBLCKS != 1) / #error`; now that the
+  ! block decomposition is set at run time it has to be a run-time check.
+  ! Choose block_size_x/block_size_y in domain_nml so that
+  ! ((nx_global-1)/block_size_x + 1)*((ny_global-1)/block_size_y + 1)
+  ! equals nprocs.
+  if (max_blocks /= 1) then
+    call abort_ice('(init_cpl): the ACCESS/ESM coupling path requires '// &
+                   'max_blocks == 1; adjust block_size_x/block_size_y '// &
+                   'in domain_nml so each processor owns exactly one block')
+  endif
+
+  ! aiiu is dimensioned by the run-time block decomposition
+  call alloc_cpl_forcing_handler
+
   nprocs = get_num_procs()
   allocate(vilo(nprocs))
   allocate(vjlo(nprocs))
@@ -825,9 +841,8 @@
 !                        field_loc_center, field_type_scalar)
     endif ! not ll_comparal
 
-#if (MXBLCKS != 1)
-#error The following code assumes that max_blocks == 1
-#endif
+    ! NOTE: the code below assumes max_blocks == 1 (it writes to block
+    ! index 1 unconditionally).  That is checked at run time in init_cpl.
 
     !***Note following "select case" works only if cl_read(:) is defined at ALL ranks***!
     !-----------------------------------------------------------------------------------!
@@ -1350,9 +1365,10 @@
   !
   ! Detach from MPI buffer
   !
-  call MPI_Buffer_Detach(rla_bufsend, il_bufsize, ierror) 
+  call MPI_Buffer_Detach(rla_bufsend, il_bufsize, ierror)
   deallocate (rla_bufsend)
-  !deallocate all the coupling associated arrays... (no bother...) 
+  call dealloc_cpl_forcing_handler
+  !deallocate all the coupling associated arrays... (no bother...)
   !  
   ! 9- PSMILe termination 
   !   

@@ -36,12 +36,12 @@
       real (kind=dbl_kind), dimension (nx_yield,ny_yield,na_yield) :: & 
         s11r, s12r, s22r, s11s, s12s, s22s           
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks) :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable :: &
          a11_1, a11_2, a11_3, a11_4,                  & ! components of 
          a12_1, a12_2, a12_3, a12_4                     ! structure tensor
 
       ! history
-      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          e11      , & ! components of strain rate tensor (1/s)
          e12      , & 
          e22      , &
@@ -56,7 +56,75 @@
 
 !=======================================================================
 
+
+      public :: alloc_dyn_eap, dealloc_dyn_eap
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of dyn_eap.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_dyn_eap
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         a11_1(nx_block,ny_block,max_blocks), &
+         a11_2(nx_block,ny_block,max_blocks), &
+         a11_3(nx_block,ny_block,max_blocks), &
+         a11_4(nx_block,ny_block,max_blocks), &
+         a12_1(nx_block,ny_block,max_blocks), &
+         a12_2(nx_block,ny_block,max_blocks), &
+         a12_3(nx_block,ny_block,max_blocks), &
+         a12_4(nx_block,ny_block,max_blocks), &
+         e11(nx_block,ny_block,max_blocks), &
+         e12(nx_block,ny_block,max_blocks), &
+         e22(nx_block,ny_block,max_blocks), &
+         yieldstress11(nx_block,ny_block,max_blocks), &
+         yieldstress12(nx_block,ny_block,max_blocks), &
+         yieldstress22(nx_block,ny_block,max_blocks), &
+         s11(nx_block,ny_block,max_blocks), &
+         s12(nx_block,ny_block,max_blocks), &
+         s22(nx_block,ny_block,max_blocks), &
+         a11(nx_block,ny_block,max_blocks), &
+         a12(nx_block,ny_block,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_dyn_eap): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      a11_1 = c0; a11_2 = c0; a11_3 = c0; a11_4 = c0; a12_1 = c0; a12_2 = c0
+      a12_3 = c0; a12_4 = c0; e11 = c0; e12 = c0; e22 = c0
+      yieldstress11 = c0; yieldstress12 = c0; yieldstress22 = c0; s11 = c0
+      s12 = c0; s22 = c0; a11 = c0; a12 = c0
+
+      end subroutine alloc_dyn_eap
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of dyn_eap.  Safe to call when
+! alloc_dyn_eap was never reached.
+!
+      subroutine dealloc_dyn_eap
+
+      if (.not. allocated(a11_1)) return
+
+      deallocate( &
+         a11_1, a11_2, a11_3, a11_4, a12_1, a12_2, a12_3, a12_4, e11, e12, &
+         e22, yieldstress11, yieldstress12, yieldstress22, s11, s12, s22, &
+         a11, a12)
+
+      end subroutine dealloc_dyn_eap
+
 
 !=======================================================================
 !

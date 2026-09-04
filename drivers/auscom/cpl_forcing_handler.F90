@@ -572,13 +572,23 @@ implicit none
     integer(kind=int_kind), save :: &
    icells    ! number of ocean cells
 
-    integer(kind=int_kind), dimension(nx_block*ny_block), save :: &
+    ! Sized by the run-time block decomposition, so no longer a plain
+    ! SAVE local; allocated once on the first call.
+    integer(kind=int_kind), dimension(:), allocatable, save :: &
    indxi, indxj    ! compressed indices for ocean cells
+
+    integer(kind=int_kind) :: ierr
 
 !type (block) :: &
 !   this_block           ! block information for current block
 
 !
+if (.not. allocated(indxi)) then
+  allocate(indxi(nx_block*ny_block), indxj(nx_block*ny_block), stat=ierr)
+  if (ierr /= 0) call abort_ice('(get_i2o_fluxes): Out of memory')
+  indxi = 0; indxj = 0
+endif
+
 dtice = dt
 swabs_ocn = 0.0
 pice      = 0.0    

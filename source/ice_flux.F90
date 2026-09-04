@@ -38,7 +38,7 @@
       ! Dynamics component
       !-----------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
 
        ! in from atmos (if .not.calc_strair)  
          strax   , & ! wind stress components (N/m^2)
@@ -61,7 +61,7 @@
 
        ! diagnostic
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          sig1    , & ! principal stress component
          sig2    , & ! principal stress component
          strairx , & ! stress on ice by air, x-direction
@@ -82,7 +82,7 @@
          opening     ! rate of opening due to divergence/shear (1/s)
 
       real (kind=dbl_kind), & 
-         dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
        ! ridging diagnostics in categories
          dardg1ndt, & ! rate of area loss by ridging ice (1/s)
          dardg2ndt, & ! rate of area gain by new ridges (1/s)
@@ -98,19 +98,19 @@
 
        ! restart
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
        ! ice stress tensor in each corner of T cell (kg/s^2)
          stressp_1, stressp_2, stressp_3, stressp_4 , & ! sigma11+sigma22
          stressm_1, stressm_2, stressm_3, stressm_4 , & ! sigma11-sigma22
          stress12_1,stress12_2,stress12_3,stress12_4    ! sigma12
 
       logical (kind=log_kind), &
-         dimension (nx_block,ny_block,max_blocks), public :: &
+         dimension (:,:,:), allocatable, public :: &
          iceumask   ! ice extent mask (U-cell)
 
        ! internal
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          prs_sig  , & ! replacement pressure, for stress calc
          fm           ! Coriolis param. * mass in U-cell (kg/s)
 
@@ -120,7 +120,7 @@
 
        ! in from atmosphere (if calc_Tsfc)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          zlvl    , & ! atm level height (m)
          uatm    , & ! wind velocity components (m/s)
          vatm    , &
@@ -141,7 +141,7 @@
        ! not per ice area. When in standalone mode, these are per ice area.
 
       real (kind=dbl_kind), & 
-         dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          fsurfn_f   , & ! net flux to top surface, excluding fcondtop
          fcondtopn_f, & ! downward cond flux at top surface (W m-2)
          fsensn_f   , & ! sensible heat flux (W m-2)
@@ -149,17 +149,17 @@
 
        ! in from atmosphere
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          frain   , & ! rainfall rate (kg/m^2 s)
          fsnow       ! snowfall rate (kg/m^2 s)
 
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,max_aero,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          faero_atm   ! aerosol deposition rate (kg/m^2 s)
 
        ! in from ocean
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          sss     , & ! sea surface salinity (ppt)
          sst     , & ! sea surface temperature (C)
          frzmlt  , & ! freezing/melting potential (W/m^2)
@@ -173,7 +173,7 @@
        ! out to atmosphere (if calc_Tsfc)
        ! note Tsfc is in ice_state.F
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          fsens   , & ! sensible heat flux (W/m^2)
          flat    , & ! latent heat flux   (W/m^2)
          fswabs  , & ! shortwave flux absorbed in ice and ocean (W/m^2)
@@ -188,7 +188,7 @@
 
 
        ! albedos aggregated over categories (if calc_Tsfc)
-      real (kind=dbl_kind), dimension(nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          alvdr   , & ! visible, direct   (fraction)
          alidr   , & ! near-ir, direct   (fraction)
          alvdf   , & ! visible, diffuse  (fraction)
@@ -206,13 +206,13 @@
          snowfrac     ! snow fraction used in radiation
 
       real (kind=dbl_kind), &
-         dimension(nx_block,ny_block,max_blocks,max_nstrm), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          albcnt       ! counter for zenith angle
 
        ! out to ocean 
        ! (Note CICE_IN_NEMO does not use these for coupling.  
        !  It uses fresh_ai,fsalt_ai,fhocn_ai and fswthru_ai)
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          fpond   , & ! fresh water flux to ponds (kg/m^2/s)
          fresh   , & ! fresh water flux to ocean (kg/m^2/s)
          fsalt   , & ! salt flux to ocean (kg/m^2/s)
@@ -220,13 +220,13 @@
          fswthru     ! shortwave penetrating to ocean (W/m^2)
 
       real (kind=dbl_kind), &
-        dimension (nx_block,ny_block,max_aero,max_blocks), public :: &
+        dimension (:,:,:,:), allocatable, public :: &
          faero_ocn   ! aerosol flux to ocean  (kg/m^2/s)
 
        ! internal
 
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,max_blocks), public :: &
+         dimension (:,:,:), allocatable, public :: &
          fswfac  , & ! for history
          scale_factor! scaling factor for shortwave components
 
@@ -235,19 +235,19 @@
          l_mpond_fresh   ! if true, include freshwater feedback from meltponds
                          ! when running in ice-ocean or coupled configuration
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable, public :: &
          meltsn      , & ! snow melt in category n (m)
          melttn      , & ! top melt in category n (m)
          meltbn      , & ! bottom melt in category n (m)
          congeln     , & ! congelation ice formation in category n (m)
          snoicen         ! snow-ice formation in category n (m)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable, public :: &
          keffn_top   , & ! effective thermal conductivity of the top ice layer 
          Tn_top          ! on categories (W/m^2/K)
 
       ! for biogeochemistry
-      real (kind=dbl_kind), dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable, public :: &
          hin_old     , & ! old ice thickness
          dsnown          ! change in snow thickness in category n (m)
 
@@ -256,7 +256,7 @@
       ! (for running with CAM)
       !-----------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          strairx_ocn , & ! stress on ocean by air, x-direction
          strairy_ocn , & ! stress on ocean by air, y-direction
          fsens_ocn   , & ! sensible heat flux (W/m^2)
@@ -274,7 +274,7 @@
       ! diagnostic
       !-----------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          fsurf , & ! net surface heat flux (excluding fcondtop)(W/m^2)
          fcondtop,&! top surface conductive flux        (W/m^2)
          fcondbot,&! bottom surface conductive flux     (W/m^2)
@@ -294,7 +294,7 @@
          frz_onset   ! day of year that freezing begins (congel or frazil)
          
       real (kind=dbl_kind), & 
-         dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          fsurfn,   & ! category fsurf
          fcondtopn,& ! category fcondtop
          fcondbotn,& ! category fcondbot
@@ -302,7 +302,7 @@
          flatn       ! category latent heat flux
 
       real (kind=dbl_kind), &
-         dimension (nx_block,ny_block,ncat,max_blocks), public :: &
+         dimension (:,:,:,:), allocatable, public :: &
          snowfracn
 
       ! As above but these remain grid box mean values i.e. they are not
@@ -312,7 +312,7 @@
       ! (The others suffer from problem of incorrect values at grid boxes
       !  that change from an ice free state to an icy state.)
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          fresh_ai, & ! fresh water flux to ocean (kg/m^2/s)
          fsalt_ai, & ! salt flux to ocean (kg/m^2/s)
          fhocn_ai, & ! net heat flux to ocean (W/m^2)
@@ -328,7 +328,7 @@
          fsurf_ai     ! net flux to top surface, excluding fcondtop (W/m^2)
 
       ! Used with data assimilation in hadgem drivers
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks) :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable :: &
          fresh_da, & ! fresh water flux to ocean due to data assim (kg/m^2/s)
          fsalt_da    ! salt flux to ocean due to data assimilation(kg/m^2/s)
 
@@ -336,20 +336,309 @@
       ! internal
       !-----------------------------------------------------------------
 
-      real (kind=dbl_kind), dimension (nx_block,ny_block,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:), allocatable, public :: &
          rside   , & ! fraction of ice that melts laterally
          fsw     , & ! incoming shortwave radiation (W/m^2)
          coszen  , & ! cosine solar zenith angle, < 0 for sun below horizon 
          rdg_conv, & ! convergence term for ridging (1/s)
          rdg_shear   ! shear term for ridging (1/s)
  
-      real (kind=dbl_kind), dimension(nx_block,ny_block,nilyr+1,max_blocks), public :: &
+      real (kind=dbl_kind), dimension (:,:,:,:), allocatable, public :: &
          salinz    ,&   ! initial salinity  profile (ppt)   
          Tmltz          ! initial melting temperature (^oC)
 
 !=======================================================================
 
+
+      public :: alloc_flux, dealloc_flux
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of flux.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_flux
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         strax(nx_block,ny_block,max_blocks), &
+         stray(nx_block,ny_block,max_blocks), &
+         uocn(nx_block,ny_block,max_blocks), &
+         vocn(nx_block,ny_block,max_blocks), &
+         ss_tltx(nx_block,ny_block,max_blocks), &
+         ss_tlty(nx_block,ny_block,max_blocks), &
+         strairxT(nx_block,ny_block,max_blocks), &
+         strairyT(nx_block,ny_block,max_blocks), &
+         strocnxT(nx_block,ny_block,max_blocks), &
+         strocnyT(nx_block,ny_block,max_blocks), &
+         sig1(nx_block,ny_block,max_blocks), &
+         sig2(nx_block,ny_block,max_blocks), &
+         strairx(nx_block,ny_block,max_blocks), &
+         strairy(nx_block,ny_block,max_blocks), &
+         strocnx(nx_block,ny_block,max_blocks), &
+         strocny(nx_block,ny_block,max_blocks), &
+         strtltx(nx_block,ny_block,max_blocks), &
+         strtlty(nx_block,ny_block,max_blocks), &
+         strintx(nx_block,ny_block,max_blocks), &
+         strinty(nx_block,ny_block,max_blocks), &
+         daidtd(nx_block,ny_block,max_blocks), &
+         dvidtd(nx_block,ny_block,max_blocks), &
+         dvsdtd(nx_block,ny_block,max_blocks), &
+         dagedtd(nx_block,ny_block,max_blocks), &
+         dardg1dt(nx_block,ny_block,max_blocks), &
+         dardg2dt(nx_block,ny_block,max_blocks), &
+         dvirdgdt(nx_block,ny_block,max_blocks), &
+         opening(nx_block,ny_block,max_blocks), &
+         dardg1ndt(nx_block,ny_block,ncat,max_blocks), &
+         dardg2ndt(nx_block,ny_block,ncat,max_blocks), &
+         dvirdgndt(nx_block,ny_block,ncat,max_blocks), &
+         aparticn(nx_block,ny_block,ncat,max_blocks), &
+         krdgn(nx_block,ny_block,ncat,max_blocks), &
+         ardgn(nx_block,ny_block,ncat,max_blocks), &
+         vrdgn(nx_block,ny_block,ncat,max_blocks), &
+         araftn(nx_block,ny_block,ncat,max_blocks), &
+         vraftn(nx_block,ny_block,ncat,max_blocks), &
+         aredistn(nx_block,ny_block,ncat,max_blocks), &
+         vredistn(nx_block,ny_block,ncat,max_blocks), &
+         stressp_1(nx_block,ny_block,max_blocks), &
+         stressp_2(nx_block,ny_block,max_blocks), &
+         stressp_3(nx_block,ny_block,max_blocks), &
+         stressp_4(nx_block,ny_block,max_blocks), &
+         stressm_1(nx_block,ny_block,max_blocks), &
+         stressm_2(nx_block,ny_block,max_blocks), &
+         stressm_3(nx_block,ny_block,max_blocks), &
+         stressm_4(nx_block,ny_block,max_blocks), &
+         stress12_1(nx_block,ny_block,max_blocks), &
+         stress12_2(nx_block,ny_block,max_blocks), &
+         stress12_3(nx_block,ny_block,max_blocks), &
+         stress12_4(nx_block,ny_block,max_blocks), &
+         iceumask(nx_block,ny_block,max_blocks), &
+         prs_sig(nx_block,ny_block,max_blocks), &
+         fm(nx_block,ny_block,max_blocks), &
+         zlvl(nx_block,ny_block,max_blocks), &
+         uatm(nx_block,ny_block,max_blocks), &
+         vatm(nx_block,ny_block,max_blocks), &
+         wind(nx_block,ny_block,max_blocks), &
+         potT(nx_block,ny_block,max_blocks), &
+         Tair(nx_block,ny_block,max_blocks), &
+         Qa(nx_block,ny_block,max_blocks), &
+         rhoa(nx_block,ny_block,max_blocks), &
+         swvdr(nx_block,ny_block,max_blocks), &
+         swvdf(nx_block,ny_block,max_blocks), &
+         swidr(nx_block,ny_block,max_blocks), &
+         swidf(nx_block,ny_block,max_blocks), &
+         flw(nx_block,ny_block,max_blocks), &
+         fsurfn_f(nx_block,ny_block,ncat,max_blocks), &
+         fcondtopn_f(nx_block,ny_block,ncat,max_blocks), &
+         fsensn_f(nx_block,ny_block,ncat,max_blocks), &
+         flatn_f(nx_block,ny_block,ncat,max_blocks), &
+         frain(nx_block,ny_block,max_blocks), &
+         fsnow(nx_block,ny_block,max_blocks), &
+         faero_atm(nx_block,ny_block,max_aero,max_blocks), &
+         sss(nx_block,ny_block,max_blocks), &
+         sst(nx_block,ny_block,max_blocks), &
+         frzmlt(nx_block,ny_block,max_blocks), &
+         frzmlt_init(nx_block,ny_block,max_blocks), &
+         Tf(nx_block,ny_block,max_blocks), &
+         qdp(nx_block,ny_block,max_blocks), &
+         hmix(nx_block,ny_block,max_blocks), &
+         daice_da(nx_block,ny_block,max_blocks), &
+         fsens(nx_block,ny_block,max_blocks), &
+         flat(nx_block,ny_block,max_blocks), &
+         fswabs(nx_block,ny_block,max_blocks), &
+         fswint_ai(nx_block,ny_block,max_blocks), &
+         flwout(nx_block,ny_block,max_blocks), &
+         Tref(nx_block,ny_block,max_blocks), &
+         Qref(nx_block,ny_block,max_blocks), &
+         Uref(nx_block,ny_block,max_blocks), &
+         evap(nx_block,ny_block,max_blocks), &
+         evap_ice(nx_block,ny_block,max_blocks), &
+         evap_snow(nx_block,ny_block,max_blocks), &
+         alvdr(nx_block,ny_block,max_blocks), &
+         alidr(nx_block,ny_block,max_blocks), &
+         alvdf(nx_block,ny_block,max_blocks), &
+         alidf(nx_block,ny_block,max_blocks), &
+         alvdr_ai(nx_block,ny_block,max_blocks), &
+         alidr_ai(nx_block,ny_block,max_blocks), &
+         alvdf_ai(nx_block,ny_block,max_blocks), &
+         alidf_ai(nx_block,ny_block,max_blocks), &
+         albice(nx_block,ny_block,max_blocks), &
+         albsno(nx_block,ny_block,max_blocks), &
+         albpnd(nx_block,ny_block,max_blocks), &
+         apeff_ai(nx_block,ny_block,max_blocks), &
+         snowfrac(nx_block,ny_block,max_blocks), &
+         albcnt(nx_block,ny_block,max_blocks,max_nstrm), &
+         fpond(nx_block,ny_block,max_blocks), &
+         fresh(nx_block,ny_block,max_blocks), &
+         fsalt(nx_block,ny_block,max_blocks), &
+         fhocn(nx_block,ny_block,max_blocks), &
+         fswthru(nx_block,ny_block,max_blocks), &
+         faero_ocn(nx_block,ny_block,max_aero,max_blocks), &
+         fswfac(nx_block,ny_block,max_blocks), &
+         scale_factor(nx_block,ny_block,max_blocks), &
+         meltsn(nx_block,ny_block,ncat,max_blocks), &
+         melttn(nx_block,ny_block,ncat,max_blocks), &
+         meltbn(nx_block,ny_block,ncat,max_blocks), &
+         congeln(nx_block,ny_block,ncat,max_blocks), &
+         snoicen(nx_block,ny_block,ncat,max_blocks), &
+         keffn_top(nx_block,ny_block,ncat,max_blocks), &
+         Tn_top(nx_block,ny_block,ncat,max_blocks), &
+         hin_old(nx_block,ny_block,ncat,max_blocks), &
+         dsnown(nx_block,ny_block,ncat,max_blocks), &
+         strairx_ocn(nx_block,ny_block,max_blocks), &
+         strairy_ocn(nx_block,ny_block,max_blocks), &
+         fsens_ocn(nx_block,ny_block,max_blocks), &
+         flat_ocn(nx_block,ny_block,max_blocks), &
+         flwout_ocn(nx_block,ny_block,max_blocks), &
+         evap_ocn(nx_block,ny_block,max_blocks), &
+         alvdr_ocn(nx_block,ny_block,max_blocks), &
+         alidr_ocn(nx_block,ny_block,max_blocks), &
+         alvdf_ocn(nx_block,ny_block,max_blocks), &
+         alidf_ocn(nx_block,ny_block,max_blocks), &
+         Tref_ocn(nx_block,ny_block,max_blocks), &
+         Qref_ocn(nx_block,ny_block,max_blocks), &
+         fsurf(nx_block,ny_block,max_blocks), &
+         fcondtop(nx_block,ny_block,max_blocks), &
+         fcondbot(nx_block,ny_block,max_blocks), &
+         congel(nx_block,ny_block,max_blocks), &
+         frazil(nx_block,ny_block,max_blocks), &
+         snoice(nx_block,ny_block,max_blocks), &
+         meltt(nx_block,ny_block,max_blocks), &
+         melts(nx_block,ny_block,max_blocks), &
+         meltb(nx_block,ny_block,max_blocks), &
+         meltl(nx_block,ny_block,max_blocks), &
+         dsnow(nx_block,ny_block,max_blocks), &
+         daidtt(nx_block,ny_block,max_blocks), &
+         dvidtt(nx_block,ny_block,max_blocks), &
+         dvsdtt(nx_block,ny_block,max_blocks), &
+         dagedtt(nx_block,ny_block,max_blocks), &
+         mlt_onset(nx_block,ny_block,max_blocks), &
+         frz_onset(nx_block,ny_block,max_blocks), &
+         fsurfn(nx_block,ny_block,ncat,max_blocks), &
+         fcondtopn(nx_block,ny_block,ncat,max_blocks), &
+         fcondbotn(nx_block,ny_block,ncat,max_blocks), &
+         fsensn(nx_block,ny_block,ncat,max_blocks), &
+         flatn(nx_block,ny_block,ncat,max_blocks), &
+         snowfracn(nx_block,ny_block,ncat,max_blocks), &
+         fresh_ai(nx_block,ny_block,max_blocks), &
+         fsalt_ai(nx_block,ny_block,max_blocks), &
+         fhocn_ai(nx_block,ny_block,max_blocks), &
+         fswthru_ai(nx_block,ny_block,max_blocks), &
+         fsens_ai(nx_block,ny_block,max_blocks), &
+         flat_ai(nx_block,ny_block,max_blocks), &
+         fswabs_ai(nx_block,ny_block,max_blocks), &
+         flwout_ai(nx_block,ny_block,max_blocks), &
+         evap_ai(nx_block,ny_block,max_blocks), &
+         evap_ice_ai(nx_block,ny_block,max_blocks), &
+         evap_snow_ai(nx_block,ny_block,max_blocks), &
+         fcondtop_ai(nx_block,ny_block,max_blocks), &
+         fsurf_ai(nx_block,ny_block,max_blocks), &
+         fresh_da(nx_block,ny_block,max_blocks), &
+         fsalt_da(nx_block,ny_block,max_blocks), &
+         rside(nx_block,ny_block,max_blocks), &
+         fsw(nx_block,ny_block,max_blocks), &
+         coszen(nx_block,ny_block,max_blocks), &
+         rdg_conv(nx_block,ny_block,max_blocks), &
+         rdg_shear(nx_block,ny_block,max_blocks), &
+         salinz(nx_block,ny_block,nilyr+1,max_blocks), &
+         Tmltz(nx_block,ny_block,nilyr+1,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_flux): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      strax = c0; stray = c0; uocn = c0; vocn = c0; ss_tltx = c0
+      ss_tlty = c0; strairxT = c0; strairyT = c0; strocnxT = c0
+      strocnyT = c0; sig1 = c0; sig2 = c0; strairx = c0; strairy = c0
+      strocnx = c0; strocny = c0; strtltx = c0; strtlty = c0; strintx = c0
+      strinty = c0; daidtd = c0; dvidtd = c0; dvsdtd = c0; dagedtd = c0
+      dardg1dt = c0; dardg2dt = c0; dvirdgdt = c0; opening = c0
+      dardg1ndt = c0; dardg2ndt = c0; dvirdgndt = c0; aparticn = c0
+      krdgn = c0; ardgn = c0; vrdgn = c0; araftn = c0; vraftn = c0
+      aredistn = c0; vredistn = c0; stressp_1 = c0; stressp_2 = c0
+      stressp_3 = c0; stressp_4 = c0; stressm_1 = c0; stressm_2 = c0
+      stressm_3 = c0; stressm_4 = c0; stress12_1 = c0; stress12_2 = c0
+      stress12_3 = c0; stress12_4 = c0; prs_sig = c0; fm = c0; zlvl = c0
+      uatm = c0; vatm = c0; wind = c0; potT = c0; Tair = c0; Qa = c0
+      rhoa = c0; swvdr = c0; swvdf = c0; swidr = c0; swidf = c0; flw = c0
+      fsurfn_f = c0; fcondtopn_f = c0; fsensn_f = c0; flatn_f = c0
+      frain = c0; fsnow = c0; faero_atm = c0; sss = c0; sst = c0
+      frzmlt = c0; frzmlt_init = c0; Tf = c0; qdp = c0; hmix = c0
+      daice_da = c0; fsens = c0; flat = c0; fswabs = c0; fswint_ai = c0
+      flwout = c0; Tref = c0; Qref = c0; Uref = c0; evap = c0; evap_ice = c0
+      evap_snow = c0; alvdr = c0; alidr = c0; alvdf = c0; alidf = c0
+      alvdr_ai = c0; alidr_ai = c0; alvdf_ai = c0; alidf_ai = c0
+      albice = c0; albsno = c0; albpnd = c0; apeff_ai = c0; snowfrac = c0
+      albcnt = c0; fpond = c0; fresh = c0; fsalt = c0; fhocn = c0
+      fswthru = c0; faero_ocn = c0; fswfac = c0; scale_factor = c0
+      meltsn = c0; melttn = c0; meltbn = c0; congeln = c0; snoicen = c0
+      keffn_top = c0; Tn_top = c0; hin_old = c0; dsnown = c0
+      strairx_ocn = c0; strairy_ocn = c0; fsens_ocn = c0; flat_ocn = c0
+      flwout_ocn = c0; evap_ocn = c0; alvdr_ocn = c0; alidr_ocn = c0
+      alvdf_ocn = c0; alidf_ocn = c0; Tref_ocn = c0; Qref_ocn = c0
+      fsurf = c0; fcondtop = c0; fcondbot = c0; congel = c0; frazil = c0
+      snoice = c0; meltt = c0; melts = c0; meltb = c0; meltl = c0
+      dsnow = c0; daidtt = c0; dvidtt = c0; dvsdtt = c0; dagedtt = c0
+      mlt_onset = c0; frz_onset = c0; fsurfn = c0; fcondtopn = c0
+      fcondbotn = c0; fsensn = c0; flatn = c0; snowfracn = c0; fresh_ai = c0
+      fsalt_ai = c0; fhocn_ai = c0; fswthru_ai = c0; fsens_ai = c0
+      flat_ai = c0; fswabs_ai = c0; flwout_ai = c0; evap_ai = c0
+      evap_ice_ai = c0; evap_snow_ai = c0; fcondtop_ai = c0; fsurf_ai = c0
+      fresh_da = c0; fsalt_da = c0; rside = c0; fsw = c0; coszen = c0
+      rdg_conv = c0; rdg_shear = c0; salinz = c0; Tmltz = c0
+      iceumask = .false.
+
+      end subroutine alloc_flux
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of flux.  Safe to call when
+! alloc_flux was never reached.
+!
+      subroutine dealloc_flux
+
+      if (.not. allocated(strax)) return
+
+      deallocate( &
+         strax, stray, uocn, vocn, ss_tltx, ss_tlty, strairxT, strairyT, &
+         strocnxT, strocnyT, sig1, sig2, strairx, strairy, strocnx, &
+         strocny, strtltx, strtlty, strintx, strinty, daidtd, dvidtd, &
+         dvsdtd, dagedtd, dardg1dt, dardg2dt, dvirdgdt, opening, dardg1ndt, &
+         dardg2ndt, dvirdgndt, aparticn, krdgn, ardgn, vrdgn, araftn, &
+         vraftn, aredistn, vredistn, stressp_1, stressp_2, stressp_3, &
+         stressp_4, stressm_1, stressm_2, stressm_3, stressm_4, stress12_1, &
+         stress12_2, stress12_3, stress12_4, iceumask, prs_sig, fm, zlvl, &
+         uatm, vatm, wind, potT, Tair, Qa, rhoa, swvdr, swvdf, swidr, &
+         swidf, flw, fsurfn_f, fcondtopn_f, fsensn_f, flatn_f, frain, &
+         fsnow, faero_atm, sss, sst, frzmlt, frzmlt_init, Tf, qdp, hmix, &
+         daice_da, fsens, flat, fswabs, fswint_ai, flwout, Tref, Qref, &
+         Uref, evap, evap_ice, evap_snow, alvdr, alidr, alvdf, alidf, &
+         alvdr_ai, alidr_ai, alvdf_ai, alidf_ai, albice, albsno, albpnd, &
+         apeff_ai, snowfrac, albcnt, fpond, fresh, fsalt, fhocn, fswthru, &
+         faero_ocn, fswfac, scale_factor, meltsn, melttn, meltbn, congeln, &
+         snoicen, keffn_top, Tn_top, hin_old, dsnown, strairx_ocn, &
+         strairy_ocn, fsens_ocn, flat_ocn, flwout_ocn, evap_ocn, alvdr_ocn, &
+         alidr_ocn, alvdf_ocn, alidf_ocn, Tref_ocn, Qref_ocn, fsurf, &
+         fcondtop, fcondbot, congel, frazil, snoice, meltt, melts, meltb, &
+         meltl, dsnow, daidtt, dvidtt, dvsdtt, dagedtt, mlt_onset, &
+         frz_onset, fsurfn, fcondtopn, fcondbotn, fsensn, flatn, snowfracn, &
+         fresh_ai, fsalt_ai, fhocn_ai, fswthru_ai, fsens_ai, flat_ai, &
+         fswabs_ai, flwout_ai, evap_ai, evap_ice_ai, evap_snow_ai, &
+         fcondtop_ai, fsurf_ai, fresh_da, fsalt_da, rside, fsw, coszen, &
+         rdg_conv, rdg_shear, salinz, Tmltz)
+
+      end subroutine dealloc_flux
+
 
 !=======================================================================
 

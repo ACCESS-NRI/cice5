@@ -40,13 +40,59 @@
          hs1                 ! tapering parameter for snow on pond ice
 
       real (kind=dbl_kind), public, &
-         dimension (nx_block,ny_block,ncat,max_blocks) :: &
+         dimension (:,:,:,:), allocatable :: &
          dhsn, &      ! depth difference for snow on sea ice and pond ice
          ffracn       ! fraction of fsurfn used to melt ipond
 
 !=======================================================================
 
+
+      public :: alloc_meltpond_lvl, dealloc_meltpond_lvl
+
       contains
+
+!=======================================================================
+!
+! Allocate the module-level arrays of meltpond_lvl.
+!
+! Must be called after init_grid1, i.e. once the block decomposition and
+! hence nx_block, ny_block and max_blocks are known, and before any of
+! these arrays is referenced.
+!
+      subroutine alloc_meltpond_lvl
+
+      use ice_constants, only: c0
+      use ice_exit, only: abort_ice
+
+      integer (kind=int_kind) :: ierr
+
+      allocate( &
+         dhsn(nx_block,ny_block,ncat,max_blocks), &
+         ffracn(nx_block,ny_block,ncat,max_blocks), &
+         stat=ierr)
+      if (ierr /= 0) call abort_ice('(alloc_meltpond_lvl): Out of memory')
+
+      ! These arrays were static, and so were zero-filled by the loader.
+      ! Heap allocations are not, so initialise them explicitly in order
+      ! to preserve the previous behaviour bit for bit.
+      dhsn = c0; ffracn = c0
+
+      end subroutine alloc_meltpond_lvl
+
+!=======================================================================
+!
+! Deallocate the module-level arrays of meltpond_lvl.  Safe to call when
+! alloc_meltpond_lvl was never reached.
+!
+      subroutine dealloc_meltpond_lvl
+
+      if (.not. allocated(dhsn)) return
+
+      deallocate( &
+         dhsn, ffracn)
+
+      end subroutine dealloc_meltpond_lvl
+
 
 !=======================================================================
 

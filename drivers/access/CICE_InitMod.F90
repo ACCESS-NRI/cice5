@@ -71,29 +71,35 @@
       use ice_communicate, only: init_communicate
       use ice_coupling, only: top_layer_Tandk_init
       use ice_diagnostics, only: init_diags
+      use ice_atmo, only: alloc_atmo
+      use ice_brine, only: alloc_brine
       use ice_domain, only: init_domain_blocks
-      use ice_dyn_eap, only: init_eap
-      use ice_dyn_shared, only: kdyn, init_evp
+      use ice_dyn_eap, only: init_eap, alloc_dyn_eap
+      use ice_dyn_shared, only: kdyn, init_evp, alloc_dyn_shared
       use ice_fileunits, only: init_fileunits
       use ice_flux, only: init_coupler_flux, init_history_therm, &
-          init_history_dyn, init_flux_atm, init_flux_ocn
+          init_history_dyn, init_flux_atm, init_flux_ocn, alloc_flux
       use ice_forcing, only: init_forcing_ocn, init_forcing_atmo, &
-          get_forcing_atmo, get_forcing_ocn
-      use ice_grid, only: init_grid1, init_grid2
+          get_forcing_atmo, get_forcing_ocn, alloc_forcing
+      use ice_grid, only: init_grid1, init_grid2, alloc_grid
+      use ice_meltpond_lvl, only: alloc_meltpond_lvl
+      use ice_therm_shared, only: alloc_therm_shared
       use ice_history, only: init_hist, accum_hist
       use ice_restart_shared, only: restart, runid, runtype
       use ice_init, only: input_data, init_state
       use ice_itd, only: init_itd
       use ice_kinds_mod
       use ice_restoring, only: ice_HaloRestore_init
-      use ice_shortwave, only: init_shortwave
+      use ice_shortwave, only: init_shortwave, alloc_shortwave
       use ice_state, only: tr_aero
+      use ice_state, only: alloc_state
       use ice_therm_shared, only: calc_Tsfc, heat_capacity
       use ice_therm_vertical, only: init_thermo_vertical
       use ice_timers, only: timer_total, init_ice_timers, ice_timer_start
       use ice_transport_driver, only: init_transport
       use ice_zbgc, only: init_zbgc
       use ice_zbgc_shared, only: skl_bgc
+      use ice_zbgc_shared, only: alloc_zbgc_shared
 #ifdef popcice
       use drv_forcing, only: sst_sss
 #endif
@@ -125,6 +131,26 @@
 
       call init_domain_blocks   ! set up block decomposition
       call init_grid1           ! domain distribution
+      !-----------------------------------------------------------------
+      ! Allocate the module-level arrays whose dimensions depend on the
+      ! run-time block decomposition.  init_grid1 (via
+      ! init_domain_distribution) has just established nx_block,
+      ! ny_block and max_blocks, and init_grid2 below is the first
+      ! consumer of these arrays.  alloc_dyn_eap is deferred to the
+      ! kdyn == 2 branch, since EAP is not always active.
+      !-----------------------------------------------------------------
+      call alloc_grid            ! grid arrays
+      call alloc_state           ! ice state arrays
+      call alloc_flux            ! flux arrays
+      call alloc_forcing         ! forcing arrays
+      call alloc_shortwave       ! radiation arrays
+      call alloc_atmo            ! atmospheric drag arrays
+      call alloc_brine           ! brine height arrays
+      call alloc_dyn_shared      ! shared dynamics arrays
+      call alloc_meltpond_lvl    ! level-ice melt pond arrays
+      call alloc_therm_shared    ! shared thermodynamics arrays
+      call alloc_zbgc_shared     ! shared biogeochemistry arrays
+
 #ifdef AusCOM
       call init_cpl     ! initialize message passing
 #endif
@@ -136,6 +162,7 @@
       call init_hist (dt)       ! initialize output history file
 
       if (kdyn == 2) then
+         call alloc_dyn_eap   ! allocate EAP dynamics arrays
          call init_eap (dt_dyn) ! define eap dynamics parameters, variables
       else                      ! for both kdyn = 0 or 1
          call init_evp (dt_dyn) ! define evp dynamics parameters, variables
