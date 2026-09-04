@@ -2,7 +2,5 @@
     "gcc_compiler_ver": "@13.2.0",
     "intel_compiler_ver": "@2021.10.0",
     "oneapi_compiler_ver": "@2025.2.0",
-    "om2_2deg": "build_system=cmake model=access-om2 nxglob=180 nyglob=150 blckx=15 blcky=150 mxblcks=1",
-    "esm1p6_0p5deg": "build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1",
     "target": "x86_64"
 }
