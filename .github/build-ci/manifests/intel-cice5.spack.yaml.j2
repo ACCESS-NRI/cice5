@@ -1,17 +1,10 @@
 spack:
+  include:
+  # Include configuration from this repository, with the environment variable defined in build-ci
+  - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'cice5@git.{{ ref }}=stable {{ om2_2deg }}'
-  - 'cice5@git.{{ ref }}=stable build_type=Debug {{ om2_2deg }}'
-  - 'cice5@git.{{ ref }}=stable model=access-om2'
-  - 'cice5@git.{{ ref }}=stable model=access-esm1.6'
-  packages:
-    intel-oneapi-compilers-classic:
-      require:
-      - '{{ intel_compiler_ver }}'
-    all:
-      require:
-      - '%access_intel'
-      - 'target={{ target }}'
-  concretizer:
-    unify: false
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=180 nyglob=150 blckx=15 blcky=150 mxblcks=1 %%access_intel'
+  - 'cice5@git.{{ ref }}=stable build_type=Debug build_system=cmake model=access-om2 nxglob=180 nyglob=150 blckx=15 blcky=150 mxblcks=1 %%access_intel'
+  - 'cice5@git.{{ ref }}=stable model=access-om2 %%access_intel'
+  - 'cice5@git.{{ ref }}=stable model=access-esm1.6 %%access_intel'
   view: false
