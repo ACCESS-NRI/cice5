@@ -9,6 +9,9 @@ spack:
   - 'cice5@git.{{ ref }}=stable model=access-om2'
   - 'access-om2 ^cice5@git.{{ ref }}=stable'
   packages:
+    # Unset inherited openmpi requirements from access-spack-packages so we can set our own in the spec list
+    openmpi:
+      require:: []
     all:
       require:
       - '%access_oneapi'

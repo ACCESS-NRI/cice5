@@ -9,6 +9,9 @@ spack:
   - 'cice5@git.{{ ref }}=stable model=access-esm1.6'
   - 'access-esm1p6 ^cice5@git.{{ ref }}=stable ^cable@2025.11.000 library=access-esm1.6'
   packages:
+    # Unset inherited openmpi requirements from access-spack-packages so we can set our own in the spec list
+    openmpi:
+      require:: []
     all:
       require:
       - '%access_oneapi'
