@@ -3,7 +3,11 @@ spack:
   # Include configuration from this repository, with the environment variable defined in build-ci
   - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=180 nyglob=150 blckx=15 blcky=150 mxblcks=1 %%access_gcc'
-  - 'cice5@git.{{ ref }}=stable model=access-om2 %%access_gcc'
-  - 'cice5@git.{{ ref }}=stable model=access-esm1.6 %%access_gcc'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=180 nyglob=150 blckx=15 blcky=150 mxblcks=1'
+  - 'cice5@git.{{ ref }}=stable model=access-om2'
+  - 'cice5@git.{{ ref }}=stable model=access-esm1.6'
+  packages:
+    all:
+      require:
+      - '%access_gcc'
   view: false

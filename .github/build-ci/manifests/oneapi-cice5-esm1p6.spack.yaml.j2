@@ -3,9 +3,13 @@ spack:
   # Include configuration from this repository, with the environment variable defined in build-ci
   - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1 %%access_oneapi ^openmpi@4'
-  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1 %%access_oneapi ^openmpi@5'
-  - 'cice5@git.{{ ref }}=stable build_type=Debug build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1 %%access_oneapi'
-  - 'cice5@git.{{ ref }}=stable model=access-esm1.6 %%access_oneapi'
-  - 'access-esm1p6 ^cice5@git.{{ ref }}=stable %%access_oneapi ^cable@2025.11.000 library=access-esm1.6'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1 ^openmpi@4'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1 ^openmpi@5'
+  - 'cice5@git.{{ ref }}=stable build_type=Debug build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1'
+  - 'cice5@git.{{ ref }}=stable model=access-esm1.6'
+  - 'access-esm1p6 ^cice5@git.{{ ref }}=stable ^cable@2025.11.000 library=access-esm1.6'
+  packages:
+    all:
+      require:
+      - '%access_oneapi'
   view: false
