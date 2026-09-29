@@ -1,18 +1,18 @@
 spack:
+  include:
+  # Include configuration from this repository, with the environment variable defined in build-ci
+  - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'cice5@git.{{ ref }}=stable {{ om2_2deg }} io_type=PIO ^openmpi@4'
-  - 'cice5@git.{{ ref }}=stable {{ om2_2deg }} io_type=NetCDF ^openmpi@5'
-  - 'cice5@git.{{ ref }}=stable build_type=Debug {{ om2_2deg }}'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=180 nyglob=150 blckx=15 blcky=150 mxblcks=1 io_type=PIO ^openmpi@4'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-om2 nxglob=180 nyglob=150 blckx=15 blcky=150 mxblcks=1 io_type=NetCDF ^openmpi@5'
+  - 'cice5@git.{{ ref }}=stable build_type=Debug build_system=cmake model=access-om2 nxglob=180 nyglob=150 blckx=15 blcky=150 mxblcks=1'
   - 'cice5@git.{{ ref }}=stable model=access-om2'
   - 'access-om2 ^cice5@git.{{ ref }}=stable'
   packages:
-    intel-oneapi-compilers:
-      require:
-      - '{{ oneapi_compiler_ver }}'
+    # Unset inherited openmpi requirements from access-spack-packages so we can set our own in the spec list
+    openmpi:
+      require:: []
     all:
       require:
       - '%access_oneapi'
-      - 'target={{ target }}'
-  concretizer:
-    unify: false
   view: false

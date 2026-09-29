@@ -1,18 +1,18 @@
 spack:
+  include:
+  # Include configuration from this repository, with the environment variable defined in build-ci
+  - path: $SPACK_MANIFEST_REPOSITORY_PATH/.github/build-ci/config
   specs:
-  - 'cice5@git.{{ ref }}=stable {{ esm1p6_0p5deg }} ^openmpi@4'
-  - 'cice5@git.{{ ref }}=stable {{ esm1p6_0p5deg }} ^openmpi@5'
-  - 'cice5@git.{{ ref }}=stable build_type=Debug {{ esm1p6_0p5deg }}'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1 ^openmpi@4'
+  - 'cice5@git.{{ ref }}=stable build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1 ^openmpi@5'
+  - 'cice5@git.{{ ref }}=stable build_type=Debug build_system=cmake model=access-esm1.6 nxglob=720 nyglob=600 blckx=30 blcky=600 mxblcks=1'
   - 'cice5@git.{{ ref }}=stable model=access-esm1.6'
   - 'access-esm1p6 ^cice5@git.{{ ref }}=stable ^cable@2025.11.000 library=access-esm1.6'
   packages:
-    intel-oneapi-compilers:
-      require:
-      - '{{ oneapi_compiler_ver }}'
+    # Unset inherited openmpi requirements from access-spack-packages so we can set our own in the spec list
+    openmpi:
+      require:: []
     all:
       require:
       - '%access_oneapi'
-      - 'target={{ target }}'
-  concretizer:
-    unify: false
   view: false
