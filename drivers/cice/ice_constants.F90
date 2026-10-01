@@ -60,10 +60,6 @@
       real (kind=real_kind), parameter, public :: &
          spval     = 1.0e30_real_kind   ! special value for netCDF output
 
-      ! NOTE: iceruf and hs_min are NOT defined here.  In this fork they are
-      ! run-time variables owned by ice_atmo and ice_itd respectively, and
-      ! defining them here as parameters as well collides with those
-      ! declarations.  This matches drivers/auscom/ice_constants.F90.
       real (kind=dbl_kind), parameter, public :: &
          ! (Ebert, Schramm and Curry JGR 100 15965-15975 Aug 1995)
          kappav = 1.4_dbl_kind ,&! vis extnctn coef in ice, wvlngth<700nm (1/m)

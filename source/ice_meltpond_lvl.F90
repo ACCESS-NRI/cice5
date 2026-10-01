@@ -72,9 +72,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_meltpond_lvl): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       dhsn = c0; ffracn = c0
 
       end subroutine alloc_meltpond_lvl

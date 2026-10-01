@@ -351,11 +351,6 @@
                                  ! (use 0.2 for cm2)
 #endif
 
-      ! iceruf (ice_atmo) and aicenmin (ice_itd) are declared unconditionally,
-      ! unlike the quantities above which are compile-time parameters in
-      ! ice_constants when AusCOM is not defined.  Their defaults therefore
-      ! have to be set unconditionally too, otherwise an uncoupled build
-      ! reads them uninitialised -- init_coupler_flux divides by iceruf.
       iceruf   = 0.0005_dbl_kind ! ice surface roughness (m)
       aicenmin = 99              ! maximum ice concentration to zap
                                  ! we set a sensible default after namelist read

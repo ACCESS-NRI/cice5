@@ -197,9 +197,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_shortwave): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       alvdrn = c0; alidrn = c0; alvdfn = c0; alidfn = c0; albicen = c0
       albsnon = c0; albpndn = c0; apeffn = c0; Iswabsn = c0; Sswabsn = c0
       fswsfcn = c0; fswthrun = c0; fswintn = c0; fswpenln = c0

@@ -196,9 +196,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_grid): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       dxt = c0; dyt = c0; dxu = c0; dyu = c0; HTE = c0; HTN = c0; tarea = c0
       uarea = c0; tarear = c0; uarear = c0; tinyarea = c0; tarean = c0
       tareas = c0; ULON = c0; ULAT = c0; TLON = c0; TLAT = c0; ANGLE = c0
@@ -1614,15 +1611,14 @@
             work_g2(i,j) = p5*(work_g(i,j) + work_g(i,j+1)) ! dyu
          enddo
       enddo
-      ! extrapolate to obtain dyu along j=ny_global
-      ! guarded at run time rather than by the NYGLOB CPP macro, to avoid
-      ! an out of bounds reference when ny_global=1 as in the CESM se
-      ! dycore; this code is not exercised in prescribed mode.
+      ! extrapolate to obtain dyu along j=ny_global.  Guarded because
+      ! work_g(i,ny_global-2) is out of bounds for ny_global < 3, as in the
+      ! CESM se dycore; this code is not exercised in prescribed mode.
       if (ny_global > 2) then
-      do i = 1, nx_global
-         work_g2(i,ny_global) = c2*work_g(i,ny_global-1) &
-                                 - work_g(i,ny_global-2) ! dyu
-      enddo
+         do i = 1, nx_global
+            work_g2(i,ny_global) = c2*work_g(i,ny_global-1) &
+                                    - work_g(i,ny_global-2) ! dyu
+         enddo
       endif
       endif
       call scatter_global(HTE, work_g, master_task, distrb_info, &

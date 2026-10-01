@@ -554,9 +554,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_flux): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       strax = c0; stray = c0; uocn = c0; vocn = c0; ss_tltx = c0
       ss_tlty = c0; strairxT = c0; strairyT = c0; strocnxT = c0
       strocnyT = c0; sig1 = c0; sig2 = c0; strairx = c0; strairy = c0

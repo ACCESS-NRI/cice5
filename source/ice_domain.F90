@@ -86,9 +86,7 @@
 
    use ice_distribution, only: processor_shape
    use ice_domain_size, only: ncat, nilyr, nslyr, max_blocks, &
-       nx_global, ny_global, block_size_x, block_size_y, &
-       default_nx_global, default_ny_global, &
-       default_block_size_x, default_block_size_y, default_max_blocks
+       nx_global, ny_global, block_size_x, block_size_y
    use ice_exit, only: abort_ice
    use ice_fileunits, only: nu_nml, nml_filename, nu_diag, &
        get_fileunit, release_fileunit
@@ -131,16 +129,14 @@
 !----------------------------------------------------------------------
 
    nprocs = -1
-   ! Grid size and block decomposition defaults come from the
-   ! NXGLOB/NYGLOB/BLCKX/BLCKY/MXBLCKS CPP macros so that a namelist without
-   ! these entries reproduces the behaviour of the previous,
-   ! compile-time-only build.  Any of them may be overridden from
-   ! domain_nml; max_blocks = -1 means "derive it".
-   nx_global         = default_nx_global
-   ny_global         = default_ny_global
-   block_size_x      = default_block_size_x
-   block_size_y      = default_block_size_y
-   max_blocks        = default_max_blocks
+   ! -1 means "not set".  The grid size and block size must be given in
+   ! domain_nml; max_blocks may be left at -1, which asks for it to be
+   ! derived from the block distribution (see init_domain_distribution).
+   nx_global         = -1
+   ny_global         = -1
+   block_size_x      = -1
+   block_size_y      = -1
+   max_blocks        = -1
    processor_shape   = 'slenderX2'
    distribution_type = 'cartesian'
    distribution_wght = 'latitude'
@@ -195,12 +191,10 @@
 
    if (nx_global < 1 .or. ny_global < 1 .or. ncat < 1) then
       !***
-      !*** domain size zero or negative; nx_global/ny_global come from
-      !*** domain_nml, defaulting to the NXGLOB/NYGLOB CPP macros
+      !*** domain size zero or negative
       !***
       call abort_ice('ice: Invalid domain: nx_global and ny_global must be '// &
-                     '> 0; set them in domain_nml or build with '// &
-                     '-DNXGLOB/-DNYGLOB')
+                     '> 0; set them in the domain_nml namelist group')
    else if (nprocs /= get_num_procs()) then
       !***
       !*** input nprocs does not match system (eg MPI) request
@@ -225,7 +219,7 @@
 
    if (block_size_x < 1 .or. block_size_y < 1) then
       call abort_ice('ice: block_size_x and block_size_y must be > 0; '// &
-                     'set them in domain_nml or build with -DBLCKX/-DBLCKY')
+                     'set them in the domain_nml namelist group')
    endif
 
    if (block_size_x > nx_global .or. block_size_y > ny_global) then

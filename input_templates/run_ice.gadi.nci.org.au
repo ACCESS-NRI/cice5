@@ -12,14 +12,14 @@
 # Build the executable first, e.g. for the gx3 test grid:
 #
 #   cmake -S . -B build \
-#         -DCICE_DRIVER=cice -DCICE_IO=NetCDF -DCMAKE_BUILD_TYPE=Release \
-#         -DCICE_NXGLOB=100 -DCICE_NYGLOB=116
+#         -DCICE_DRIVER=cice -DCICE_IO=NetCDF -DCMAKE_BUILD_TYPE=Release
 #   cmake --build build -j
 #
-# which produces build/cice_cice_100x116.exe.  No block size is baked in: the
-# same executable runs at any task count, because block_size_x, block_size_y
-# and max_blocks are read from domain_nml at run time.  That is why the ncpus
-# request below is the only thing you need to change to rescale the run.
+# which produces build/cice_cice.exe.  Nothing about the domain is baked in:
+# the same executable runs any grid at any task count, because nx_global,
+# ny_global, block_size_x, block_size_y and max_blocks are all read from
+# domain_nml.  That is why the ncpus request below is the only thing you need
+# to change to rescale the run.
 #
 #PBS -q normal
 #PBS -l ncpus=4
@@ -51,10 +51,10 @@ module list
 # What to run
 #-----------------------------------------------------------------------------
 # Executable, as produced by the CMake build above.
-CICE_EXE=${CICE_EXE:-./cice_cice_100x116.exe}
+CICE_EXE=${CICE_EXE:-./cice_cice.exe}
 
-# Global grid size.  Must match the CICE_NXGLOB/CICE_NYGLOB the executable was
-# built with -- unlike the block size, the grid size IS still compile-time.
+# Global grid size, written into domain_nml below.  Nothing is compiled in, so
+# this only has to match the input data you point the run at.
 NXGLOB=${NXGLOB:-100}
 NYGLOB=${NYGLOB:-116}
 

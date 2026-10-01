@@ -203,9 +203,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_forcing): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       cldf = c0; fsw_data = c0; cldf_data = c0; fsnow_data = c0
       Tair_data = c0; uatm_data = c0; vatm_data = c0; wind_data = c0
       strax_data = c0; stray_data = c0; Qa_data = c0; rhoa_data = c0

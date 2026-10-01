@@ -202,9 +202,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_zbgc_shared): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       first_ice = .false.
       flux_bio = c0; ocean_bio = c0; flux_bio_ai = c0; nit = c0; amm = c0
       sil = c0; dmsp = c0; dms = c0; algalN = c0; dhbr_top = c0

@@ -202,9 +202,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_state): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       aice = c0; vice = c0; vsno = c0; trcr = c0; aice0 = c0; aicen = c0
       vicen = c0; vsnon = c0; trcrn = c0; uvel = c0; vvel = c0; divu = c0
       shear = c0; strength = c0; aice_init = c0; aicen_init = c0

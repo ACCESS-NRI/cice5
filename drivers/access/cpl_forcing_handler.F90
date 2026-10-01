@@ -56,9 +56,6 @@ contains
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_cpl_forcing_handler): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       aiiu = c0
 
       end subroutine alloc_cpl_forcing_handler

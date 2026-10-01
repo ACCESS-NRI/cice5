@@ -41,43 +41,16 @@ else()
   message(STATUS "  - CICE_DRIVER   ${CICE_DRIVER}")
 endif()
 
-# The 'cice' driver is the standalone (uncoupled) executable: no OASIS, no
-# libaccessom2, and neither AusCOM nor coupled defined.  It is intended for
-# testing the sea-ice model on its own, not for ACCESS-OM2 or ACCESS-ESM1.6.
 if(CICE_DRIVER MATCHES "^cice$")
-  set(CICE_COUPLED FALSE)
+  set(CICE_OASIS_COUPLED FALSE)
 else()
-  set(CICE_COUPLED TRUE)
+  set(CICE_OASIS_COUPLED TRUE)
 endif()
 
-# The global grid size is chosen at RUN time too, in domain_nml (nx_global,
-# ny_global).  As with the block settings below, these only supply the
-# DEFAULTS used when the namelist entry is absent.  Set them to -1 to compile
-# in no default and make the namelist entries mandatory.
-set(CICE_NXGLOB "360" CACHE STRING "Default size of grid in X-direction (-1 = require nx_global in domain_nml)")
-set(CICE_NYGLOB "300" CACHE STRING "Default size of grid in Y-direction (-1 = require ny_global in domain_nml)")
-message(STATUS "  - CICE_NXGLOB   ${CICE_NXGLOB} (default for domain_nml nx_global)")
-message(STATUS "  - CICE_NYGLOB   ${CICE_NYGLOB} (default for domain_nml ny_global)")
-
-# The block decomposition is chosen at RUN time, in the domain_nml group of
-# the namelist (block_size_x, block_size_y, max_blocks).  The three settings
-# below only supply the DEFAULTS used when the corresponding namelist entry
-# is absent, so that existing namelists keep working unchanged.  One
-# executable can therefore be run at any number of tasks.
-#
-# Set any of them to -1 to compile in no default, which makes the matching
-# domain_nml entry mandatory at run time.  max_blocks = -1 additionally
-# means "derive it from the actual block distribution", which is the
-# recommended setting.
-#
-# defaults from https://github.com/ACCESS-NRI/access-spack-packages/blob/d8b48b18a1400cf2a6850af0bf038af55804d92f/packages/cice5/spack-build.sh#L89-L91
-# BLCKX = 360/24 = 15 , BLCKY = 300/1  = 300
-set(CICE_BLCKX   "15"  CACHE STRING "Default size of computational blocks in X-direction (-1 = require block_size_x in domain_nml)")
-set(CICE_BLCKY   "300" CACHE STRING "Default size of computational blocks in Y-direction (-1 = require block_size_y in domain_nml)")
-set(CICE_MXBLCKS "1"   CACHE STRING "Default maximum number of blocks per task (-1 = derive at run time)")
-message(STATUS "  - CICE_BLCKX    ${CICE_BLCKX} (default for domain_nml block_size_x)")
-message(STATUS "  - CICE_BLCKY    ${CICE_BLCKY} (default for domain_nml block_size_y)")
-message(STATUS "  - CICE_MXBLCKS  ${CICE_MXBLCKS} (default for domain_nml max_blocks)")
+# The global grid size (nx_global, ny_global) and the block decomposition
+# (block_size_x, block_size_y, max_blocks) are set entirely at RUN time, in
+# the domain_nml namelist group.  Nothing about the domain is compiled in, so
+# one executable runs any grid at any task count.
 
 # these are also configuration settings, but we leave them as internal only at this point
 # could be made options if users need them
@@ -135,11 +108,6 @@ else()
 endif()
 
 add_compile_definitions(
-  NXGLOB=${CICE_NXGLOB}
-  NYGLOB=${CICE_NYGLOB}
-  BLCKX=${CICE_BLCKX}
-  BLCKY=${CICE_BLCKY}
-  MXBLCKS=${CICE_MXBLCKS}
   NUMIN=${NUMIN}
   NUMAX=${NUMAX}
   TRAGE=${TRAGE}
@@ -156,7 +124,7 @@ add_compile_definitions(
 )
 
 add_compile_definitions( gather_scatter_barrier ncdf )
-if(CICE_COUPLED)
+if(CICE_OASIS_COUPLED)
   add_compile_definitions( OASIS3_MCT )
 endif()
 
@@ -174,7 +142,7 @@ endif()
 #                              External packages                                #
 #]==============================================================================]
 
-if(CICE_COUPLED)
+if(CICE_OASIS_COUPLED)
   find_package(PkgConfig REQUIRED)
   pkg_check_modules(OASIS3PSMILE REQUIRED IMPORTED_TARGET "oasis3-psmile.MPI1")
   pkg_check_modules(OASIS3MCT REQUIRED IMPORTED_TARGET "oasis3-mct")
@@ -214,7 +182,7 @@ endif()
 
 target_link_libraries(cice PRIVATE MPI::MPI_Fortran)
 
-if(CICE_COUPLED)
+if(CICE_OASIS_COUPLED)
   target_link_libraries(cice
     PRIVATE
     PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP
@@ -357,9 +325,8 @@ endif()
 #                             Install                                           #
 #]==============================================================================]
 
-# Neither the grid size nor the block size is baked into the executable any
-# more -- both come from domain_nml -- so neither belongs in the name.  The
-# CICE_* settings above are only compile-time defaults.
+# Neither the grid size nor the block size is baked into the executable, so
+# neither belongs in its name.
 set_target_properties(cice PROPERTIES
   LINKER_LANGUAGE Fortran
   OUTPUT_NAME "cice_${CICE_DRIVER}.exe"

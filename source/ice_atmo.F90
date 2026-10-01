@@ -104,9 +104,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_atmo): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       Cdn_atm = c0; Cdn_ocn = c0; hfreebd = c0; hdraft = c0; hridge = c0
       distrdg = c0; hkeel = c0; dkeel = c0; lfloe = c0; dfloe = c0
       Cdn_atm_skin = c0; Cdn_atm_floe = c0; Cdn_atm_pond = c0

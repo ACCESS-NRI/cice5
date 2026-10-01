@@ -195,13 +195,15 @@
   integer (int_kind) :: nprocs
   integer (int_kind),dimension(:), allocatable :: vilo, vjlo 
 
-  ! The from_atm unpacking below writes into block index 1 directly, so
-  ! this driver only works with exactly one block per processor.  This
-  ! used to be enforced with `#if (MXBLCKS != 1) / #error`; now that the
-  ! block decomposition is set at run time it has to be a run-time check.
-  ! Choose block_size_x/block_size_y in domain_nml so that
-  ! ((nx_global-1)/block_size_x + 1)*((ny_global-1)/block_size_y + 1)
-  ! equals nprocs.
+  ! The from_atm unpacking below writes into block index 1 directly, so this
+  ! driver needs exactly one block per processor.
+  !
+  ! The requirement is on the block COUNT, not on the blocks tiling the grid
+  ! exactly: create_blocks makes ceil(nx_global/block_size_x) by
+  ! ceil(ny_global/block_size_y) blocks and trims the last one in each
+  ! direction to the grid edge, so blocks that overhang are fine.  Pick
+  ! block_size_x/block_size_y in domain_nml so that that block count equals
+  ! nprocs.
   if (max_blocks /= 1) then
     call abort_ice('(init_cpl): the ACCESS/ESM coupling path requires '// &
                    'max_blocks == 1; adjust block_size_x/block_size_y '// &

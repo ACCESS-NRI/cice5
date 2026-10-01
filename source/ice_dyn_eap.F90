@@ -99,9 +99,6 @@
          stat=ierr)
       if (ierr /= 0) call abort_ice('(alloc_dyn_eap): Out of memory')
 
-      ! These arrays were static, and so were zero-filled by the loader.
-      ! Heap allocations are not, so initialise them explicitly in order
-      ! to preserve the previous behaviour bit for bit.
       a11_1 = c0; a11_2 = c0; a11_3 = c0; a11_4 = c0; a12_1 = c0; a12_2 = c0
       a12_3 = c0; a12_4 = c0; e11 = c0; e12 = c0; e22 = c0
       yieldstress11 = c0; yieldstress12 = c0; yieldstress22 = c0; s11 = c0

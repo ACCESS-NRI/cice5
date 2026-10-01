@@ -64,11 +64,6 @@
 
 !echmod      if (nu_diag /= 6) close (nu_diag) ! diagnostic output
 
-      !-----------------------------------------------------------------
-      ! Release the run-time-sized module arrays allocated in cice_init.
-      ! Each dealloc_* is a no-op if the matching alloc_* never ran, so
-      ! this is safe on an aborted or partial initialisation.
-      !-----------------------------------------------------------------
       call dealloc_grid
       call dealloc_state
       call dealloc_flux

@@ -572,8 +572,9 @@ implicit none
     integer(kind=int_kind), save :: &
    icells    ! number of ocean cells
 
-    ! Sized by the run-time block decomposition, so no longer a plain
-    ! SAVE local; allocated once on the first call.
+    ! Allocated once on the first call and kept for the life of the run,
+    ! as the SAVE fixed-size arrays these replace were.  There is
+    ! deliberately no deallocate.
     integer(kind=int_kind), dimension(:), allocatable, save :: &
    indxi, indxj    ! compressed indices for ocean cells
 

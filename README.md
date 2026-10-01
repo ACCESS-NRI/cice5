@@ -20,30 +20,6 @@ Three drivers are supported by the CMake build, selected with `CICE_DRIVER`:
 | `access` | ACCESS-ESM1.6 | OASIS3-MCT |
 | `cice` | standalone / testing | none |
 
-The `cice` driver builds an uncoupled executable for exercising the sea-ice
-model on its own. It requires neither OASIS nor libaccessom2, and defines
-neither `AusCOM` nor `coupled`:
-
-```bash
-cmake -S . -B build \
-      -DCICE_DRIVER=cice -DCICE_IO=NetCDF -DCMAKE_BUILD_TYPE=Release \
-      -DCICE_NXGLOB=100 -DCICE_NYGLOB=116
-cmake --build build -j
-```
-
-See `input_templates/run_ice.gadi.nci.org.au` for a Gadi PBS script that runs
-it. Note that the standalone driver is not part of any ACCESS configuration and
-is not covered by the CI, so treat it as a development and testing aid.
-
-For a smoke test that needs **no input data at all**, set `grid_type =
-'rectangular'` in `grid_nml` and `atm_data_type = 'default'` in `forcing_nml`.
-The grid is then generated analytically and the forcing is synthetic, so the
-model runs from the namelist alone. This is a convenient way to check that a
-build works and that results are independent of the block decomposition: run
-the same executable at several `block_size_x`/`block_size_y`/`nprocs`
-combinations and compare the restart files, which should be bitwise identical.
-(The history field `blkmask` is expected to differ — it records which task and
-block each cell belongs to.)
 
 ### Grid size, block decomposition and task count
 
@@ -65,6 +41,13 @@ rebuilding:
 ```
 
 Notes:
+
+This runtime specification for domain grids, `nprocs`,
+block sizes, and max blocks, was backported from CICE6 in this
+[CICE5 PR](https://github.com/ACCESS-NRI/cice5/pull/113); please refer to
+[CICE6 docs](https://cice-consortium-cice.readthedocs.io/en/main/user_guide/ug_case_settings.html)
+for details on the namelist parameters.
+
 
 * `block_size_x` and `block_size_y` need not divide `nx_global`/`ny_global`
   evenly — the decomposition is padded — but choosing sizes that do avoids
@@ -90,12 +73,18 @@ Notes:
   index 1. It aborts at startup otherwise. The OM2 (`auscom`) driver has no
   such restriction.
 
-`CICE_NXGLOB`, `CICE_NYGLOB`, `CICE_BLCKX`, `CICE_BLCKY` and `CICE_MXBLCKS`
-are retained in the CMake build, but only as the **defaults** applied when the
-corresponding `domain_nml` entry is absent, so existing namelists keep their
-previous behaviour. Set any of them to `-1` to compile in no default and make
-that namelist entry mandatory. Since nothing about the domain is baked into
-the executable any more, it is simply `cice_<driver>.exe`.
+`nx_global`, `ny_global`, `block_size_x` and `block_size_y` are **required**
+in `domain_nml`; `max_blocks` may be given or left at `-1` to be derived. The
+build has no grid or block settings at all — the old `-DNXGLOB`, `-DNYGLOB`,
+`-DBLCKX`, `-DBLCKY` and `-DMXBLCKS` macros and their `CICE_*` CMake variables
+are gone. Since nothing about the domain is baked into the executable, it is
+simply `cice_<driver>.exe`.
+
+**Upgrading an existing namelist:** a `domain_nml` that relied on the
+compiled-in values must now spell out `nx_global`, `ny_global`,
+`block_size_x` and `block_size_y`. Use the values the build previously passed
+via `-D`; the run aborts at startup with a message naming the missing setting
+if any is absent.
 
 Note that the vertical and tracer dimensions (`NICECAT`, `NICELYR`,
 `NSNWLYR`, the tracer counts) are still compile-time.
