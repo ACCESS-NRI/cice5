@@ -334,7 +334,7 @@
       rnslyr = real(nslyr,kind=dbl_kind)      
       rnilyr = real(nilyr,kind=dbl_kind)    
               
-      do iblk = 1, max_blocks
+      do iblk = 1, nblocks
 	 do n = 1, ncat
             do j = 1, ny_block
                do i = 1, nx_block

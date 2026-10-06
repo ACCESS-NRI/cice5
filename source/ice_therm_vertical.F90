@@ -21,7 +21,7 @@
       module ice_therm_vertical
 
       use ice_kinds_mod
-      use ice_domain_size, only: ncat, nilyr, nslyr, max_ntrcr, max_blocks 
+      use ice_domain_size, only: ncat, nilyr, nslyr, max_ntrcr
       use ice_calendar, only: istep1
       use ice_constants
       use ice_fileunits, only: nu_diag
@@ -624,6 +624,7 @@
       subroutine init_thermo_vertical
 
       use ice_blocks, only: nx_block, ny_block
+      use ice_domain, only: nblocks
       use ice_flux, only: salinz, Tmltz, sss
 
       integer (kind=int_kind) :: &
@@ -655,7 +656,7 @@
       !-----------------------------------------------------------------
 
       !$OMP PARALLEL DO PRIVATE(iblk,i,j,k,zn)
-      do iblk = 1,max_blocks
+      do iblk = 1,nblocks
       do j = 1, ny_block
       do i = 1, nx_block
       if (l_brine) then
