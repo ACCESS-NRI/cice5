@@ -35,16 +35,22 @@ else()
 endif()
 
 set(CICE_DRIVER "auscom" CACHE STRING "CICE driver code to use")
-message(STATUS "  - CICE_DRIVER   ${CICE_DRIVER}")
+if(NOT CICE_DRIVER MATCHES "^(auscom|access|cice)$")
+  message(FATAL_ERROR " CICE_DRIVER   ${CICE_DRIVER} not valid, choose auscom|access|cice")
+else()
+  message(STATUS "  - CICE_DRIVER   ${CICE_DRIVER}")
+endif()
 
-set(CICE_NXGLOB "360" CACHE STRING "Size of grid in X-direction")
-set(CICE_NYGLOB "300" CACHE STRING "Size of grid in Y-direction")
+if(CICE_DRIVER MATCHES "^cice$")
+  set(CICE_OASIS_COUPLED FALSE)
+else()
+  set(CICE_OASIS_COUPLED TRUE)
+endif()
 
-# defaults from https://github.com/ACCESS-NRI/access-spack-packages/blob/d8b48b18a1400cf2a6850af0bf038af55804d92f/packages/cice5/spack-build.sh#L89-L91
-# BLCKX = 360/24 = 15 , BLCKY = 300/1  = 300
-set(CICE_BLCKX   "15"  CACHE STRING "Size of computational blocks in X-direction")
-set(CICE_BLCKY   "300" CACHE STRING "Size of computational blocks in Y-direction")
-set(CICE_MXBLCKS "1"   CACHE STRING "Maximum number of blocks per task")
+# The global grid size (nx_global, ny_global) and the block decomposition
+# (block_size_x, block_size_y, max_blocks) are set entirely at RUN time, in
+# the domain_nml namelist group.  Nothing about the domain is compiled in, so
+# one executable runs any grid at any task count.
 
 # these are also configuration settings, but we leave them as internal only at this point
 # could be made options if users need them
@@ -102,11 +108,6 @@ else()
 endif()
 
 add_compile_definitions(
-  NXGLOB=${CICE_NXGLOB}
-  NYGLOB=${CICE_NYGLOB}
-  BLCKX=${CICE_BLCKX}
-  BLCKY=${CICE_BLCKY}
-  MXBLCKS=${CICE_MXBLCKS}
   NUMIN=${NUMIN}
   NUMAX=${NUMAX}
   TRAGE=${TRAGE}
@@ -122,7 +123,10 @@ add_compile_definitions(
   NSNWLYR=${NSNWLYR}
 )
 
-add_compile_definitions( gather_scatter_barrier ncdf OASIS3_MCT )
+add_compile_definitions( gather_scatter_barrier ncdf )
+if(CICE_OASIS_COUPLED)
+  add_compile_definitions( OASIS3_MCT )
+endif()
 
 if (CICE_IO MATCHES PIO)
   add_compile_definitions(PIO)
@@ -138,11 +142,13 @@ endif()
 #                              External packages                                #
 #]==============================================================================]
 
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(OASIS3PSMILE REQUIRED IMPORTED_TARGET "oasis3-psmile.MPI1")
-pkg_check_modules(OASIS3MCT REQUIRED IMPORTED_TARGET "oasis3-mct")
-pkg_check_modules(OASIS3MPEU REQUIRED IMPORTED_TARGET "oasis3-mpeu")
-pkg_check_modules(OASIS3SCRIP REQUIRED IMPORTED_TARGET "oasis3-scrip")
+if(CICE_OASIS_COUPLED)
+  find_package(PkgConfig REQUIRED)
+  pkg_check_modules(OASIS3PSMILE REQUIRED IMPORTED_TARGET "oasis3-psmile.MPI1")
+  pkg_check_modules(OASIS3MCT REQUIRED IMPORTED_TARGET "oasis3-mct")
+  pkg_check_modules(OASIS3MPEU REQUIRED IMPORTED_TARGET "oasis3-mpeu")
+  pkg_check_modules(OASIS3SCRIP REQUIRED IMPORTED_TARGET "oasis3-scrip")
+endif()
 
 find_package(MPI REQUIRED COMPONENTS Fortran)
 if(CICE_DRIVER MATCHES "auscom")
@@ -174,12 +180,15 @@ if(CICE_DRIVER MATCHES "auscom")
   target_link_libraries(cice PUBLIC libaccessom2::accessom2 )
 endif()
 
-target_link_libraries(cice 
-  PRIVATE 
-  MPI::MPI_Fortran 
-  PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP 
-  # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
-  )
+target_link_libraries(cice PRIVATE MPI::MPI_Fortran)
+
+if(CICE_OASIS_COUPLED)
+  target_link_libraries(cice
+    PRIVATE
+    PkgConfig::OASIS3PSMILE PkgConfig::OASIS3MCT PkgConfig::OASIS3MPEU PkgConfig::OASIS3SCRIP
+    # OASIS3MCT is a depedency of OASIS3PSMILE, so order matters here
+    )
+endif()
 
 if(CICE_IO MATCHES "^(NetCDF|PIO)$")
   target_link_libraries(cice PRIVATE NetCDF::NetCDF_Fortran NetCDF::NetCDF_C)
@@ -287,6 +296,13 @@ elseif(CICE_DRIVER MATCHES "auscom")
     ${CICE_DRIVER_SOURCE}/cpl_arrays_setup.F90
     ${CICE_DRIVER_SOURCE}/ice_constants.F90
   )
+elseif(CICE_DRIVER MATCHES "^cice$")
+  target_sources(cice PRIVATE
+    ${CICE_DRIVER_SOURCE}/CICE_FinalMod.F90
+    ${CICE_DRIVER_SOURCE}/CICE_InitMod.F90
+    ${CICE_DRIVER_SOURCE}/CICE_RunMod.F90
+    ${CICE_DRIVER_SOURCE}/ice_constants.F90
+  )
 else()
   message(FATAL_ERROR "CICE_DRIVER: ${CICE_DRIVER} is currently not supported by the CMake build system")
 endif()
@@ -309,9 +325,11 @@ endif()
 #                             Install                                           #
 #]==============================================================================]
 
+# Neither the grid size nor the block size is baked into the executable, so
+# neither belongs in its name.
 set_target_properties(cice PROPERTIES
   LINKER_LANGUAGE Fortran
-  OUTPUT_NAME "cice_${CICE_DRIVER}_${CICE_NXGLOB}x${CICE_NYGLOB}_${CICE_BLCKX}x${CICE_BLCKY}.exe"
+  OUTPUT_NAME "cice_${CICE_DRIVER}.exe"
 )
 
 install(TARGETS cice

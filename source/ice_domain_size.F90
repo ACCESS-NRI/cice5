@@ -21,8 +21,6 @@
       save
 
       integer (kind=int_kind), parameter, public :: &
-        nx_global = NXGLOB    , & ! i-axis size
-        ny_global = NYGLOB    , & ! j-axis size
         ncat      = NICECAT   , & ! number of categories
         nilyr     = NICELYR   , & ! number of ice layers per category
         nslyr     = NSNWLYR   , & ! number of snow layers per category
@@ -49,21 +47,26 @@
 !                  + TRBGCZ*nltrcr*nblyr ! for zbgc (off if TRBRI=0)
         max_nstrm =   5           ! max number of history output streams
 
-      integer (kind=int_kind), parameter, public :: &
-        block_size_x = BLCKX  , & ! size of block in first horiz dimension
-        block_size_y = BLCKY      ! size of block in second horiz dimension
+   !*** The global grid size and the block decomposition are set at run time
+   !*** from the domain_nml namelist group; see init_domain_blocks in
+   !*** ice_domain.F90.  nx_global, ny_global, block_size_x and block_size_y
+   !*** must all be given there.
+   !***
+   !*** max_blocks may be given, or left at -1 to have the model derive it
+   !*** from the block distribution it actually builds.  A max_blocks larger
+   !*** than necessary is not fatal, but wastes memory; one that is too small
+   !*** aborts the run.
+   !***
+   !*** These are NOT parameters: every array dimensioned by them must be
+   !*** allocatable, and allocated by the relevant alloc_* routine after
+   !*** init_grid1.
 
-   !*** The model will inform the user of the correct
-   !*** values for the parameter below.  A value higher than
-   !*** necessary will not cause the code to fail, but will
-   !*** allocate more memory than is necessary.  A value that
-   !*** is too low will cause the code to exit.  
-   !*** A good initial guess is found using
-   !*** max_blocks = (nx_global/block_size_x)*(ny_global/block_size_y)/
-   !***               num_procs
- 
-      integer (kind=int_kind), parameter, public :: &
-        max_blocks = MXBLCKS      ! max number of blocks per processor
+      integer (kind=int_kind), public :: &
+        nx_global    = -1 , & ! i-axis size
+        ny_global    = -1 , & ! j-axis size
+        block_size_x = -1 , & ! block size, first horizontal dimension
+        block_size_y = -1 , & ! block size, second horizontal dimension
+        max_blocks   = -1     ! max number of blocks per processor
 
 !=======================================================================
 

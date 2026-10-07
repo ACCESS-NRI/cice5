@@ -61,11 +61,9 @@
          spval     = 1.0e30_real_kind   ! special value for netCDF output
 
       real (kind=dbl_kind), parameter, public :: &
-         iceruf   = 0.0005_dbl_kind   ,&! ice surface roughness (m)
-
          ! (Ebert, Schramm and Curry JGR 100 15965-15975 Aug 1995)
          kappav = 1.4_dbl_kind ,&! vis extnctn coef in ice, wvlngth<700nm (1/m)
-         !kappan = 17.6_dbl_kind,&! vis extnctn coef in ice, wvlngth<700nm (1/m)
+         kappan = 17.6_dbl_kind,&! vis extnctn coef in ice, wvlngth<700nm (1/m)
 
          ! kice is not used for mushy thermo
          kice   = 2.03_dbl_kind  ,&! thermal conductivity of fresh ice(W/m/deg)
@@ -74,7 +72,6 @@
                                    ! (used in zero layer thermodynamics option)
          ksno   = 0.30_dbl_kind  ,&! thermal conductivity of snow  (W/m/deg)
          zref   = 10._dbl_kind   ,&! reference height for stability (m)
-         hs_min = 1.e-4_dbl_kind ,&! min snow thickness for computing zTsn (m)
          snowpatch = 0.02_dbl_kind ! parameter for fractional snow area (m)
                     
       ! weights for albedos 
@@ -120,10 +117,13 @@
         c20  = 20.0_dbl_kind, &
         c25  = 25.0_dbl_kind, &
 	c30  = 30.0_dbl_kind, &
+        c60  = 60.0_dbl_kind, &
         c100 = 100.0_dbl_kind, &
+        c114 = 114.0_dbl_kind, &
         c180 = 180.0_dbl_kind, &
         c360 = 360.0_dbl_kind, &
         c365 = 365.0_dbl_kind, &
+        c373 = 373.0_dbl_kind, &
 	c400 = 400.0_dbl_kind, &
         c3600= 3600.0_dbl_kind, &
         c1000= 1000.0_dbl_kind, &

@@ -79,7 +79,9 @@
 #ifdef ncdf 
       ! local parameters
 
-      real (kind=dbl_kind), dimension(nx_block,ny_block,2,max_blocks), &
+      ! Static across calls, but sized by the run-time block decomposition,
+      ! so these can no longer be plain SAVE locals; allocate on first call.
+      real (kind=dbl_kind), dimension(:,:,:,:), allocatable, &
          save :: &
          aero1_data    , & ! field values at 2 temporal data points
          aero2_data    , & ! field values at 2 temporal data points
@@ -97,10 +99,24 @@
 
       logical (kind=log_kind) :: readm
 
+      integer (kind=int_kind) :: ierr
+
     !-------------------------------------------------------------------
-    ! monthly data 
+    ! allocate the persistent data buffers on first entry
+    !-------------------------------------------------------------------
+
+      if (.not. allocated(aero1_data)) then
+         allocate(aero1_data(nx_block,ny_block,2,max_blocks), &
+                  aero2_data(nx_block,ny_block,2,max_blocks), &
+                  aero3_data(nx_block,ny_block,2,max_blocks), stat=ierr)
+         if (ierr /= 0) call abort_ice('(faero_data): Out of memory')
+         aero1_data = c0; aero2_data = c0; aero3_data = c0
+      endif
+
+    !-------------------------------------------------------------------
+    ! monthly data
     !
-    ! Assume that monthly data values are located in the middle of the 
+    ! Assume that monthly data values are located in the middle of the
     ! month.
     !-------------------------------------------------------------------
 

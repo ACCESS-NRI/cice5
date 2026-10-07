@@ -11,7 +11,6 @@
 ! Jan. 2008: Elizabeth Hunke updated to new POP infrastructure
 
    use ice_kinds_mod
-   use ice_domain_size, only: max_blocks
    use ice_communicate, only: my_task, master_task, create_communicator
    use ice_blocks, only: nblocks_x, nblocks_y, nblocks_tot
    use ice_exit, only: abort_ice
@@ -61,6 +60,97 @@
 !***********************************************************************
 
  contains
+
+!***********************************************************************
+!BOP
+! !IROUTINE: estimate_max_blocks
+! !INTERFACE:
+
+ function estimate_max_blocks(dist_type, nprocs, workPerBlock) result(mb)
+
+! !DESCRIPTION:
+!  Returns a starting size for the blockIndex work array of the
+!  distributions that need one.  Only roundrobin, sectrobin and sectcart
+!  index blockIndex by a per-processor block counter; cartesian, rake and
+!  spacecurve never touch it.
+!
+!  For roundrobin the answer is exact: blocks carrying work are dealt one
+!  per processor in turn, so no processor can receive more than
+!  ceil(nActive/nprocs).
+!
+!  sectrobin and sectcart deal blocks in runs of blktogether, sweeping the
+!  processors more than once, so their per-processor totals are bounded by
+!  the target share plus a few whole runs.  Those bounds are estimates, not
+!  proofs, which is why grow_block_index exists: getting one wrong costs a
+!  reallocation and a copy, not a failed run.  There is deliberately no way
+!  to override them -- there would be nothing for a user to gain.
+
+   character (*), intent(in) :: dist_type
+   integer (int_kind), intent(in) :: nprocs
+   integer (int_kind), dimension(:), intent(in) :: workPerBlock
+   integer (int_kind) :: mb
+
+   integer (int_kind) :: nactive, share, blktogether
+
+   nactive = count(workPerBlock /= 0)
+   share   = (max(nactive,1) - 1)/nprocs + 1     ! ceil(nactive/nprocs)
+
+   select case (trim(dist_type))
+
+   case('roundrobin')
+      mb = share                                  ! exact
+
+   case('sectrobin')
+      ! southern and northern sweeps deposit runs of blktogether before the
+      ! central sweep tops each processor up towards share
+      blktogether = max(1,nint(float(nactive)/float(6*nprocs)))
+      mb = share + 2*(blktogether + 1)
+
+   case('sectcart')
+      ! two half-domain sweeps, each visiting a processor about twice
+      blktogether = max(1,nint(float(nblocks_x*nblocks_y)/float(4*nprocs)))
+      mb = (nblocks_tot - 1)/nprocs + 1 + 2*(blktogether + 1)
+
+   case default
+      mb = share + 1
+
+   end select
+
+   mb = max(mb, 1)
+
+ end function estimate_max_blocks
+
+!***********************************************************************
+!BOP
+! !IROUTINE: grow_block_index
+! !INTERFACE:
+
+ subroutine grow_block_index(dist, nprocs, needed)
+
+! !DESCRIPTION:
+!  Enlarges dist%blockIndex so that its second dimension is at least
+!  `needed`, preserving the entries already written.  Doubling keeps the
+!  number of copies logarithmic even if the initial estimate is poor.
+
+   type (distrb), intent(inout) :: dist
+   integer (int_kind), intent(in) :: nprocs, needed
+
+   integer (int_kind), dimension(:,:), pointer :: tmp
+   integer (int_kind) :: oldsize, newsize, istat
+
+   oldsize = size(dist%blockIndex, dim=2)
+   if (needed <= oldsize) return
+
+   newsize = max(needed, 2*oldsize)
+   allocate(tmp(nprocs,newsize), stat=istat)
+   if (istat /= 0) call abort_ice( &
+      'ice_distribution: could not grow blockIndex; out of memory')
+   tmp(:,:) = 0
+   tmp(:,1:oldsize) = dist%blockIndex(:,1:oldsize)
+   deallocate(dist%blockIndex)
+   dist%blockIndex => tmp
+
+ end subroutine grow_block_index
 
 !***********************************************************************
 
@@ -1017,7 +1107,12 @@
    globalID = 0
    proc_tmp = 0
 
-   allocate(newDistrb%blockIndex(nprocs,max_blocks))
+   !*** blockIndex is an internal work array; size it from an estimate and
+   !*** grow it on demand rather than requiring max_blocks up front.  This
+   !*** is what lets max_blocks = -1 be resolved from the finished
+   !*** distribution in init_domain_distribution.
+   allocate(newDistrb%blockIndex(nprocs, &
+            estimate_max_blocks('roundrobin', nprocs, workPerBlock)))
    newDistrb%blockIndex(:,:) = 0
 
    do j=1,nblocks_y
@@ -1029,10 +1124,9 @@
          processor = mod(processor,nprocs) + 1
          proc_tmp(processor) = proc_tmp(processor) + 1
          localID = proc_tmp(processor)
-         if (localID > max_blocks) then
-            call abort_ice('create_distrb_roundrobin: max_blocks too small')
-            return
-         endif
+         if (localID > size(newDistrb%blockIndex,dim=2)) &
+
+            call grow_block_index(newDistrb, nprocs, localID)
          newDistrb%blockLocation(globalID) = processor
          newDistrb%blockLocalID (globalID) = localID
          newDistrb%blockIndex(processor,localID) = globalID
@@ -1154,7 +1248,12 @@
    globalID = 0
    proc_tmp = 0
 
-   allocate(newDistrb%blockIndex(nprocs,max_blocks))
+   !*** blockIndex is an internal work array; size it from an estimate and
+   !*** grow it on demand rather than requiring max_blocks up front.  This
+   !*** is what lets max_blocks = -1 be resolved from the finished
+   !*** distribution in init_domain_distribution.
+   allocate(newDistrb%blockIndex(nprocs, &
+            estimate_max_blocks('sectrobin', nprocs, workPerBlock)))
    newDistrb%blockIndex(:,:) = 0
 
    allocate(bfree(nblocks_x*nblocks_y))
@@ -1210,10 +1309,9 @@
          if (workPerBlock(globalID) /= 0) then
             proc_tmp(processor) = proc_tmp(processor) + 1
             localID = proc_tmp(processor)
-            if (localID > max_blocks) then
-               call abort_ice('create_distrb_sectrobin: max_blocks too small')
-               return
-            endif
+            if (localID > size(newDistrb%blockIndex,dim=2)) &
+
+               call grow_block_index(newDistrb, nprocs, localID)
             newDistrb%blockLocation(globalID) = processor
             newDistrb%blockLocalID (globalID) = localID
             newDistrb%blockIndex(processor,localID) = globalID
@@ -1261,10 +1359,9 @@
          if (workPerBlock(globalID) /= 0) then
             proc_tmp(processor) = proc_tmp(processor) + 1
             localID = proc_tmp(processor)
-            if (localID > max_blocks) then
-               call abort_ice('create_distrb_sectrobin: max_blocks too small')
-               return
-            endif
+            if (localID > size(newDistrb%blockIndex,dim=2)) &
+
+               call grow_block_index(newDistrb, nprocs, localID)
             newDistrb%blockLocation(globalID) = processor
             newDistrb%blockLocalID (globalID) = localID
             newDistrb%blockIndex(processor,localID) = globalID
@@ -1321,10 +1418,9 @@
       if (workPerBlock(globalID) /= 0) then
          proc_tmp(processor) = proc_tmp(processor) + 1
          localID = proc_tmp(processor)
-         if (localID > max_blocks) then
-            call abort_ice('create_distrb_sectrobin: max_blocks too small')
-            return
-         endif
+         if (localID > size(newDistrb%blockIndex,dim=2)) &
+
+            call grow_block_index(newDistrb, nprocs, localID)
          newDistrb%blockLocation(globalID) = processor
          newDistrb%blockLocalID (globalID) = localID
          newDistrb%blockIndex(processor,localID) = globalID
@@ -1442,7 +1538,12 @@
    allocate(proc_tmp(nprocs))
    proc_tmp = 0
 
-   allocate(newDistrb%blockIndex(nprocs,max_blocks))
+   !*** blockIndex is an internal work array; size it from an estimate and
+   !*** grow it on demand rather than requiring max_blocks up front.  This
+   !*** is what lets max_blocks = -1 be resolved from the finished
+   !*** distribution in init_domain_distribution.
+   allocate(newDistrb%blockIndex(nprocs, &
+            estimate_max_blocks('sectcart', nprocs, workPerBlock)))
    newDistrb%blockIndex(:,:) = 0
 
    blktogether = max(1,nint(float(nblocks_x*nblocks_y)/float(4*nprocs)))
@@ -1481,10 +1582,9 @@
       if (workPerBlock(globalID) /= 0) then
          proc_tmp(processor) = proc_tmp(processor) + 1
          localID = proc_tmp(processor)
-         if (localID > max_blocks) then
-            call abort_ice('create_distrb_sectcart: max_blocks too small')
-            return
-         endif
+         if (localID > size(newDistrb%blockIndex,dim=2)) &
+
+            call grow_block_index(newDistrb, nprocs, localID)
          newDistrb%blockLocation(globalID) = processor
          newDistrb%blockLocalID (globalID) = localID
          newDistrb%blockIndex(processor,localID) = globalID
